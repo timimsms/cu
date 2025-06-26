@@ -20,7 +20,7 @@ type Formatter interface {
 // Format formats and prints data according to the specified format
 func Format(format string, data interface{}) error {
 	var formatter Formatter
-	
+
 	switch strings.ToLower(format) {
 	case "json":
 		formatter = &JSONFormatter{Writer: os.Stdout}
@@ -33,7 +33,7 @@ func Format(format string, data interface{}) error {
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)
 	}
-	
+
 	return formatter.Format(data)
 }
 
@@ -119,7 +119,7 @@ func structToSlice(v interface{}) ([]string, error) {
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-	
+
 	var result []string
 	switch rv.Kind() {
 	case reflect.Struct:

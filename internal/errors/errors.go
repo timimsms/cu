@@ -10,25 +10,25 @@ import (
 var (
 	// ErrNotAuthenticated indicates the user is not authenticated
 	ErrNotAuthenticated = errors.New("not authenticated: please run 'cu auth login'")
-	
+
 	// ErrTokenExpired indicates the authentication token has expired
 	ErrTokenExpired = errors.New("authentication token expired: please run 'cu auth login' again")
-	
+
 	// ErrInvalidToken indicates the token is invalid
 	ErrInvalidToken = errors.New("invalid authentication token")
-	
+
 	// ErrNetworkError indicates a network error occurred
 	ErrNetworkError = errors.New("network error")
-	
+
 	// ErrRateLimited indicates the API rate limit was exceeded
 	ErrRateLimited = errors.New("rate limit exceeded")
-	
+
 	// ErrNotFound indicates the requested resource was not found
 	ErrNotFound = errors.New("resource not found")
-	
+
 	// ErrInvalidInput indicates invalid user input
 	ErrInvalidInput = errors.New("invalid input")
-	
+
 	// ErrConfigNotFound indicates the configuration was not found
 	ErrConfigNotFound = errors.New("configuration not found")
 )
@@ -132,12 +132,12 @@ func IsRetryable(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	// Check for specific error types
 	if errors.Is(err, ErrNetworkError) || errors.Is(err, ErrRateLimited) {
 		return true
 	}
-	
+
 	// Check for API errors
 	var apiErr *APIError
 	if errors.As(err, &apiErr) {
@@ -145,6 +145,6 @@ func IsRetryable(err error) bool {
 			apiErr.StatusCode == http.StatusServiceUnavailable ||
 			apiErr.StatusCode == http.StatusBadGateway
 	}
-	
+
 	return false
 }

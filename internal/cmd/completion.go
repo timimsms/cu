@@ -60,7 +60,7 @@ PowerShell:
 			fmt.Fprintf(os.Stderr, "Unsupported shell type: %s\n", args[0])
 			os.Exit(1)
 		}
-		
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to generate completion script: %v\n", err)
 			os.Exit(1)

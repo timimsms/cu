@@ -7,7 +7,7 @@ import (
 
 func TestRateLimiter(t *testing.T) {
 	rl := NewRateLimiter(2, time.Second)
-	
+
 	// Should allow first two requests immediately
 	if !rl.tryAcquire() {
 		t.Error("First request should be allowed")
@@ -15,12 +15,12 @@ func TestRateLimiter(t *testing.T) {
 	if !rl.tryAcquire() {
 		t.Error("Second request should be allowed")
 	}
-	
+
 	// Third request should be blocked
 	if rl.tryAcquire() {
 		t.Error("Third request should be blocked")
 	}
-	
+
 	// After waiting, should allow more requests
 	time.Sleep(600 * time.Millisecond)
 	if !rl.tryAcquire() {
@@ -37,7 +37,7 @@ func TestMinFunction(t *testing.T) {
 		{3, 3, 3},
 		{-1, 0, -1},
 	}
-	
+
 	for _, test := range tests {
 		result := min(test.a, test.b)
 		if result != test.expected {

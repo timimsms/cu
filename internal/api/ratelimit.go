@@ -50,7 +50,7 @@ func (r *RateLimiter) tryAcquire() bool {
 	now := time.Now()
 	elapsed := now.Sub(r.lastRefill)
 	tokensToAdd := int(elapsed / r.refillRate)
-	
+
 	if tokensToAdd > 0 {
 		r.tokens = min(r.tokens+tokensToAdd, r.maxTokens)
 		r.lastRefill = now

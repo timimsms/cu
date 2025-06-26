@@ -73,6 +73,11 @@ coverage:
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
+## ci: Run CI checks locally (mirrors GitHub Actions)
+ci:
+	@echo "Running CI checks..."
+	@./scripts/ci.sh
+
 ## help: Show this help
 help:
 	@echo "Usage: make [target]"

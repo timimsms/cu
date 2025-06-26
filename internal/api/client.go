@@ -33,7 +33,7 @@ func NewClient() (*Client, error) {
 	}
 
 	client := clickup.NewClient(httpClient, token.Value)
-	
+
 	return &Client{
 		client:      client,
 		rateLimiter: NewRateLimiter(100, time.Minute), // 100 requests per minute for free tier
@@ -151,8 +151,6 @@ func (c *Client) GetTasks(ctx context.Context, listID string, options *TaskQuery
 
 	return tasks, nil
 }
-
-
 
 // DeleteTask deletes a task
 func (c *Client) DeleteTask(ctx context.Context, taskID string) error {
@@ -297,7 +295,7 @@ func (c *Client) CreateTask(ctx context.Context, listID string, options *TaskCre
 // parseDueDate parses various date formats including relative dates
 func parseDueDate(input string) (time.Time, error) {
 	now := time.Now()
-	
+
 	// Handle relative dates
 	switch input {
 	case "today":
@@ -307,17 +305,17 @@ func parseDueDate(input string) (time.Time, error) {
 	case "week":
 		return now.AddDate(0, 0, 7), nil
 	}
-	
+
 	// Try parsing as RFC3339
 	if t, err := time.Parse(time.RFC3339, input); err == nil {
 		return t, nil
 	}
-	
+
 	// Try parsing as date only
 	if t, err := time.Parse("2006-01-02", input); err == nil {
 		return t, nil
 	}
-	
+
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", input)
 }
 

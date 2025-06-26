@@ -44,7 +44,7 @@ func Init(cfgFile string) error {
 	projectViper.SetConfigName(".cu")
 	projectViper.SetConfigType("yml")
 	projectViper.AddConfigPath(".")
-	
+
 	// Read project config if it exists
 	if err := projectViper.ReadInConfig(); err == nil {
 		// Merge project config with main config

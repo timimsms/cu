@@ -36,7 +36,7 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 
 		resp, err = t.base.RoundTrip(req)
-		
+
 		// Don't retry on success or client errors
 		if err == nil && resp.StatusCode < 500 && resp.StatusCode != 429 {
 			return resp, nil

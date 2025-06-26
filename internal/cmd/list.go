@@ -24,34 +24,34 @@ var listListCmd = &cobra.Command{
 	Long:  `List all lists in a space or folder.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		
+
 		// Initialize caches if not already done
 		if cache.WorkspaceCache == nil {
 			if err := cache.InitCaches(); err != nil {
 				fmt.Fprintf(os.Stderr, "Warning: failed to initialize cache: %v\n", err)
 			}
 		}
-		
+
 		// Create API client
 		client, err := api.NewClient()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Get flags
 		spaceID, _ := cmd.Flags().GetString("space")
 		folderID, _ := cmd.Flags().GetString("folder")
 		includeArchived, _ := cmd.Flags().GetBool("archived")
-		
+
 		// If neither space nor folder specified, show error
 		if spaceID == "" && folderID == "" {
 			fmt.Fprintln(os.Stderr, "Please specify either --space or --folder")
 			os.Exit(1)
 		}
-		
+
 		var allLists []interface{}
-		
+
 		if folderID != "" {
 			// Get lists from folder
 			lists, err := client.GetLists(ctx, folderID)
@@ -76,14 +76,14 @@ var listListCmd = &cobra.Command{
 					allLists = append(allLists, list)
 				}
 			}
-			
+
 			// Also get lists from folders in the space
 			folders, err := client.GetFolders(ctx, spaceID)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to get folders: %v\n", err)
 				os.Exit(1)
 			}
-			
+
 			for _, folder := range folders {
 				lists, err := client.GetLists(ctx, folder.ID)
 				if err != nil {
@@ -97,13 +97,13 @@ var listListCmd = &cobra.Command{
 				}
 			}
 		}
-		
+
 		// Get default list ID for highlighting
 		defaultListID := config.GetString("default_list")
-		
+
 		// Format output
 		format := cmd.Flag("output").Value.String()
-		
+
 		if format == "table" {
 			// Prepare table data
 			type listRow struct {
@@ -113,7 +113,7 @@ var listListCmd = &cobra.Command{
 				Tasks    int    `json:"tasks"`
 				Archived bool   `json:"archived"`
 			}
-			
+
 			var rows []listRow
 			for _, item := range allLists {
 				// Type assertion based on the actual type
@@ -122,12 +122,12 @@ var listListCmd = &cobra.Command{
 					id, _ := v["id"].(string)
 					name, _ := v["name"].(string)
 					archived, _ := v["archived"].(bool)
-					
+
 					defaultMarker := ""
 					if id == defaultListID {
 						defaultMarker = "*"
 					}
-					
+
 					row := listRow{
 						ID:       id,
 						Name:     name,
@@ -137,7 +137,7 @@ var listListCmd = &cobra.Command{
 					rows = append(rows, row)
 				}
 			}
-			
+
 			if err := output.Format(format, rows); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
 				os.Exit(1)
@@ -159,16 +159,16 @@ var listDefaultCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		listID := args[0]
-		
+
 		// TODO: Validate that the list exists and is accessible
-		
+
 		// Save to config
 		config.Set("default_list", listID)
 		if err := config.Save(); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to save configuration: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		fmt.Printf("Default list set to: %s\n", listID)
 		fmt.Println("This will be saved to .cu.yml in the current directory for project-specific defaults.")
 	},
@@ -177,7 +177,7 @@ var listDefaultCmd = &cobra.Command{
 func init() {
 	listCmd.AddCommand(listListCmd)
 	listCmd.AddCommand(listDefaultCmd)
-	
+
 	// List command flags
 	listListCmd.Flags().StringP("space", "s", "", "Space ID or name")
 	listListCmd.Flags().StringP("folder", "f", "", "Folder ID or name")

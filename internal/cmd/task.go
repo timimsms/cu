@@ -25,14 +25,14 @@ var taskListCmd = &cobra.Command{
 	Long:  `List tasks from ClickUp with various filtering and sorting options.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		
+
 		// Create API client
 		client, err := api.NewClient()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Get flags
 		listID, _ := cmd.Flags().GetString("list")
 		spaceID, _ := cmd.Flags().GetString("space")
@@ -43,7 +43,7 @@ var taskListCmd = &cobra.Command{
 		// priority, _ := cmd.Flags().GetString("priority") // TODO: implement priority filtering
 		limit, _ := cmd.Flags().GetInt("limit")
 		page, _ := cmd.Flags().GetInt("page")
-		
+
 		// If no list is specified, try to use default from config
 		if listID == "" && spaceID == "" && folderID == "" {
 			listID = config.GetString("default_list")
@@ -52,19 +52,19 @@ var taskListCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-		
+
 		// TODO: Implement space/folder to list resolution
 		// For now, require a list ID
 		if listID == "" {
 			fmt.Fprintln(os.Stderr, "List ID is required for now. Space/folder resolution coming soon.")
 			os.Exit(1)
 		}
-		
+
 		// Build query options
 		queryOpts := &api.TaskQueryOptions{
 			Page: page,
 		}
-		
+
 		if assignee != "" {
 			queryOpts.Assignees = []string{assignee}
 		}
@@ -74,22 +74,22 @@ var taskListCmd = &cobra.Command{
 		if tag != "" {
 			queryOpts.Tags = []string{tag}
 		}
-		
+
 		// Get tasks
 		tasks, err := client.GetTasks(ctx, listID, queryOpts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get tasks: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Apply limit
 		if limit > 0 && len(tasks) > limit {
 			tasks = tasks[:limit]
 		}
-		
+
 		// Format output
 		format := cmd.Flag("output").Value.String()
-		
+
 		if format == "table" {
 			// Prepare table data
 			type taskRow struct {
@@ -100,20 +100,20 @@ var taskListCmd = &cobra.Command{
 				Priority string `json:"priority"`
 				Due      string `json:"due"`
 			}
-			
+
 			var rows []taskRow
 			for _, task := range tasks {
 				row := taskRow{
-					ID:     task.ID,
-					Name:   truncate(task.Name, 50),
-					Status: getTaskStatus(task),
+					ID:       task.ID,
+					Name:     truncate(task.Name, 50),
+					Status:   getTaskStatus(task),
 					Assignee: getTaskAssignee(task),
 					Priority: getTaskPriority(task),
 					Due:      getTaskDueDate(task),
 				}
 				rows = append(rows, row)
 			}
-			
+
 			if err := output.Format(format, rows); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
 				os.Exit(1)
@@ -134,7 +134,7 @@ var taskCreateCmd = &cobra.Command{
 	Long:  `Create a new task in ClickUp with the specified name and optional properties.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		
+
 		// Get task name from args or flag
 		var name string
 		if len(args) > 0 {
@@ -142,19 +142,19 @@ var taskCreateCmd = &cobra.Command{
 		} else {
 			name, _ = cmd.Flags().GetString("name")
 		}
-		
+
 		if name == "" {
 			fmt.Fprintln(os.Stderr, "Task name is required. Provide it as an argument or use --name flag")
 			os.Exit(1)
 		}
-		
+
 		// Create API client
 		client, err := api.NewClient()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Get flags
 		listID, _ := cmd.Flags().GetString("list")
 		description, _ := cmd.Flags().GetString("description")
@@ -163,7 +163,7 @@ var taskCreateCmd = &cobra.Command{
 		priority, _ := cmd.Flags().GetString("priority")
 		dueDate, _ := cmd.Flags().GetString("due")
 		tags, _ := cmd.Flags().GetStringSlice("tag")
-		
+
 		// If no list is specified, try to use default from config
 		if listID == "" {
 			listID = config.GetString("default_list")
@@ -172,7 +172,7 @@ var taskCreateCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-		
+
 		// Build task creation options
 		createOpts := &api.TaskCreateOptions{
 			Name:        name,
@@ -181,29 +181,29 @@ var taskCreateCmd = &cobra.Command{
 			Priority:    priority,
 			Tags:        tags,
 		}
-		
+
 		// Handle assignees
 		if len(assignees) > 0 {
 			createOpts.Assignees = assignees
 		}
-		
+
 		// Handle due date
 		if dueDate != "" {
 			// TODO: Parse due date strings like "today", "tomorrow", etc.
 			// For now, expect ISO date format
 			createOpts.DueDate = dueDate
 		}
-		
+
 		// Create task
 		task, err := client.CreateTask(ctx, listID, createOpts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create task: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Format output
 		format := cmd.Flag("output").Value.String()
-		
+
 		if format == "table" {
 			// Simple success message with task details
 			fmt.Printf("✓ Created task %s: %s\n", task.ID, task.Name)
@@ -228,24 +228,24 @@ var taskViewCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 		taskID := args[0]
-		
+
 		// Create API client
 		client, err := api.NewClient()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Get task
 		task, err := client.GetTask(ctx, taskID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get task: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Format output
 		format := cmd.Flag("output").Value.String()
-		
+
 		if format == "table" {
 			// Display detailed task information
 			fmt.Printf("Task: %s\n", task.Name)
@@ -255,7 +255,7 @@ var taskViewCmd = &cobra.Command{
 			}
 			fmt.Printf("Status: %s\n", getTaskStatus(*task))
 			fmt.Printf("Priority: %s\n", getTaskPriority(*task))
-			
+
 			if len(task.Assignees) > 0 {
 				fmt.Printf("Assignees: ")
 				for i, assignee := range task.Assignees {
@@ -266,23 +266,23 @@ var taskViewCmd = &cobra.Command{
 				}
 				fmt.Println()
 			}
-			
+
 			if task.Description != "" {
 				fmt.Printf("\nDescription:\n%s\n", task.Description)
 			}
-			
+
 			if task.DueDate != nil {
 				fmt.Printf("Due: %s\n", getTaskDueDate(*task))
 			}
-			
+
 			if task.DateCreated != "" {
 				fmt.Printf("Created: %s\n", task.DateCreated)
 			}
-			
+
 			if task.DateUpdated != "" {
 				fmt.Printf("Updated: %s\n", task.DateUpdated)
 			}
-			
+
 			if len(task.Tags) > 0 {
 				fmt.Printf("Tags: ")
 				for i, tag := range task.Tags {
@@ -311,14 +311,14 @@ var taskUpdateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 		taskID := args[0]
-		
+
 		// Create API client
 		client, err := api.NewClient()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Get flags
 		name, _ := cmd.Flags().GetString("name")
 		description, _ := cmd.Flags().GetString("description")
@@ -328,7 +328,7 @@ var taskUpdateCmd = &cobra.Command{
 		addAssignees, _ := cmd.Flags().GetStringSlice("add-assignee")
 		removeAssignees, _ := cmd.Flags().GetStringSlice("remove-assignee")
 		tags, _ := cmd.Flags().GetStringSlice("tag")
-		
+
 		// Build update options
 		updateOpts := &api.TaskUpdateOptions{
 			Name:            name,
@@ -340,23 +340,23 @@ var taskUpdateCmd = &cobra.Command{
 			AddAssignees:    addAssignees,
 			RemoveAssignees: removeAssignees,
 		}
-		
+
 		// Check if any updates were specified
 		if !updateOpts.HasUpdates() {
 			fmt.Fprintln(os.Stderr, "No updates specified. Use flags like --name, --status, --priority, etc.")
 			os.Exit(1)
 		}
-		
+
 		// Update task
 		task, err := client.UpdateTask(ctx, taskID, updateOpts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to update task: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Format output
 		format := cmd.Flag("output").Value.String()
-		
+
 		if format == "table" {
 			fmt.Printf("✓ Updated task %s: %s\n", task.ID, task.Name)
 			if task.URL != "" {
@@ -377,7 +377,7 @@ func init() {
 	taskCmd.AddCommand(taskCreateCmd)
 	taskCmd.AddCommand(taskViewCmd)
 	taskCmd.AddCommand(taskUpdateCmd)
-	
+
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
 	taskListCmd.Flags().StringP("space", "s", "", "Space ID or name")
@@ -391,7 +391,7 @@ func init() {
 	taskListCmd.Flags().Int("page", 0, "Page number for pagination")
 	taskListCmd.Flags().String("sort", "", "Sort by field (created, updated, due, priority)")
 	taskListCmd.Flags().String("order", "asc", "Sort order (asc, desc)")
-	
+
 	// Create command flags
 	taskCreateCmd.Flags().StringP("name", "n", "", "Task name (alternative to providing as argument)")
 	taskCreateCmd.Flags().StringP("list", "l", "", "List ID to create task in")
@@ -401,7 +401,7 @@ func init() {
 	taskCreateCmd.Flags().StringP("priority", "p", "", "Task priority (urgent, high, normal, low)")
 	taskCreateCmd.Flags().String("due", "", "Due date (ISO format or 'today', 'tomorrow')")
 	taskCreateCmd.Flags().StringSlice("tag", []string{}, "Tags to add to the task")
-	
+
 	// Update command flags
 	taskUpdateCmd.Flags().StringP("name", "n", "", "New task name")
 	taskUpdateCmd.Flags().StringP("description", "d", "", "New task description")
@@ -445,7 +445,7 @@ func getTaskDueDate(task clickup.Task) string {
 	if task.DueDate == nil {
 		return ""
 	}
-	
+
 	// DueDate is a *Date type, convert to string
 	t := task.DueDate.Time()
 	if t != nil {
@@ -458,7 +458,7 @@ func getTaskDueDate(task clickup.Task) string {
 func formatRelativeTime(t time.Time) string {
 	now := time.Now()
 	diff := t.Sub(now)
-	
+
 	if diff < 0 {
 		// Past
 		diff = -diff

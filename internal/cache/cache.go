@@ -15,9 +15,9 @@ import (
 
 // Cache represents a simple file-based cache
 type Cache struct {
-	mu       sync.RWMutex
-	dir      string
-	ttl      time.Duration
+	mu  sync.RWMutex
+	dir string
+	ttl time.Duration
 }
 
 // CacheEntry represents a cached item with metadata
@@ -32,7 +32,7 @@ func NewCache(ttl time.Duration) (*Cache, error) {
 	if err := os.MkdirAll(cacheDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
-	
+
 	return &Cache{
 		dir: cacheDir,
 		ttl: ttl,
@@ -43,7 +43,7 @@ func NewCache(ttl time.Duration) (*Cache, error) {
 func (c *Cache) Get(key string, dest interface{}) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	filename := c.filename(key)
 	data, err := os.ReadFile(filename) // #nosec G304 - filename is generated from SHA256 hash
 	if err != nil {
@@ -52,27 +52,27 @@ func (c *Cache) Get(key string, dest interface{}) error {
 		}
 		return fmt.Errorf("failed to read cache: %w", err)
 	}
-	
+
 	var entry CacheEntry
 	if err := json.Unmarshal(data, &entry); err != nil {
 		return fmt.Errorf("failed to unmarshal cache entry: %w", err)
 	}
-	
+
 	// Check if expired
 	if time.Now().After(entry.ExpiresAt) {
 		return fmt.Errorf("cache expired: %s", key)
 	}
-	
+
 	// Marshal data to JSON then unmarshal to destination
 	jsonData, err := json.Marshal(entry.Data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal cached data: %w", err)
 	}
-	
+
 	if err := json.Unmarshal(jsonData, dest); err != nil {
 		return fmt.Errorf("failed to unmarshal to destination: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -80,22 +80,22 @@ func (c *Cache) Get(key string, dest interface{}) error {
 func (c *Cache) Set(key string, value interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	entry := CacheEntry{
 		Data:      value,
 		ExpiresAt: time.Now().Add(c.ttl),
 	}
-	
+
 	data, err := json.MarshalIndent(entry, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal cache entry: %w", err)
 	}
-	
+
 	filename := c.filename(key)
 	if err := os.WriteFile(filename, data, 0600); err != nil {
 		return fmt.Errorf("failed to write cache: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -103,12 +103,12 @@ func (c *Cache) Set(key string, value interface{}) error {
 func (c *Cache) Delete(key string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	filename := c.filename(key)
 	if err := os.Remove(filename); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete cache: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -116,12 +116,12 @@ func (c *Cache) Delete(key string) error {
 func (c *Cache) Clear() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	entries, err := os.ReadDir(c.dir)
 	if err != nil {
 		return fmt.Errorf("failed to read cache directory: %w", err)
 	}
-	
+
 	for _, entry := range entries {
 		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
 			path := filepath.Join(c.dir, entry.Name())
@@ -130,7 +130,7 @@ func (c *Cache) Clear() error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -155,21 +155,21 @@ var (
 // InitCaches initializes the global cache instances
 func InitCaches() error {
 	var err error
-	
+
 	WorkspaceCache, err = NewCache(1 * time.Hour)
 	if err != nil {
 		return fmt.Errorf("failed to create workspace cache: %w", err)
 	}
-	
+
 	UserCache, err = NewCache(1 * time.Hour)
 	if err != nil {
 		return fmt.Errorf("failed to create user cache: %w", err)
 	}
-	
+
 	TaskCache, err = NewCache(5 * time.Minute)
 	if err != nil {
 		return fmt.Errorf("failed to create task cache: %w", err)
 	}
-	
+
 	return nil
 }

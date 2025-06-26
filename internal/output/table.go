@@ -110,7 +110,7 @@ func (f *TableFormatter) formatStruct(w io.Writer, rv reflect.Value) error {
 	for i := 0; i < rv.NumField(); i++ {
 		field := rt.Field(i)
 		value := rv.Field(i)
-		
+
 		// Skip unexported fields
 		if field.PkgPath != "" {
 			continue
@@ -138,7 +138,7 @@ func (f *TableFormatter) getHeaders(item interface{}) ([]string, error) {
 
 	var headers []string
 	rv := reflect.ValueOf(item)
-	
+
 	switch rv.Kind() {
 	case reflect.Map:
 		// For maps, use specified columns or all keys

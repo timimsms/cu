@@ -40,17 +40,17 @@ func (m *Manager) SaveToken(workspace string, token *Token) error {
 	if workspace == "" {
 		workspace = DefaultWorkspace
 	}
-	
+
 	data, err := json.Marshal(token)
 	if err != nil {
 		return fmt.Errorf("failed to marshal token: %w", err)
 	}
-	
+
 	err = keyring.Set(m.service, workspace, string(data))
 	if err != nil {
 		return fmt.Errorf("failed to save token: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -59,7 +59,7 @@ func (m *Manager) GetToken(workspace string) (*Token, error) {
 	if workspace == "" {
 		workspace = DefaultWorkspace
 	}
-	
+
 	data, err := keyring.Get(m.service, workspace)
 	if err != nil {
 		if err == keyring.ErrNotFound {
@@ -67,7 +67,7 @@ func (m *Manager) GetToken(workspace string) (*Token, error) {
 		}
 		return nil, fmt.Errorf("failed to get token: %w", err)
 	}
-	
+
 	var token Token
 	if err := json.Unmarshal([]byte(data), &token); err != nil {
 		// Handle legacy format (just the token string)
@@ -77,7 +77,7 @@ func (m *Manager) GetToken(workspace string) (*Token, error) {
 			return nil, fmt.Errorf("failed to unmarshal token: %w", err)
 		}
 	}
-	
+
 	return &token, nil
 }
 
@@ -86,12 +86,12 @@ func (m *Manager) DeleteToken(workspace string) error {
 	if workspace == "" {
 		workspace = DefaultWorkspace
 	}
-	
+
 	err := keyring.Delete(m.service, workspace)
 	if err != nil && err != keyring.ErrNotFound {
 		return fmt.Errorf("failed to delete token: %w", err)
 	}
-	
+
 	return nil
 }
 
