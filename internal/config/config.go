@@ -31,7 +31,7 @@ var (
 // Init initializes the configuration
 func Init(cfgFile string) error {
 	// Create config directory if it doesn't exist
-	if err := os.MkdirAll(DefaultConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(DefaultConfigDir, 0750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
