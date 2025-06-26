@@ -372,11 +372,113 @@ var taskUpdateCmd = &cobra.Command{
 	},
 }
 
+var taskCloseCmd = &cobra.Command{
+	Use:   "close [task-id]",
+	Short: "Close a task",
+	Long:  `Close a task by marking it as complete.`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+		taskID := args[0]
+
+		// Create API client
+		client, err := api.NewClient()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Find a closed status in the same list
+		// For now, we'll use "complete" as the closed status
+		// TODO: Query the list's statuses to find the actual closed status
+		updateOpts := &api.TaskUpdateOptions{
+			Status: "complete",
+		}
+
+		// Update task
+		updatedTask, err := client.UpdateTask(ctx, taskID, updateOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close task: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Format output
+		format := cmd.Flag("output").Value.String()
+
+		if format == "table" {
+			fmt.Printf("✓ Closed task %s: %s\n", updatedTask.ID, updatedTask.Name)
+			if updatedTask.URL != "" {
+				fmt.Printf("  View in ClickUp: %s\n", updatedTask.URL)
+			}
+		} else {
+			// For other formats, output the updated task
+			if err := output.Format(format, updatedTask); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
+}
+
+var taskReopenCmd = &cobra.Command{
+	Use:   "reopen [task-id]",
+	Short: "Reopen a task",
+	Long:  `Reopen a closed task by marking it as open/in progress.`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+		taskID := args[0]
+
+		// Create API client
+		client, err := api.NewClient()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Get the status flag or use default
+		status, _ := cmd.Flags().GetString("status")
+		if status == "" {
+			status = "open" // Default to "open"
+		}
+
+		// Update task
+		updateOpts := &api.TaskUpdateOptions{
+			Status: status,
+		}
+
+		updatedTask, err := client.UpdateTask(ctx, taskID, updateOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to reopen task: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Format output
+		format := cmd.Flag("output").Value.String()
+
+		if format == "table" {
+			fmt.Printf("✓ Reopened task %s: %s\n", updatedTask.ID, updatedTask.Name)
+			fmt.Printf("  New status: %s\n", updatedTask.Status.Status)
+			if updatedTask.URL != "" {
+				fmt.Printf("  View in ClickUp: %s\n", updatedTask.URL)
+			}
+		} else {
+			// For other formats, output the updated task
+			if err := output.Format(format, updatedTask); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
+}
+
 func init() {
 	taskCmd.AddCommand(taskListCmd)
 	taskCmd.AddCommand(taskCreateCmd)
 	taskCmd.AddCommand(taskViewCmd)
 	taskCmd.AddCommand(taskUpdateCmd)
+	taskCmd.AddCommand(taskCloseCmd)
+	taskCmd.AddCommand(taskReopenCmd)
 
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
@@ -411,6 +513,9 @@ func init() {
 	taskUpdateCmd.Flags().StringSlice("tag", []string{}, "Replace tags with these tags")
 	taskUpdateCmd.Flags().StringSlice("add-assignee", []string{}, "Add assignees (username or ID)")
 	taskUpdateCmd.Flags().StringSlice("remove-assignee", []string{}, "Remove assignees (username or ID)")
+
+	// Reopen command flags
+	taskReopenCmd.Flags().StringP("status", "s", "", "Status to set when reopening (default: open)")
 }
 
 // Helper functions
