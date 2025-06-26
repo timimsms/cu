@@ -1,11 +1,12 @@
 package cache
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -44,7 +45,7 @@ func (c *Cache) Get(key string, dest interface{}) error {
 	defer c.mu.RUnlock()
 	
 	filename := c.filename(key)
-	data, err := os.ReadFile(filename)
+	data, err := os.ReadFile(filename) // #nosec G304 - filename is generated from SHA256 hash
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("cache miss: %s", key)
@@ -133,16 +134,12 @@ func (c *Cache) Clear() error {
 	return nil
 }
 
-// filename generates a safe filename for a cache key
+// filename generates a safe filename for a cache key using SHA256
 func (c *Cache) filename(key string) string {
-	// Simple sanitization - in production, use a proper hash
-	safe := filepath.Clean(key)
-	safe = filepath.Base(safe)
-	// Remove any remaining unsafe characters
-	safe = strings.ReplaceAll(safe, "/", "_")
-	safe = strings.ReplaceAll(safe, "\\", "_")
-	safe = strings.ReplaceAll(safe, ":", "_")
-	return filepath.Join(c.dir, safe+".json")
+	// Use SHA256 to generate a safe filename from the key
+	hash := sha256.Sum256([]byte(key))
+	filename := hex.EncodeToString(hash[:])
+	return filepath.Join(c.dir, filename+".json")
 }
 
 // Global cache instances with different TTLs
