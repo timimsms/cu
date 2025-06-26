@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/raksul/go-clickup/clickup"
@@ -15,6 +16,7 @@ import (
 type Client struct {
 	client      *clickup.Client
 	rateLimiter *RateLimiter
+	userLookup  *UserLookup
 }
 
 // NewClient creates a new API client
@@ -34,10 +36,18 @@ func NewClient() (*Client, error) {
 
 	client := clickup.NewClient(httpClient, token.Value)
 
-	return &Client{
+	c := &Client{
 		client:      client,
 		rateLimiter: NewRateLimiter(100, time.Minute), // 100 requests per minute for free tier
-	}, nil
+	}
+	c.userLookup = NewUserLookup(c)
+
+	return c, nil
+}
+
+// UserLookup returns the user lookup service
+func (c *Client) UserLookup() *UserLookup {
+	return c.userLookup
 }
 
 // GetWorkspaces returns all workspaces the user has access to
@@ -180,6 +190,41 @@ func (c *Client) GetCurrentUser(ctx context.Context) (*clickup.User, error) {
 	return user, nil
 }
 
+// GetWorkspaceMembers returns all members of a workspace
+func (c *Client) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// The ClickUp API doesn't have a direct endpoint for workspace members
+	// We need to get teams first, then get members from teams
+	teams, _, err := c.client.Teams.GetTeams(ctx)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	// Find the team with matching ID
+	var targetTeam *clickup.Team
+	for _, team := range teams {
+		if team.ID == workspaceID {
+			targetTeam = &team
+			break
+		}
+	}
+
+	if targetTeam == nil {
+		return nil, fmt.Errorf("workspace not found: %s", workspaceID)
+	}
+
+	// Extract users from team members
+	users := make([]clickup.TeamUser, 0, len(targetTeam.Members))
+	for _, member := range targetTeam.Members {
+		users = append(users, member.User)
+	}
+
+	return users, nil
+}
+
 // handleError converts API errors to user-friendly errors
 func (c *Client) handleError(err error) error {
 	if err == nil {
@@ -243,10 +288,23 @@ func (c *Client) CreateTask(ctx context.Context, listID string, options *TaskCre
 		Tags:        options.Tags,
 	}
 
-	// TODO: Implement user lookup by username to set assignees
-	// if len(options.Assignees) > 0 {
-	//     request.Assignees = convertUsernamesToIDs(options.Assignees)
-	// }
+	// Handle assignees
+	if len(options.Assignees) > 0 {
+		// First, ensure we have loaded users
+		workspaces, err := c.GetWorkspaces(ctx)
+		if err == nil && len(workspaces) > 0 {
+			_ = c.userLookup.LoadWorkspaceUsers(ctx, workspaces[0].ID)
+		}
+
+		// Convert usernames to IDs
+		ids, err := c.userLookup.ConvertUsernamesToIDs(options.Assignees)
+		if err != nil {
+			// Log error but continue - don't fail task creation due to assignee issues
+			fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+		} else {
+			request.Assignees = ids
+		}
+	}
 
 	// Set status if provided
 	if options.Status != "" {
@@ -369,13 +427,41 @@ func (c *Client) UpdateTask(ctx context.Context, taskID string, options *TaskUpd
 		}
 	}
 
-	// TODO: Implement user lookup by username to handle assignees
-	// if len(options.AddAssignees) > 0 || len(options.RemoveAssignees) > 0 {
-	//     request.Assignees = clickup.TaskAssigneeUpdateRequest{
-	//         Add: convertUsernamesToIDs(options.AddAssignees),
-	//         Rem: convertUsernamesToIDs(options.RemoveAssignees),
-	//     }
-	// }
+	// Handle assignees
+	if len(options.AddAssignees) > 0 || len(options.RemoveAssignees) > 0 {
+		// First, ensure we have loaded users
+		workspaces, err := c.GetWorkspaces(ctx)
+		if err == nil && len(workspaces) > 0 {
+			_ = c.userLookup.LoadWorkspaceUsers(ctx, workspaces[0].ID)
+		}
+
+		assigneeUpdate := clickup.TaskAssigneeUpdateRequest{}
+
+		// Convert add assignees
+		if len(options.AddAssignees) > 0 {
+			addIDs, err := c.userLookup.ConvertUsernamesToIDs(options.AddAssignees)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+			} else {
+				assigneeUpdate.Add = addIDs
+			}
+		}
+
+		// Convert remove assignees
+		if len(options.RemoveAssignees) > 0 {
+			remIDs, err := c.userLookup.ConvertUsernamesToIDs(options.RemoveAssignees)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+			} else {
+				assigneeUpdate.Rem = remIDs
+			}
+		}
+
+		// Only set if we have something to update
+		if len(assigneeUpdate.Add) > 0 || len(assigneeUpdate.Rem) > 0 {
+			request.Assignees = assigneeUpdate
+		}
+	}
 
 	task, _, err := c.client.Tasks.UpdateTask(ctx, taskID, &clickup.GetTaskOptions{}, request)
 	if err != nil {
