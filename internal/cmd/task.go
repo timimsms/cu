@@ -220,9 +220,93 @@ var taskCreateCmd = &cobra.Command{
 	},
 }
 
+var taskViewCmd = &cobra.Command{
+	Use:   "view [task-id]",
+	Short: "View task details",
+	Long:  `View detailed information about a specific task.`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+		taskID := args[0]
+		
+		// Create API client
+		client, err := api.NewClient()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Get task
+		task, err := client.GetTask(ctx, taskID)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to get task: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Format output
+		format := cmd.Flag("output").Value.String()
+		
+		if format == "table" {
+			// Display detailed task information
+			fmt.Printf("Task: %s\n", task.Name)
+			fmt.Printf("ID: %s\n", task.ID)
+			if task.URL != "" {
+				fmt.Printf("URL: %s\n", task.URL)
+			}
+			fmt.Printf("Status: %s\n", getTaskStatus(*task))
+			fmt.Printf("Priority: %s\n", getTaskPriority(*task))
+			
+			if len(task.Assignees) > 0 {
+				fmt.Printf("Assignees: ")
+				for i, assignee := range task.Assignees {
+					if i > 0 {
+						fmt.Printf(", ")
+					}
+					fmt.Printf("%s", assignee.Username)
+				}
+				fmt.Println()
+			}
+			
+			if task.Description != "" {
+				fmt.Printf("\nDescription:\n%s\n", task.Description)
+			}
+			
+			if task.DueDate != nil {
+				fmt.Printf("Due: %s\n", getTaskDueDate(*task))
+			}
+			
+			if task.DateCreated != "" {
+				fmt.Printf("Created: %s\n", task.DateCreated)
+			}
+			
+			if task.DateUpdated != "" {
+				fmt.Printf("Updated: %s\n", task.DateUpdated)
+			}
+			
+			if len(task.Tags) > 0 {
+				fmt.Printf("Tags: ")
+				for i, tag := range task.Tags {
+					if i > 0 {
+						fmt.Printf(", ")
+					}
+					fmt.Printf("%s", tag.Name)
+				}
+				fmt.Println()
+			}
+		} else {
+			// For other formats, output the raw task
+			if err := output.Format(format, task); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
+}
+
 func init() {
 	taskCmd.AddCommand(taskListCmd)
 	taskCmd.AddCommand(taskCreateCmd)
+	taskCmd.AddCommand(taskViewCmd)
 	
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
