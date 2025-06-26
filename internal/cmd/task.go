@@ -483,6 +483,184 @@ var taskReopenCmd = &cobra.Command{
 	},
 }
 
+var taskSearchCmd = &cobra.Command{
+	Use:   "search [query]",
+	Short: "Search for tasks",
+	Long:  `Search for tasks across all lists in your workspace. Searches in task names and descriptions.`,
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+		query := strings.Join(args, " ")
+
+		// Create API client
+		client, err := api.NewClient()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Get search scope from flags
+		spaceID, _ := cmd.Flags().GetString("space")
+		listID, _ := cmd.Flags().GetString("list")
+		searchDescription, _ := cmd.Flags().GetBool("include-description")
+		limit, _ := cmd.Flags().GetInt("limit")
+
+		// Get workspaces to search
+		workspaces, err := client.GetWorkspaces(ctx)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to get workspaces: %v\n", err)
+			os.Exit(1)
+		}
+
+		if len(workspaces) == 0 {
+			fmt.Fprintln(os.Stderr, "No workspaces found")
+			os.Exit(1)
+		}
+
+		var allTasks []clickup.Task
+		var searchErrors []string
+
+		// If specific list is provided, search only that list
+		if listID != "" {
+			tasks, err := client.GetTasks(ctx, listID, &api.TaskQueryOptions{})
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to get tasks from list %s: %v\n", listID, err)
+				os.Exit(1)
+			}
+			allTasks = tasks
+		} else {
+			// Search across all lists in workspace or space
+			for _, workspace := range workspaces {
+				spaces, err := client.GetSpaces(ctx, workspace.ID)
+				if err != nil {
+					searchErrors = append(searchErrors, fmt.Sprintf("Failed to get spaces for workspace %s: %v", workspace.Name, err))
+					continue
+				}
+
+				for _, space := range spaces {
+					// Skip if specific space is requested and this isn't it
+					if spaceID != "" && space.ID != spaceID && space.Name != spaceID {
+						continue
+					}
+
+					// Get folders in space
+					folders, err := client.GetFolders(ctx, space.ID)
+					if err != nil {
+						searchErrors = append(searchErrors, fmt.Sprintf("Failed to get folders for space %s: %v", space.Name, err))
+						continue
+					}
+
+					// Get tasks from folders
+					for _, folder := range folders {
+						lists, err := client.GetLists(ctx, folder.ID)
+						if err != nil {
+							searchErrors = append(searchErrors, fmt.Sprintf("Failed to get lists for folder %s: %v", folder.Name, err))
+							continue
+						}
+
+						for _, list := range lists {
+							tasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
+							if err != nil {
+								searchErrors = append(searchErrors, fmt.Sprintf("Failed to get tasks for list %s: %v", list.Name, err))
+								continue
+							}
+							allTasks = append(allTasks, tasks...)
+						}
+					}
+
+					// Get folderless lists
+					lists, err := client.GetFolderlessLists(ctx, space.ID)
+					if err != nil {
+						searchErrors = append(searchErrors, fmt.Sprintf("Failed to get folderless lists for space %s: %v", space.Name, err))
+						continue
+					}
+
+					for _, list := range lists {
+						tasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
+						if err != nil {
+							searchErrors = append(searchErrors, fmt.Sprintf("Failed to get tasks for list %s: %v", list.Name, err))
+							continue
+						}
+						allTasks = append(allTasks, tasks...)
+					}
+				}
+			}
+		}
+
+		// Print any errors encountered during search
+		if len(searchErrors) > 0 {
+			fmt.Fprintln(os.Stderr, "Some errors occurred during search:")
+			for _, err := range searchErrors {
+				fmt.Fprintf(os.Stderr, "  - %s\n", err)
+			}
+		}
+
+		// Filter tasks based on search query
+		query = strings.ToLower(query)
+		var matchedTasks []clickup.Task
+
+		for _, task := range allTasks {
+			nameMatch := strings.Contains(strings.ToLower(task.Name), query)
+			descMatch := searchDescription && strings.Contains(strings.ToLower(task.Description), query)
+
+			if nameMatch || descMatch {
+				matchedTasks = append(matchedTasks, task)
+			}
+		}
+
+		// Apply limit
+		if limit > 0 && len(matchedTasks) > limit {
+			matchedTasks = matchedTasks[:limit]
+		}
+
+		// Format output
+		format := cmd.Flag("output").Value.String()
+
+		if format == "table" {
+			if len(matchedTasks) == 0 {
+				fmt.Printf("No tasks found matching '%s'\n", strings.Join(args, " "))
+				return
+			}
+
+			fmt.Printf("Found %d task(s) matching '%s':\n\n", len(matchedTasks), strings.Join(args, " "))
+
+			// Prepare table data
+			type taskRow struct {
+				ID       string `json:"id"`
+				Name     string `json:"name"`
+				Status   string `json:"status"`
+				Assignee string `json:"assignee"`
+				Priority string `json:"priority"`
+				Due      string `json:"due"`
+			}
+
+			var rows []taskRow
+			for _, task := range matchedTasks {
+				row := taskRow{
+					ID:       task.ID,
+					Name:     truncate(task.Name, 50),
+					Status:   getTaskStatus(task),
+					Assignee: getTaskAssignee(task),
+					Priority: getTaskPriority(task),
+					Due:      getTaskDueDate(task),
+				}
+				rows = append(rows, row)
+			}
+
+			if err := output.Format(format, rows); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			// For other formats, output raw task data
+			if err := output.Format(format, matchedTasks); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
+}
+
 func init() {
 	taskCmd.AddCommand(taskListCmd)
 	taskCmd.AddCommand(taskCreateCmd)
@@ -490,6 +668,7 @@ func init() {
 	taskCmd.AddCommand(taskUpdateCmd)
 	taskCmd.AddCommand(taskCloseCmd)
 	taskCmd.AddCommand(taskReopenCmd)
+	taskCmd.AddCommand(taskSearchCmd)
 
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
@@ -527,6 +706,12 @@ func init() {
 
 	// Reopen command flags
 	taskReopenCmd.Flags().StringP("status", "s", "", "Status to set when reopening (default: open)")
+
+	// Search command flags
+	taskSearchCmd.Flags().StringP("space", "s", "", "Limit search to specific space")
+	taskSearchCmd.Flags().StringP("list", "l", "", "Limit search to specific list")
+	taskSearchCmd.Flags().Bool("include-description", false, "Search in task descriptions as well as names")
+	taskSearchCmd.Flags().Int("limit", 50, "Maximum number of results to return")
 }
 
 // Helper functions
