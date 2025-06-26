@@ -1,5 +1,7 @@
 # cu - ClickUp CLI
 
+[![CI](https://github.com/timimsms/cu/actions/workflows/ci.yml/badge.svg)](https://github.com/timimsms/cu/actions/workflows/ci.yml)
+
 A GitHub CLI-inspired command-line interface for ClickUp.
 
 ## Overview
