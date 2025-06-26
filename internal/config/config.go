@@ -39,6 +39,20 @@ func Init(cfgFile string) error {
 	viper.SetDefault("output", "table")
 	viper.SetDefault("debug", false)
 
+	// Look for project config file
+	projectViper := viper.New()
+	projectViper.SetConfigName(".cu")
+	projectViper.SetConfigType("yml")
+	projectViper.AddConfigPath(".")
+	
+	// Read project config if it exists
+	if err := projectViper.ReadInConfig(); err == nil {
+		// Merge project config with main config
+		for k, v := range projectViper.AllSettings() {
+			viper.Set(k, v)
+		}
+	}
+
 	return nil
 }
 
