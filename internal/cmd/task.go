@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/raksul/go-clickup/clickup"
@@ -40,7 +42,10 @@ var taskListCmd = &cobra.Command{
 		assignee, _ := cmd.Flags().GetString("assignee")
 		status, _ := cmd.Flags().GetString("status")
 		tag, _ := cmd.Flags().GetString("tag")
-		// priority, _ := cmd.Flags().GetString("priority") // TODO: implement priority filtering
+		priority, _ := cmd.Flags().GetString("priority")
+		due, _ := cmd.Flags().GetString("due")
+		sortBy, _ := cmd.Flags().GetString("sort")
+		order, _ := cmd.Flags().GetString("order")
 		limit, _ := cmd.Flags().GetInt("limit")
 		page, _ := cmd.Flags().GetInt("page")
 
@@ -81,6 +86,12 @@ var taskListCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Failed to get tasks: %v\n", err)
 			os.Exit(1)
 		}
+
+		// Apply client-side filtering
+		tasks = filterTasks(tasks, priority, due)
+
+		// Apply sorting
+		sortTasks(tasks, sortBy, order)
 
 		// Apply limit
 		if limit > 0 && len(tasks) > limit {
@@ -593,5 +604,142 @@ func formatRelativeTime(t time.Time) string {
 		default:
 			return t.Format("Jan 2, 2006")
 		}
+	}
+}
+
+// filterTasks applies client-side filtering for priority and due date
+func filterTasks(tasks []clickup.Task, priority, due string) []clickup.Task {
+	if priority == "" && due == "" {
+		return tasks
+	}
+
+	filtered := make([]clickup.Task, 0, len(tasks))
+	now := time.Now()
+
+	for _, task := range tasks {
+		// Filter by priority
+		if priority != "" {
+			taskPriority := strings.ToLower(getTaskPriority(task))
+			filterPriority := strings.ToLower(priority)
+			if taskPriority != filterPriority {
+				continue
+			}
+		}
+
+		// Filter by due date
+		if due != "" && task.DueDate != nil {
+			dueTime := task.DueDate.Time()
+			if dueTime == nil {
+				continue
+			}
+
+			switch due {
+			case "today":
+				if !isToday(*dueTime) {
+					continue
+				}
+			case "tomorrow":
+				if !isTomorrow(*dueTime) {
+					continue
+				}
+			case "week":
+				if !isThisWeek(*dueTime) {
+					continue
+				}
+			case "overdue":
+				if !dueTime.Before(now) {
+					continue
+				}
+			}
+		} else if due != "" && task.DueDate == nil {
+			// Skip tasks without due dates if filtering by due date
+			continue
+		}
+
+		filtered = append(filtered, task)
+	}
+
+	return filtered
+}
+
+// sortTasks sorts tasks by the specified field and order
+func sortTasks(tasks []clickup.Task, sortBy, order string) {
+	if sortBy == "" {
+		return
+	}
+
+	sort.Slice(tasks, func(i, j int) bool {
+		var less bool
+
+		switch sortBy {
+		case "created":
+			less = tasks[i].DateCreated < tasks[j].DateCreated
+		case "updated":
+			less = tasks[i].DateUpdated < tasks[j].DateUpdated
+		case "due":
+			// Tasks without due dates go to the end
+			if tasks[i].DueDate == nil && tasks[j].DueDate == nil {
+				less = false
+			} else if tasks[i].DueDate == nil {
+				less = false
+			} else if tasks[j].DueDate == nil {
+				less = true
+			} else {
+				iTime := tasks[i].DueDate.Time()
+				jTime := tasks[j].DueDate.Time()
+				if iTime != nil && jTime != nil {
+					less = iTime.Before(*jTime)
+				}
+			}
+		case "priority":
+			// Convert priority to number for comparison (lower number = higher priority)
+			iPriority := getPriorityValue(getTaskPriority(tasks[i]))
+			jPriority := getPriorityValue(getTaskPriority(tasks[j]))
+			less = iPriority < jPriority
+		default:
+			// Default to sorting by name
+			less = tasks[i].Name < tasks[j].Name
+		}
+
+		if order == "desc" {
+			return !less
+		}
+		return less
+	})
+}
+
+// Helper functions for date filtering
+func isToday(t time.Time) bool {
+	now := time.Now()
+	y1, m1, d1 := now.Date()
+	y2, m2, d2 := t.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func isTomorrow(t time.Time) bool {
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	y1, m1, d1 := tomorrow.Date()
+	y2, m2, d2 := t.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func isThisWeek(t time.Time) bool {
+	now := time.Now()
+	weekFromNow := now.AddDate(0, 0, 7)
+	return t.After(now) && t.Before(weekFromNow)
+}
+
+func getPriorityValue(priority string) int {
+	switch strings.ToLower(priority) {
+	case "urgent":
+		return 1
+	case "high":
+		return 2
+	case "normal":
+		return 3
+	case "low":
+		return 4
+	default:
+		return 3 // Default to normal
 	}
 }
