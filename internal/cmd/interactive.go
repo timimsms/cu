@@ -348,4 +348,3 @@ func runCreateTaskInteractive() {
 		fmt.Printf("  View in ClickUp: %s\n", task.URL)
 	}
 }
-
