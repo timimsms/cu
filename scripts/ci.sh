@@ -180,7 +180,8 @@ rm -f go.mod.backup go.sum.backup
 
 # Step 11: Check formatting
 print_step "Checking code formatting"
-UNFORMATTED=$(gofmt -l .)
+# Exclude vendor directory from formatting check
+UNFORMATTED=$(gofmt -l . | grep -v "^vendor/")
 if [ -z "$UNFORMATTED" ]; then
     print_success "All files properly formatted"
 else
