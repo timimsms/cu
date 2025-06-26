@@ -1,0 +1,1 @@
+This project is intended to be “gh for ClickUp (cu)” - the idea being that a developer who is also using ClickUp can seamlessly interact with ClickUp as one would interact with Github using the gh terminal command.
