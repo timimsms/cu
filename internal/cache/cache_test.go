@@ -119,7 +119,8 @@ func TestCacheClear(t *testing.T) {
 }
 
 func TestCacheFilename(t *testing.T) {
-	c := &Cache{dir: "/tmp"}
+	tmpDir := t.TempDir()
+	c := &Cache{dir: tmpDir}
 
 	// Test that different keys produce different filenames
 	name1 := c.filename("key1")
@@ -136,8 +137,8 @@ func TestCacheFilename(t *testing.T) {
 	}
 
 	// Test that filename is in the correct directory
-	if !strings.HasPrefix(name1, "/tmp/") {
-		t.Errorf("Filename should be in cache directory: %s", name1)
+	if !strings.HasPrefix(name1, tmpDir) {
+		t.Errorf("Filename should be in cache directory: expected prefix %s, got %s", tmpDir, name1)
 	}
 
 	// Test that filename ends with .json
@@ -147,7 +148,8 @@ func TestCacheFilename(t *testing.T) {
 }
 
 func TestCacheSafety(t *testing.T) {
-	c := &Cache{dir: "/tmp"}
+	tmpDir := t.TempDir()
+	c := &Cache{dir: tmpDir}
 
 	// Test potentially dangerous keys
 	dangerousKeys := []string{
@@ -168,8 +170,8 @@ func TestCacheSafety(t *testing.T) {
 		filename := c.filename(key)
 
 		// Check that filename is within cache directory
-		if !strings.HasPrefix(filename, "/tmp/") {
-			t.Errorf("Dangerous key %q produced filename outside cache dir: %s", key, filename)
+		if !strings.HasPrefix(filename, tmpDir) {
+			t.Errorf("Dangerous key %q produced filename outside cache dir: expected prefix %s, got %s", key, tmpDir, filename)
 		}
 
 		// Check that filename doesn't contain path traversal
