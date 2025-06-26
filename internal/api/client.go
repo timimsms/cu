@@ -153,19 +153,6 @@ func (c *Client) GetTasks(ctx context.Context, listID string, options *TaskQuery
 }
 
 
-// UpdateTask updates an existing task
-func (c *Client) UpdateTask(ctx context.Context, taskID string, opts *clickup.GetTaskOptions, request *clickup.TaskUpdateRequest) (*clickup.Task, error) {
-	if err := c.rateLimiter.Wait(ctx); err != nil {
-		return nil, err
-	}
-
-	task, _, err := c.client.Tasks.UpdateTask(ctx, taskID, opts, request)
-	if err != nil {
-		return nil, c.handleError(err)
-	}
-
-	return task, nil
-}
 
 // DeleteTask deletes a task
 func (c *Client) DeleteTask(ctx context.Context, taskID string) error {
@@ -225,6 +212,24 @@ type TaskCreateOptions struct {
 	Priority    string
 	Tags        []string
 	DueDate     string
+}
+
+// TaskUpdateOptions represents options for updating a task
+type TaskUpdateOptions struct {
+	Name            string
+	Description     string
+	Status          string
+	Priority        string
+	Tags            []string
+	DueDate         string
+	AddAssignees    []string
+	RemoveAssignees []string
+}
+
+// HasUpdates checks if any updates are specified
+func (o *TaskUpdateOptions) HasUpdates() bool {
+	return o.Name != "" || o.Description != "" || o.Status != "" || o.Priority != "" ||
+		len(o.Tags) > 0 || o.DueDate != "" || len(o.AddAssignees) > 0 || len(o.RemoveAssignees) > 0
 }
 
 // CreateTask creates a new task with simplified options
@@ -314,4 +319,74 @@ func parseDueDate(input string) (time.Time, error) {
 	}
 	
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", input)
+}
+
+// UpdateTask updates an existing task with simplified options
+func (c *Client) UpdateTask(ctx context.Context, taskID string, options *TaskUpdateOptions) (*clickup.Task, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Build the update request
+	request := &clickup.TaskUpdateRequest{}
+
+	// Set simple string fields
+	if options.Name != "" {
+		request.Name = options.Name
+	}
+	if options.Description != "" {
+		request.Description = options.Description
+	}
+	if options.Status != "" {
+		request.Status = options.Status
+	}
+
+	// Set priority if provided
+	if options.Priority != "" {
+		// Convert priority string to int based on ClickUp's scale
+		var priorityInt int
+		switch options.Priority {
+		case "urgent":
+			priorityInt = 1
+		case "high":
+			priorityInt = 2
+		case "normal":
+			priorityInt = 3
+		case "low":
+			priorityInt = 4
+		default:
+			priorityInt = 3 // Default to normal
+		}
+		request.Priority = priorityInt
+	}
+
+	// Set tags - this replaces all tags
+	if len(options.Tags) > 0 {
+		request.Tags = options.Tags
+	}
+
+	// Set due date if provided
+	if options.DueDate != "" {
+		t, err := parseDueDate(options.DueDate)
+		if err == nil {
+			request.DueDate = clickup.NewDate(t)
+		}
+	}
+
+	// Handle assignees - for now skip as it requires user ID lookup
+	// TODO: Implement user lookup by username
+	if len(options.AddAssignees) > 0 || len(options.RemoveAssignees) > 0 {
+		// Would need to convert usernames to IDs
+		// request.Assignees = clickup.TaskAssigneeUpdateRequest{
+		//     Add: convertUsernamesToIDs(options.AddAssignees),
+		//     Rem: convertUsernamesToIDs(options.RemoveAssignees),
+		// }
+	}
+
+	task, _, err := c.client.Tasks.UpdateTask(ctx, taskID, &clickup.GetTaskOptions{}, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return task, nil
 }

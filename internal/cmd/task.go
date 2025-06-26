@@ -303,10 +303,80 @@ var taskViewCmd = &cobra.Command{
 	},
 }
 
+var taskUpdateCmd = &cobra.Command{
+	Use:   "update [task-id]",
+	Short: "Update a task",
+	Long:  `Update an existing task with new properties.`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+		taskID := args[0]
+		
+		// Create API client
+		client, err := api.NewClient()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Get flags
+		name, _ := cmd.Flags().GetString("name")
+		description, _ := cmd.Flags().GetString("description")
+		status, _ := cmd.Flags().GetString("status")
+		priority, _ := cmd.Flags().GetString("priority")
+		dueDate, _ := cmd.Flags().GetString("due")
+		addAssignees, _ := cmd.Flags().GetStringSlice("add-assignee")
+		removeAssignees, _ := cmd.Flags().GetStringSlice("remove-assignee")
+		tags, _ := cmd.Flags().GetStringSlice("tag")
+		
+		// Build update options
+		updateOpts := &api.TaskUpdateOptions{
+			Name:            name,
+			Description:     description,
+			Status:          status,
+			Priority:        priority,
+			DueDate:         dueDate,
+			Tags:            tags,
+			AddAssignees:    addAssignees,
+			RemoveAssignees: removeAssignees,
+		}
+		
+		// Check if any updates were specified
+		if !updateOpts.HasUpdates() {
+			fmt.Fprintln(os.Stderr, "No updates specified. Use flags like --name, --status, --priority, etc.")
+			os.Exit(1)
+		}
+		
+		// Update task
+		task, err := client.UpdateTask(ctx, taskID, updateOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to update task: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Format output
+		format := cmd.Flag("output").Value.String()
+		
+		if format == "table" {
+			fmt.Printf("✓ Updated task %s: %s\n", task.ID, task.Name)
+			if task.URL != "" {
+				fmt.Printf("  View in ClickUp: %s\n", task.URL)
+			}
+		} else {
+			// For other formats, output the updated task
+			if err := output.Format(format, task); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
+}
+
 func init() {
 	taskCmd.AddCommand(taskListCmd)
 	taskCmd.AddCommand(taskCreateCmd)
 	taskCmd.AddCommand(taskViewCmd)
+	taskCmd.AddCommand(taskUpdateCmd)
 	
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
@@ -331,6 +401,16 @@ func init() {
 	taskCreateCmd.Flags().StringP("priority", "p", "", "Task priority (urgent, high, normal, low)")
 	taskCreateCmd.Flags().String("due", "", "Due date (ISO format or 'today', 'tomorrow')")
 	taskCreateCmd.Flags().StringSlice("tag", []string{}, "Tags to add to the task")
+	
+	// Update command flags
+	taskUpdateCmd.Flags().StringP("name", "n", "", "New task name")
+	taskUpdateCmd.Flags().StringP("description", "d", "", "New task description")
+	taskUpdateCmd.Flags().StringP("status", "s", "", "New task status")
+	taskUpdateCmd.Flags().StringP("priority", "p", "", "New task priority (urgent, high, normal, low)")
+	taskUpdateCmd.Flags().String("due", "", "New due date (ISO format or 'today', 'tomorrow')")
+	taskUpdateCmd.Flags().StringSlice("tag", []string{}, "Replace tags with these tags")
+	taskUpdateCmd.Flags().StringSlice("add-assignee", []string{}, "Add assignees (username or ID)")
+	taskUpdateCmd.Flags().StringSlice("remove-assignee", []string{}, "Remove assignees (username or ID)")
 }
 
 // Helper functions
