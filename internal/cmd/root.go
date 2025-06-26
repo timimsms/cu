@@ -70,6 +70,7 @@ func init() {
 	rootCmd.AddCommand(taskCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(spaceCmd)
+	rootCmd.AddCommand(interactiveCmd)
 }
 
 func initConfig() {
