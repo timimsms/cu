@@ -206,7 +206,7 @@ func displayTaskDetails(task clickup.Task) {
 	}
 
 	fmt.Printf("\nPress Enter to continue...")
-	fmt.Scanln()
+	_, _ = fmt.Scanln()
 }
 
 func updateTaskStatusInteractive(task clickup.Task) {
@@ -348,3 +348,4 @@ func runCreateTaskInteractive() {
 		fmt.Printf("  View in ClickUp: %s\n", task.URL)
 	}
 }
+
