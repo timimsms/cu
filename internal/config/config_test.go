@@ -12,8 +12,8 @@ func TestInit(t *testing.T) {
 	// Create temp directory for config
 	tmpDir := t.TempDir()
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", oldHome) }()
 	
 	// Update DefaultConfigDir for test
 	oldConfigDir := DefaultConfigDir

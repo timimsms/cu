@@ -75,7 +75,10 @@ var authLoginCmd = &cobra.Command{
 		// Save workspace as default if it's the first one
 		if workspace != "" && workspace != auth.DefaultWorkspace {
 			config.Set("default_workspace", workspace)
-			config.Save()
+			if err := config.Save(); err != nil {
+				// Log warning but don't fail - the auth is already saved
+				fmt.Fprintf(os.Stderr, "Warning: failed to save default workspace: %v\n", err)
+			}
 		}
 		
 		fmt.Println("\nSuccessfully authenticated!")

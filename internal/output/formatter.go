@@ -55,7 +55,7 @@ type YAMLFormatter struct {
 
 func (f *YAMLFormatter) Format(data interface{}) error {
 	encoder := yaml.NewEncoder(f.Writer)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(data)
 }
 

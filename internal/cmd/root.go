@@ -48,8 +48,14 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "output format (table|json|yaml|csv)")
 
 	// Bind flags to viper
-	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
+	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+		// Log error but don't fail - this is non-critical
+		fmt.Fprintf(os.Stderr, "Warning: failed to bind debug flag: %v\n", err)
+	}
+	if err := viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output")); err != nil {
+		// Log error but don't fail - this is non-critical
+		fmt.Fprintf(os.Stderr, "Warning: failed to bind output flag: %v\n", err)
+	}
 
 	// Version flag
 	rootCmd.Version = version.Version

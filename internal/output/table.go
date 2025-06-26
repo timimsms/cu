@@ -26,7 +26,7 @@ func (f *TableFormatter) Format(data interface{}) error {
 
 	// Create tab writer for aligned columns
 	w := tabwriter.NewWriter(f.Writer, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	// Handle different data types
 	rv := reflect.ValueOf(data)
@@ -39,7 +39,7 @@ func (f *TableFormatter) Format(data interface{}) error {
 		return f.formatStruct(w, rv)
 	default:
 		// For simple types, just print the value
-		fmt.Fprintln(w, data)
+		_, _ = fmt.Fprintln(w, data)
 		return nil
 	}
 }
@@ -47,7 +47,7 @@ func (f *TableFormatter) Format(data interface{}) error {
 func (f *TableFormatter) formatSlice(w io.Writer, rv reflect.Value) error {
 	if rv.Len() == 0 {
 		if f.ShowEmpty {
-			fmt.Fprintln(w, "No items found")
+			_, _ = fmt.Fprintln(w, "No items found")
 		}
 		return nil
 	}
@@ -61,13 +61,13 @@ func (f *TableFormatter) formatSlice(w io.Writer, rv reflect.Value) error {
 
 	// Print headers
 	if !f.NoHeader && len(headers) > 0 {
-		fmt.Fprintln(w, strings.Join(headers, "\t"))
+		_, _ = fmt.Fprintln(w, strings.Join(headers, "\t"))
 		// Print separator
 		var sep []string
 		for range headers {
 			sep = append(sep, strings.Repeat("-", 10))
 		}
-		fmt.Fprintln(w, strings.Join(sep, "\t"))
+		_, _ = fmt.Fprintln(w, strings.Join(sep, "\t"))
 	}
 
 	// Print rows
@@ -76,7 +76,7 @@ func (f *TableFormatter) formatSlice(w io.Writer, rv reflect.Value) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(w, strings.Join(row, "\t"))
+		_, _ = fmt.Fprintln(w, strings.Join(row, "\t"))
 	}
 
 	return nil
@@ -84,13 +84,13 @@ func (f *TableFormatter) formatSlice(w io.Writer, rv reflect.Value) error {
 
 func (f *TableFormatter) formatMap(w io.Writer, rv reflect.Value) error {
 	if !f.NoHeader {
-		fmt.Fprintln(w, "KEY\tVALUE")
-		fmt.Fprintln(w, "---\t-----")
+		_, _ = fmt.Fprintln(w, "KEY\tVALUE")
+		_, _ = fmt.Fprintln(w, "---\t-----")
 	}
 
 	for _, key := range rv.MapKeys() {
 		value := rv.MapIndex(key)
-		fmt.Fprintf(w, "%v\t%v\n", key.Interface(), f.formatValue(value.Interface()))
+		_, _ = fmt.Fprintf(w, "%v\t%v\n", key.Interface(), f.formatValue(value.Interface()))
 	}
 
 	return nil
@@ -103,8 +103,8 @@ func (f *TableFormatter) formatStruct(w io.Writer, rv reflect.Value) error {
 
 	rt := rv.Type()
 	if !f.NoHeader {
-		fmt.Fprintln(w, "FIELD\tVALUE")
-		fmt.Fprintln(w, "-----\t-----")
+		_, _ = fmt.Fprintln(w, "FIELD\tVALUE")
+		_, _ = fmt.Fprintln(w, "-----\t-----")
 	}
 
 	for i := 0; i < rv.NumField(); i++ {
@@ -125,14 +125,14 @@ func (f *TableFormatter) formatStruct(w io.Writer, rv reflect.Value) error {
 			}
 		}
 
-		fmt.Fprintf(w, "%s\t%v\n", name, f.formatValue(value.Interface()))
+		_, _ = fmt.Fprintf(w, "%s\t%v\n", name, f.formatValue(value.Interface()))
 	}
 
 	return nil
 }
 
 func (f *TableFormatter) getHeaders(item interface{}) ([]string, error) {
-	if f.Columns != nil && len(f.Columns) > 0 {
+	if len(f.Columns) > 0 {
 		return f.Columns, nil
 	}
 

@@ -28,7 +28,8 @@ jobs:
       run: go mod download
     
     - name: Run tests
-      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+      run: |
+        go test -v -race -coverprofile coverage.txt -covermode atomic ./...
     
     - name: Upload coverage
       if: matrix.os == 'ubuntu-latest' && matrix.go == '1.24'
