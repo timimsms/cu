@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	cfgFile string
-	debug   bool
-	output  string
+	cfgFile      string
+	debug        bool
+	outputFormat string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,7 +45,7 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/cu/config.yml)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
-	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "table", "output format (table|json|yaml|csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "output format (table|json|yaml|csv)")
 
 	// Bind flags to viper
 	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
@@ -66,7 +66,10 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(versionCmd)
-	// Task, list, space, etc. commands will be added here
+	rootCmd.AddCommand(meCmd)
+	rootCmd.AddCommand(taskCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(spaceCmd)
 }
 
 func initConfig() {
