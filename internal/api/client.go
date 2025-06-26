@@ -243,12 +243,10 @@ func (c *Client) CreateTask(ctx context.Context, listID string, options *TaskCre
 		Tags:        options.Tags,
 	}
 
-	// Set assignees - for now, we'll skip this as it requires user ID lookup
-	// TODO: Implement user lookup by username
-	if len(options.Assignees) > 0 {
-		// Would need to convert usernames to IDs
-		// request.Assignees = convertUsernamesToIDs(options.Assignees)
-	}
+	// TODO: Implement user lookup by username to set assignees
+	// if len(options.Assignees) > 0 {
+	//     request.Assignees = convertUsernamesToIDs(options.Assignees)
+	// }
 
 	// Set status if provided
 	if options.Status != "" {
@@ -371,15 +369,13 @@ func (c *Client) UpdateTask(ctx context.Context, taskID string, options *TaskUpd
 		}
 	}
 
-	// Handle assignees - for now skip as it requires user ID lookup
-	// TODO: Implement user lookup by username
-	if len(options.AddAssignees) > 0 || len(options.RemoveAssignees) > 0 {
-		// Would need to convert usernames to IDs
-		// request.Assignees = clickup.TaskAssigneeUpdateRequest{
-		//     Add: convertUsernamesToIDs(options.AddAssignees),
-		//     Rem: convertUsernamesToIDs(options.RemoveAssignees),
-		// }
-	}
+	// TODO: Implement user lookup by username to handle assignees
+	// if len(options.AddAssignees) > 0 || len(options.RemoveAssignees) > 0 {
+	//     request.Assignees = clickup.TaskAssigneeUpdateRequest{
+	//         Add: convertUsernamesToIDs(options.AddAssignees),
+	//         Rem: convertUsernamesToIDs(options.RemoveAssignees),
+	//     }
+	// }
 
 	task, _, err := c.client.Tasks.UpdateTask(ctx, taskID, &clickup.GetTaskOptions{}, request)
 	if err != nil {

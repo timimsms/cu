@@ -3,6 +3,7 @@ package cache
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -135,7 +136,7 @@ func TestCacheFilename(t *testing.T) {
 	}
 
 	// Test that filename is in the correct directory
-	if !filepath.HasPrefix(name1, "/tmp/") {
+	if !strings.HasPrefix(name1, "/tmp/") {
 		t.Errorf("Filename should be in cache directory: %s", name1)
 	}
 
@@ -167,7 +168,7 @@ func TestCacheSafety(t *testing.T) {
 		filename := c.filename(key)
 
 		// Check that filename is within cache directory
-		if !filepath.HasPrefix(filename, "/tmp/") {
+		if !strings.HasPrefix(filename, "/tmp/") {
 			t.Errorf("Dangerous key %q produced filename outside cache dir: %s", key, filename)
 		}
 

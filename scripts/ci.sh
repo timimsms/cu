@@ -69,7 +69,7 @@ else
     FAILED=1
 fi
 
-# Step 5: Run staticcheck (if installed)
+# Step 5: Run staticcheck
 print_step "Running staticcheck"
 if command -v staticcheck &> /dev/null; then
     if staticcheck ./...; then
@@ -79,7 +79,14 @@ if command -v staticcheck &> /dev/null; then
         FAILED=1
     fi
 else
-    echo "staticcheck not installed, skipping..."
+    echo "staticcheck not installed, installing..."
+    go install honnef.co/go/tools/cmd/staticcheck@latest
+    if staticcheck ./...; then
+        print_success "staticcheck passed"
+    else
+        print_error "staticcheck failed"
+        FAILED=1
+    fi
 fi
 
 # Step 6: Run gosec
