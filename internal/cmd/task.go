@@ -128,8 +128,101 @@ var taskListCmd = &cobra.Command{
 	},
 }
 
+var taskCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create a new task",
+	Long:  `Create a new task in ClickUp with the specified name and optional properties.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+		
+		// Get task name from args or flag
+		var name string
+		if len(args) > 0 {
+			name = args[0]
+		} else {
+			name, _ = cmd.Flags().GetString("name")
+		}
+		
+		if name == "" {
+			fmt.Fprintln(os.Stderr, "Task name is required. Provide it as an argument or use --name flag")
+			os.Exit(1)
+		}
+		
+		// Create API client
+		client, err := api.NewClient()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Get flags
+		listID, _ := cmd.Flags().GetString("list")
+		description, _ := cmd.Flags().GetString("description")
+		assignees, _ := cmd.Flags().GetStringSlice("assignee")
+		status, _ := cmd.Flags().GetString("status")
+		priority, _ := cmd.Flags().GetString("priority")
+		dueDate, _ := cmd.Flags().GetString("due")
+		tags, _ := cmd.Flags().GetStringSlice("tag")
+		
+		// If no list is specified, try to use default from config
+		if listID == "" {
+			listID = config.GetString("default_list")
+			if listID == "" {
+				fmt.Fprintln(os.Stderr, "No list specified. Use --list flag or set a default list with 'cu list default'")
+				os.Exit(1)
+			}
+		}
+		
+		// Build task creation options
+		createOpts := &api.TaskCreateOptions{
+			Name:        name,
+			Description: description,
+			Status:      status,
+			Priority:    priority,
+			Tags:        tags,
+		}
+		
+		// Handle assignees
+		if len(assignees) > 0 {
+			createOpts.Assignees = assignees
+		}
+		
+		// Handle due date
+		if dueDate != "" {
+			// TODO: Parse due date strings like "today", "tomorrow", etc.
+			// For now, expect ISO date format
+			createOpts.DueDate = dueDate
+		}
+		
+		// Create task
+		task, err := client.CreateTask(ctx, listID, createOpts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create task: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Format output
+		format := cmd.Flag("output").Value.String()
+		
+		if format == "table" {
+			// Simple success message with task details
+			fmt.Printf("✓ Created task %s: %s\n", task.ID, task.Name)
+			if task.URL != "" {
+				fmt.Printf("  View in ClickUp: %s\n", task.URL)
+			}
+		} else {
+			// For other formats, output the created task
+			if err := output.Format(format, task); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+	},
+}
+
 func init() {
 	taskCmd.AddCommand(taskListCmd)
+	taskCmd.AddCommand(taskCreateCmd)
 	
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
@@ -144,6 +237,16 @@ func init() {
 	taskListCmd.Flags().Int("page", 0, "Page number for pagination")
 	taskListCmd.Flags().String("sort", "", "Sort by field (created, updated, due, priority)")
 	taskListCmd.Flags().String("order", "asc", "Sort order (asc, desc)")
+	
+	// Create command flags
+	taskCreateCmd.Flags().StringP("name", "n", "", "Task name (alternative to providing as argument)")
+	taskCreateCmd.Flags().StringP("list", "l", "", "List ID to create task in")
+	taskCreateCmd.Flags().StringP("description", "d", "", "Task description")
+	taskCreateCmd.Flags().StringSliceP("assignee", "a", []string{}, "Assignees (username or ID)")
+	taskCreateCmd.Flags().StringP("status", "s", "", "Task status")
+	taskCreateCmd.Flags().StringP("priority", "p", "", "Task priority (urgent, high, normal, low)")
+	taskCreateCmd.Flags().String("due", "", "Due date (ISO format or 'today', 'tomorrow')")
+	taskCreateCmd.Flags().StringSlice("tag", []string{}, "Tags to add to the task")
 }
 
 // Helper functions

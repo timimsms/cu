@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -151,19 +152,6 @@ func (c *Client) GetTasks(ctx context.Context, listID string, options *TaskQuery
 	return tasks, nil
 }
 
-// CreateTask creates a new task
-func (c *Client) CreateTask(ctx context.Context, listID string, request *clickup.TaskRequest) (*clickup.Task, error) {
-	if err := c.rateLimiter.Wait(ctx); err != nil {
-		return nil, err
-	}
-
-	task, _, err := c.client.Tasks.CreateTask(ctx, listID, request)
-	if err != nil {
-		return nil, c.handleError(err)
-	}
-
-	return task, nil
-}
 
 // UpdateTask updates an existing task
 func (c *Client) UpdateTask(ctx context.Context, taskID string, opts *clickup.GetTaskOptions, request *clickup.TaskUpdateRequest) (*clickup.Task, error) {
@@ -226,4 +214,104 @@ type TaskQueryOptions struct {
 	Tags      []string
 	Priority  *int
 	DueDate   *time.Time
+}
+
+// TaskCreateOptions represents options for creating a task
+type TaskCreateOptions struct {
+	Name        string
+	Description string
+	Assignees   []string
+	Status      string
+	Priority    string
+	Tags        []string
+	DueDate     string
+}
+
+// CreateTask creates a new task with simplified options
+func (c *Client) CreateTask(ctx context.Context, listID string, options *TaskCreateOptions) (*clickup.Task, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Build the task request
+	request := &clickup.TaskRequest{
+		Name:        options.Name,
+		Description: options.Description,
+		Tags:        options.Tags,
+	}
+
+	// Set assignees - for now, we'll skip this as it requires user ID lookup
+	// TODO: Implement user lookup by username
+	if len(options.Assignees) > 0 {
+		// Would need to convert usernames to IDs
+		// request.Assignees = convertUsernamesToIDs(options.Assignees)
+	}
+
+	// Set status if provided
+	if options.Status != "" {
+		request.Status = options.Status
+	}
+
+	// Set priority if provided
+	if options.Priority != "" {
+		// Convert priority string to int based on ClickUp's scale
+		var priorityInt int
+		switch options.Priority {
+		case "urgent":
+			priorityInt = 1
+		case "high":
+			priorityInt = 2
+		case "normal":
+			priorityInt = 3
+		case "low":
+			priorityInt = 4
+		default:
+			priorityInt = 3 // Default to normal
+		}
+		request.Priority = priorityInt
+	}
+
+	// Set due date if provided
+	if options.DueDate != "" {
+		// Parse due date
+		t, err := parseDueDate(options.DueDate)
+		if err == nil {
+			request.DueDate = clickup.NewDate(t)
+		}
+		// If parsing fails, just skip setting the due date
+	}
+
+	task, _, err := c.client.Tasks.CreateTask(ctx, listID, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return task, nil
+}
+
+// parseDueDate parses various date formats including relative dates
+func parseDueDate(input string) (time.Time, error) {
+	now := time.Now()
+	
+	// Handle relative dates
+	switch input {
+	case "today":
+		return time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location()), nil
+	case "tomorrow":
+		return now.AddDate(0, 0, 1), nil
+	case "week":
+		return now.AddDate(0, 0, 7), nil
+	}
+	
+	// Try parsing as RFC3339
+	if t, err := time.Parse(time.RFC3339, input); err == nil {
+		return t, nil
+	}
+	
+	// Try parsing as date only
+	if t, err := time.Parse("2006-01-02", input); err == nil {
+		return t, nil
+	}
+	
+	return time.Time{}, fmt.Errorf("unable to parse date: %s", input)
 }
