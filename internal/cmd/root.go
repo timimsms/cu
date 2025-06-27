@@ -63,6 +63,7 @@ func init() {
 
 	// Add subcommands
 	rootCmd.AddCommand(authCmd)
+	rootCmd.AddCommand(apiCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(versionCmd)
