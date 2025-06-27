@@ -280,7 +280,12 @@ func exportTasksToMarkdown(output *os.File, tasks []clickup.Task) error {
 
 	// Write tasks by status
 	for status, statusTasks := range tasksByStatus {
-		fmt.Fprintf(output, "## %s (%d)\n\n", strings.Title(status), len(statusTasks))
+		// Simple title case - capitalize first letter
+		titleStatus := status
+		if len(status) > 0 {
+			titleStatus = strings.ToUpper(string(status[0])) + status[1:]
+		}
+		fmt.Fprintf(output, "## %s (%d)\n\n", titleStatus, len(statusTasks))
 
 		for _, task := range statusTasks {
 			// Task header

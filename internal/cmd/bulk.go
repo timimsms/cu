@@ -109,7 +109,7 @@ Examples:
 		if !yes {
 			fmt.Printf("\nAre you sure you want to update %d task(s)? [y/N] ", len(taskIDs))
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if strings.ToLower(response) != "y" {
 				fmt.Println("Cancelled")
 				return
@@ -125,14 +125,12 @@ Examples:
 
 		// Update tasks
 		var successCount, errorCount int
-		var errors []string
 
 		fmt.Println("\nUpdating tasks...")
 		for _, taskID := range taskIDs {
 			_, err := client.UpdateTask(ctx, taskID, updateOpts)
 			if err != nil {
 				errorCount++
-				errors = append(errors, fmt.Sprintf("%s: %v", taskID, err))
 				fmt.Printf("  ✗ %s: %v\n", taskID, err)
 			} else {
 				successCount++
@@ -192,7 +190,7 @@ Examples:
 		if !yes {
 			fmt.Printf("Are you sure you want to close %d task(s)? [y/N] ", len(taskIDs))
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if strings.ToLower(response) != "y" {
 				fmt.Println("Cancelled")
 				return
@@ -278,7 +276,7 @@ Examples:
 			fmt.Printf("⚠️  WARNING: This will permanently delete %d task(s).\n", len(taskIDs))
 			fmt.Printf("Are you absolutely sure? Type 'delete' to confirm: ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "delete" {
 				fmt.Println("Cancelled")
 				return
