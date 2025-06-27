@@ -470,3 +470,99 @@ func (c *Client) UpdateTask(ctx context.Context, taskID string, options *TaskUpd
 
 	return task, nil
 }
+
+// Comment-related methods
+
+// GetTaskComments retrieves all comments for a task
+func (c *Client) GetTaskComments(ctx context.Context, taskID string) ([]clickup.Comment, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	comments, _, err := c.client.Comments.GetTaskComments(ctx, taskID, nil)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return comments, nil
+}
+
+// CreateTaskComment creates a new comment on a task
+func (c *Client) CreateTaskComment(ctx context.Context, taskID string, text string, assignee string, notifyAll bool) (*clickup.CreateCommentResponse, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	request := &clickup.CommentRequest{
+		CommentText: text,
+		NotifyAll:   notifyAll,
+	}
+
+	// Handle assignee if specified
+	if assignee != "" {
+		// First, ensure we have loaded users
+		workspaces, err := c.GetWorkspaces(ctx)
+		if err == nil && len(workspaces) > 0 {
+			_ = c.userLookup.LoadWorkspaceUsers(ctx, workspaces[0].ID)
+		}
+
+		// Convert username to ID
+		userIDs, err := c.userLookup.ConvertUsernamesToIDs([]string{assignee})
+		if err != nil || len(userIDs) == 0 {
+			return nil, fmt.Errorf("invalid assignee: %w", err)
+		}
+		request.Assignee = userIDs[0]
+	}
+
+	response, _, err := c.client.Comments.CreateTaskComment(ctx, taskID, nil, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return response, nil
+}
+
+// UpdateTaskComment updates an existing comment
+func (c *Client) UpdateTaskComment(ctx context.Context, commentID string, text string, resolved bool) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	// Convert comment ID to int
+	var commentIDInt int
+	if _, err := fmt.Sscanf(commentID, "%d", &commentIDInt); err != nil {
+		return fmt.Errorf("invalid comment ID format: %w", err)
+	}
+
+	request := &clickup.UpdateCommentRequest{
+		CommentText: text,
+		Resolved:    resolved,
+	}
+
+	_, err := c.client.Comments.UpdateComment(ctx, commentIDInt, request)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
+}
+
+// DeleteTaskComment deletes a comment
+func (c *Client) DeleteTaskComment(ctx context.Context, commentID string) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	// Convert comment ID to int
+	var commentIDInt int
+	if _, err := fmt.Sscanf(commentID, "%d", &commentIDInt); err != nil {
+		return fmt.Errorf("invalid comment ID format: %w", err)
+	}
+
+	_, err := c.client.Comments.DeleteComment(ctx, commentIDInt)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
+}
