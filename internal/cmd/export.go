@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -146,7 +147,13 @@ Examples:
 		// Open output file or use stdout
 		var output *os.File
 		if outputFile != "" {
-			file, err := os.Create(outputFile)
+			// Sanitize the file path to prevent directory traversal
+			cleanPath := filepath.Clean(outputFile)
+			if filepath.IsAbs(cleanPath) || strings.Contains(cleanPath, "..") {
+				fmt.Fprintf(os.Stderr, "Invalid output file path: %s\n", outputFile)
+				os.Exit(1)
+			}
+			file, err := os.Create(cleanPath)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to create output file: %v\n", err)
 				os.Exit(1)
