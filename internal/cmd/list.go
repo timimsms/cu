@@ -12,6 +12,10 @@ import (
 	"github.com/tim/cu/internal/output"
 )
 
+var (
+	isProjectFlag bool
+)
+
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Manage lists",
@@ -162,21 +166,42 @@ var listDefaultCmd = &cobra.Command{
 
 		// TODO: Validate that the list exists and is accessible
 
-		// Save to config
-		config.Set("default_list", listID)
-		if err := config.Save(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to save configuration: %v\n", err)
-			os.Exit(1)
+		// Save to project config if in a project, otherwise global config
+		if config.HasProjectConfig() || isProjectFlag {
+			// Save to project config
+			settings := map[string]interface{}{
+				"default_list": listID,
+			}
+			if err := config.SaveProjectConfig(settings); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to save project configuration: %v\n", err)
+				os.Exit(1)
+			}
+			
+			configPath := config.GetProjectConfigPath()
+			if configPath == "" {
+				configPath = ".cu.yml"
+			}
+			fmt.Printf("Default list set to: %s\n", listID)
+			fmt.Printf("Saved to project config: %s\n", configPath)
+		} else {
+			// Save to global config
+			config.Set("default_list", listID)
+			if err := config.Save(); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to save configuration: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Default list set to: %s (global)\n", listID)
+			fmt.Println("Tip: Use --project flag to save to project-specific config")
 		}
-
-		fmt.Printf("Default list set to: %s\n", listID)
-		fmt.Println("This will be saved to .cu.yml in the current directory for project-specific defaults.")
 	},
 }
 
 func init() {
 	listCmd.AddCommand(listListCmd)
 	listCmd.AddCommand(listDefaultCmd)
+
+	// Add --project flag to list default command
+	listDefaultCmd.Flags().BoolVarP(&isProjectFlag, "project", "p", false, "Save to project config instead of global config")
 
 	// List command flags
 	listListCmd.Flags().StringP("space", "s", "", "Space ID or name")
