@@ -1,0 +1,21 @@
+# Test files
+test.js
+*.test.js
+
+# Development files
+.gitignore
+.editorconfig
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+temp/
+
+# Don't include pre-downloaded binaries
+bin/

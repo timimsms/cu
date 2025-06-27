@@ -1,0 +1,54 @@
+{
+  "name": "@clickup/cli",
+  "version": "0.0.0-development",
+  "description": "Command-line interface for ClickUp",
+  "keywords": [
+    "clickup",
+    "cli",
+    "task-management",
+    "productivity",
+    "command-line"
+  ],
+  "homepage": "https://github.com/timimsms/cu",
+  "bugs": {
+    "url": "https://github.com/timimsms/cu/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timimsms/cu.git"
+  },
+  "license": "MIT",
+  "author": "Tim Timmerman <timmerman.tim@gmail.com>",
+  "main": "index.js",
+  "bin": {
+    "cu": "./bin/cu",
+    "clickup": "./bin/cu"
+  },
+  "files": [
+    "bin/",
+    "index.js",
+    "postinstall.js",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node postinstall.js",
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64",
+    "ia32"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
