@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install ClickUp CLI</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c5282;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #2d3748;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .install-section {
+            margin-bottom: 40px;
+        }
+        
+        .code-block {
+            background-color: #1a1a1a;
+            color: #e8e8e8;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 16px 0;
+            position: relative;
+        }
+        
+        .code-block code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        .copy-button:hover {
+            background-color: #2d3748;
+        }
+        
+        .copy-button.copied {
+            background-color: #48bb78;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #718096;
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            color: #2d3748;
+        }
+        
+        .tab.active {
+            color: #2c5282;
+            border-bottom: 2px solid #2c5282;
+            margin-bottom: -2px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .warning {
+            background-color: #fff5f5;
+            border-left: 4px solid #feb2b2;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        
+        .info {
+            background-color: #ebf8ff;
+            border-left: 4px solid #90cdf4;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        
+        .options {
+            background-color: #f7fafc;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .options h3 {
+            margin-top: 0;
+            color: #2d3748;
+        }
+        
+        .options ul {
+            margin: 10px 0;
+        }
+        
+        .options code {
+            background-color: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        footer a {
+            color: #2c5282;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Install ClickUp CLI</h1>
+        
+        <p>The ClickUp CLI (<code>cu</code>) is a command-line tool for managing ClickUp tasks and projects.</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('unix')">macOS / Linux</button>
+            <button class="tab" onclick="showTab('windows')">Windows</button>
+            <button class="tab" onclick="showTab('other')">Other Methods</button>
+        </div>
+        
+        <div id="unix" class="tab-content active">
+            <div class="install-section">
+                <h2>Quick Install</h2>
+                <p>Run this command in your terminal:</p>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'curl -sSL https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.sh | bash')">Copy</button>
+                    <code>curl -sSL https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.sh | bash</code>
+                </div>
+                
+                <h2>Using wget</h2>
+                <p>If you prefer wget:</p>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'wget -qO- https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.sh | bash')">Copy</button>
+                    <code>wget -qO- https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.sh | bash</code>
+                </div>
+                
+                <div class="options">
+                    <h3>Installation Options</h3>
+                    <ul>
+                        <li>Install specific version: <code>curl -sSL [...] | bash -s -- --version v1.0.0</code></li>
+                        <li>Install to custom directory: <code>curl -sSL [...] | bash -s -- --dir /usr/local/bin</code></li>
+                        <li>Show help: <code>curl -sSL [...] | bash -s -- --help</code></li>
+                    </ul>
+                </div>
+                
+                <div class="info">
+                    <strong>Note:</strong> The script will install to <code>~/.local/bin</code> by default and add it to your PATH if needed.
+                </div>
+            </div>
+        </div>
+        
+        <div id="windows" class="tab-content">
+            <div class="install-section">
+                <h2>Quick Install (PowerShell)</h2>
+                <p>Run this command in PowerShell:</p>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'irm https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.ps1 | iex')">Copy</button>
+                    <code>irm https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.ps1 | iex</code>
+                </div>
+                
+                <h2>Alternative Method</h2>
+                <p>Or download and run the script:</p>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'Invoke-WebRequest -Uri https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.ps1 -OutFile install.ps1; ./install.ps1')">Copy</button>
+                    <code>Invoke-WebRequest -Uri https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.ps1 -OutFile install.ps1<br>./install.ps1</code>
+                </div>
+                
+                <div class="options">
+                    <h3>Installation Options</h3>
+                    <ul>
+                        <li>Install specific version: <code>$env:CU_VERSION="v1.0.0"; irm [...] | iex</code></li>
+                        <li>Install to custom directory: <code>$env:CU_INSTALL_DIR="C:\Program Files\cu"; irm [...] | iex</code></li>
+                    </ul>
+                </div>
+                
+                <div class="warning">
+                    <strong>Security Note:</strong> You may need to allow script execution: <code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code>
+                </div>
+            </div>
+        </div>
+        
+        <div id="other" class="tab-content">
+            <div class="install-section">
+                <h2>Homebrew (macOS/Linux)</h2>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'brew install timimsms/clickup/clickup-cli')">Copy</button>
+                    <code>brew install timimsms/clickup/clickup-cli</code>
+                </div>
+                
+                <h2>Docker</h2>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'docker run -it clickup/cli:latest --help')">Copy</button>
+                    <code>docker run -it clickup/cli:latest --help</code>
+                </div>
+                
+                <h2>Manual Download</h2>
+                <p>Download the latest binary for your platform from the <a href="https://github.com/timimsms/cu/releases/latest" target="_blank">releases page</a>.</p>
+                
+                <h2>Build from Source</h2>
+                <div class="code-block">
+                    <button class="copy-button" onclick="copyToClipboard(this, 'git clone https://github.com/timimsms/cu.git\ncd cu\ngo build -o cu ./cmd/cu')">Copy</button>
+                    <code>git clone https://github.com/timimsms/cu.git<br>cd cu<br>go build -o cu ./cmd/cu</code>
+                </div>
+            </div>
+        </div>
+        
+        <h2>Getting Started</h2>
+        <p>After installation, authenticate with your ClickUp account:</p>
+        <div class="code-block">
+            <button class="copy-button" onclick="copyToClipboard(this, 'cu auth login')">Copy</button>
+            <code>cu auth login</code>
+        </div>
+        
+        <p>Then you can start using the CLI:</p>
+        <div class="code-block">
+            <button class="copy-button" onclick="copyToClipboard(this, 'cu task list\ncu task create\ncu --help')">Copy</button>
+            <code>cu task list<br>cu task create<br>cu --help</code>
+        </div>
+        
+        <footer>
+            <p>
+                <a href="https://github.com/timimsms/cu" target="_blank">GitHub</a> •
+                <a href="https://github.com/timimsms/cu/issues" target="_blank">Report Issues</a> •
+                <a href="https://github.com/timimsms/cu/blob/main/README.md" target="_blank">Documentation</a>
+            </p>
+        </footer>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function copyToClipboard(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
