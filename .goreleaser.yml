@@ -1,0 +1,159 @@
+# GoReleaser configuration for ClickUp CLI
+# Documentation: https://goreleaser.com
+version: 2
+
+project_name: cu
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: cu
+    main: ./cmd/cu
+    binary: cu
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+    goarm:
+      - "7"
+    # Skip unsupported combinations
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: windows
+        goarch: arm64
+    # Build flags for smaller binaries
+    ldflags:
+      - -s -w
+      - -X github.com/tim/cu/internal/version.Version={{.Version}}
+      - -X github.com/tim/cu/internal/version.Commit={{.Commit}}
+      - -X github.com/tim/cu/internal/version.BuildDate={{.Date}}
+      - -X github.com/tim/cu/internal/version.BuiltBy=goreleaser
+
+archives:
+  - id: cu-archive
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    builds:
+      - cu
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - src: completions/*
+        dst: completions
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+signs:
+  - artifacts: checksum
+    cmd: gpg
+    args:
+      - "--batch"
+      - "--local-user"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ArtifactName }}.sbom.json"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+  groups:
+    - title: 'New Features'
+      regexp: '^feat'
+    - title: 'Bug Fixes'
+      regexp: '^fix'
+    - title: 'Performance Improvements'
+      regexp: '^perf'
+    - title: 'Breaking Changes'
+      regexp: '^breaking'
+
+release:
+  github:
+    owner: timimsms
+    name: cu
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
+  header: |
+    ## ClickUp CLI v{{.Version}}
+    
+    **Full Changelog**: https://github.com/timimsms/cu/compare/{{ .PreviousTag }}...{{ .Tag }}
+  footer: |
+    ## Installation
+    
+    ### Homebrew (macOS/Linux)
+    ```bash
+    brew install timimsms/clickup/clickup-cli
+    ```
+    
+    ### npm
+    ```bash
+    npm install -g @clickup/cli
+    ```
+    
+    ### Docker
+    ```bash
+    docker run -it clickup/cli:{{ .Version }}
+    ```
+    
+    ### Direct Download
+    See the assets below for platform-specific binaries.
+
+# Homebrew tap configuration (will create PR to separate tap repo)
+# Requires HOMEBREW_TAP_GITHUB_TOKEN secret
+# brews section is deprecated in v2, using separate action in workflow instead
+
+# Docker configuration
+dockers:
+  - image_templates:
+      - "clickup/cli:{{ .Tag }}"
+      - "clickup/cli:v{{ .Major }}"
+      - "clickup/cli:v{{ .Major }}.{{ .Minor }}"
+      - "clickup/cli:latest"
+    dockerfile: Dockerfile.release
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64,linux/arm64"
+    extra_files:
+      - completions/

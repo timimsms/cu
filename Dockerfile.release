@@ -1,0 +1,30 @@
+# Dockerfile for ClickUp CLI releases
+# This is used by GoReleaser for Docker image builds
+
+FROM alpine:3.19
+
+# Install ca-certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
+
+# Create non-root user
+RUN addgroup -g 1000 -S cu && \
+    adduser -u 1000 -S cu -G cu
+
+# Copy binary from GoReleaser
+COPY cu /usr/local/bin/cu
+
+# Copy shell completions
+COPY completions /usr/share/cu/completions
+
+# Set up working directory
+WORKDIR /workspace
+
+# Switch to non-root user
+USER cu
+
+# Verify installation
+RUN cu --version
+
+# Set entrypoint
+ENTRYPOINT ["cu"]
+CMD ["--help"]
