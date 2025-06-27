@@ -18,20 +18,40 @@ A GitHub CLI-inspired command-line interface for ClickUp.
 
 ## Installation
 
-### Homebrew (macOS/Linux)
+### Quick Install
+
+#### macOS / Linux
 ```bash
-# Coming soon
-brew install clickup-cli
+curl -sSL https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.sh | bash
 ```
 
-### npm
+#### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/timimsms/cu/main/scripts/install.ps1 | iex
+```
+
+### Package Managers
+
+#### Homebrew (macOS/Linux)
+```bash
+brew install timimsms/clickup/clickup-cli
+```
+
+#### npm
 ```bash
 # Coming soon
 npm install -g @clickup/cli
 ```
 
-### Direct Download
-Download the latest release from the [releases page](https://github.com/tim/cu/releases).
+#### Docker
+```bash
+docker run -it clickup/cli:latest --help
+```
+
+### Manual Download
+Download the latest binary for your platform from the [releases page](https://github.com/timimsms/cu/releases/latest).
+
+For more installation options and troubleshooting, visit our [installation guide](https://timimsms.github.io/cu/install/).
 
 ## Quick Start
 
