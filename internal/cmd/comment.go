@@ -30,7 +30,6 @@ var (
 	notifyAll      bool
 	listComments   bool
 	deleteComment  string
-	resolveComment bool
 	yesFlag        bool
 )
 
