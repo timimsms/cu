@@ -67,8 +67,7 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 		}
 
 		// Get authentication token
-		authMgr := auth.NewManager()
-		token, err := authMgr.GetCurrentToken()
+		token, err := getAuthToken()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Not authenticated. Run 'cu auth login' first.\n")
 			os.Exit(1)
@@ -165,6 +164,12 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 			os.Exit(1)
 		}
 	},
+}
+
+// getAuthToken is a variable to make auth testable
+var getAuthToken = func() (*auth.Token, error) {
+	authMgr := auth.NewManager()
+	return authMgr.GetCurrentToken()
 }
 
 func init() {
