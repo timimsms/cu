@@ -188,7 +188,7 @@ func (c *Cache) GetStats() (*Stats, error) {
 			
 			// Check if expired
 			path := filepath.Join(c.dir, entry.Name())
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(path) // #nosec G304 - path is constructed from directory listing
 			if err != nil {
 				continue
 			}
@@ -226,7 +226,7 @@ func (c *Cache) CleanExpired() (int, error) {
 		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
 			path := filepath.Join(c.dir, entry.Name())
 			
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(path) // #nosec G304 - path is constructed from directory listing
 			if err != nil {
 				continue
 			}
