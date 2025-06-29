@@ -119,7 +119,11 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 			fmt.Fprintf(os.Stderr, "Request failed: %v\n", err)
 			os.Exit(1)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error closing response body: %v\n", err)
+			}
+		}()
 
 		// Read response
 		respBody, err := io.ReadAll(resp.Body)
@@ -141,7 +145,9 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 					fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
 				} else {
 					// Output the full error response
-					output.Format("json", errResp)
+					if err := output.Format("json", errResp); err != nil {
+						fmt.Fprintf(os.Stderr, "Error formatting response: %v\n", err)
+					}
 				}
 			} else {
 				fmt.Fprintf(os.Stderr, "Response: %s\n", string(respBody))

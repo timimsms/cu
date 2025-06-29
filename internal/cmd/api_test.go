@@ -29,8 +29,7 @@ func TestAPICommand(t *testing.T) {
 	methodFlag := cmd.Flag("method")
 	if methodFlag == nil {
 		t.Error("method flag should exist")
-	}
-	if methodFlag.DefValue != "GET" {
+	} else if methodFlag.DefValue != "GET" {
 		t.Errorf("method flag default should be GET, got %s", methodFlag.DefValue)
 	}
 
