@@ -176,7 +176,7 @@ var listDefaultCmd = &cobra.Command{
 				fmt.Fprintf(os.Stderr, "Failed to save project configuration: %v\n", err)
 				os.Exit(1)
 			}
-			
+
 			configPath := config.GetProjectConfigPath()
 			if configPath == "" {
 				configPath = ".cu.yml"
