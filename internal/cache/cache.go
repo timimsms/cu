@@ -142,6 +142,111 @@ func (c *Cache) filename(key string) string {
 	return filepath.Join(c.dir, filename+".json")
 }
 
+// Stats represents cache statistics
+type Stats struct {
+	TotalEntries   int
+	ExpiredEntries int
+	ValidEntries   int
+	TotalSize      int64
+	OldestEntry    time.Time
+	NewestEntry    time.Time
+}
+
+// GetStats returns statistics about the cache
+func (c *Cache) GetStats() (*Stats, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	stats := &Stats{}
+	
+	entries, err := os.ReadDir(c.dir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read cache directory: %w", err)
+	}
+
+	now := time.Now()
+	
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
+			stats.TotalEntries++
+			
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+			
+			stats.TotalSize += info.Size()
+			modTime := info.ModTime()
+			
+			// Track oldest and newest
+			if stats.OldestEntry.IsZero() || modTime.Before(stats.OldestEntry) {
+				stats.OldestEntry = modTime
+			}
+			if modTime.After(stats.NewestEntry) {
+				stats.NewestEntry = modTime
+			}
+			
+			// Check if expired
+			path := filepath.Join(c.dir, entry.Name())
+			data, err := os.ReadFile(path) // #nosec G304 - path is constructed from directory listing
+			if err != nil {
+				continue
+			}
+			
+			var cacheEntry CacheEntry
+			if err := json.Unmarshal(data, &cacheEntry); err != nil {
+				continue
+			}
+			
+			if now.After(cacheEntry.ExpiresAt) {
+				stats.ExpiredEntries++
+			} else {
+				stats.ValidEntries++
+			}
+		}
+	}
+	
+	return stats, nil
+}
+
+// CleanExpired removes expired entries from the cache
+func (c *Cache) CleanExpired() (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	entries, err := os.ReadDir(c.dir)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read cache directory: %w", err)
+	}
+
+	now := time.Now()
+	removed := 0
+	
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
+			path := filepath.Join(c.dir, entry.Name())
+			
+			data, err := os.ReadFile(path) // #nosec G304 - path is constructed from directory listing
+			if err != nil {
+				continue
+			}
+			
+			var cacheEntry CacheEntry
+			if err := json.Unmarshal(data, &cacheEntry); err != nil {
+				continue
+			}
+			
+			if now.After(cacheEntry.ExpiresAt) {
+				if err := os.Remove(path); err == nil {
+					removed++
+				}
+			}
+		}
+	}
+	
+	return removed, nil
+}
+
 // Global cache instances with different TTLs
 var (
 	// WorkspaceCache for workspace structure (1 hour)
