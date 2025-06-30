@@ -34,8 +34,6 @@ jobs:
       - name: Install MkDocs and theme
         run: |
           pip install mkdocs-material
-          pip install mkdocstrings
-          pip install mkdocstrings-go
           
       - name: Build documentation
         run: mkdocs build --site-dir _site
