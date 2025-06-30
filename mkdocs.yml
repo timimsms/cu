@@ -1,0 +1,77 @@
+site_name: cu - ClickUp CLI
+site_url: https://timimsms.github.io/cu
+repo_url: https://github.com/timimsms/cu
+repo_name: timimsms/cu
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Authentication: getting-started/authentication.md
+    - Quick Start: getting-started/quickstart.md
+  - Commands:
+    - Overview: commands/overview.md
+    - Task Management: commands/task.md
+    - Comments: commands/comment.md
+    - Cache: commands/cache.md
+    - Configuration: commands/config.md
+    - API Access: commands/api.md
+    - Export: commands/export.md
+  - Configuration:
+    - Global Config: configuration/global.md
+    - Project Config: configuration/project.md
+  - API Reference: api-reference.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        go:
+          options:
+            show_source: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/timimsms/cu
+
+docs_dir: docs/site
