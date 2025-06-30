@@ -1,6 +1,7 @@
 # cu - ClickUp CLI
 
 [![CI](https://github.com/timimsms/cu/actions/workflows/ci.yml/badge.svg)](https://github.com/timimsms/cu/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-timimsms.github.io%2Fcu-blue)](https://timimsms.github.io/cu/)
 
 A GitHub CLI-inspired command-line interface for ClickUp.
 
@@ -122,10 +123,13 @@ cu api "/list/abc123/task?archived=false"
 
 ## Documentation
 
-- [Installation Guide](docs/installation.md)
-- [Configuration](docs/configuration.md)
-- [Authentication](docs/authentication.md)
-- [Command Reference](docs/commands/)
+Full documentation is available at [https://timimsms.github.io/cu/](https://timimsms.github.io/cu/)
+
+### Quick Links
+- [Command Reference](https://timimsms.github.io/cu/commands/cu/)
+- [Task Management](https://timimsms.github.io/cu/commands/cu_task/)
+- [Configuration](https://timimsms.github.io/cu/commands/cu_config/)
+- [Authentication](https://timimsms.github.io/cu/commands/cu_auth/)
 
 ## Development
 
