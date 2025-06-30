@@ -39,7 +39,7 @@ cu task create
 
 ## Next Steps
 
-- [Installation Guide](getting-started/installation.md) - Get `cu` installed on your system
-- [Authentication](getting-started/authentication.md) - Connect `cu` to your ClickUp account
-- [Command Reference](commands/overview.md) - Explore all available commands
-- [Configuration](configuration/global.md) - Customize `cu` to your workflow
+- [Command Reference](commands/cu.md) - Explore all available commands
+- [Task Management](commands/cu_task.md) - Learn how to manage tasks
+- [Configuration](commands/cu_config.md) - Customize `cu` to your workflow
+- [Authentication](commands/cu_auth.md) - Connect `cu` to your ClickUp account
