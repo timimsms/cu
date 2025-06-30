@@ -50,11 +50,6 @@ nav:
 
 plugins:
   - search
-  - mkdocstrings:
-      handlers:
-        go:
-          options:
-            show_source: true
 
 markdown_extensions:
   - pymdownx.highlight:
