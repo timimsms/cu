@@ -12,6 +12,11 @@ A GitHub CLI-inspired command-line interface for ClickUp.
 
 - **GitHub CLI-like Interface**: Familiar command structure for developers who use `gh`
 - **Task Management**: Create, view, update, and manage tasks from the command line
+- **Comment Management**: Add, list, and delete comments on tasks with user assignment
+- **Cache Management**: Optimize performance with intelligent caching and cache control commands
+- **Project Configuration**: Set project-specific defaults with `.cu.yml` configuration files
+- **API Passthrough**: Direct access to ClickUp API endpoints for advanced operations
+- **Export Functionality**: Export tasks to CSV, JSON, or Markdown formats
 - **Multiple Output Formats**: Support for table, JSON, YAML, and CSV output
 - **Shell Completions**: Full support for bash, zsh, fish, and PowerShell
 - **Cross-Platform**: Works on macOS, Linux, and Windows
@@ -48,6 +53,71 @@ cu task list
 3. Create a new task:
 ```bash
 cu task create
+```
+
+## Command Examples
+
+### Task Management
+```bash
+# List tasks in current space
+cu task list
+
+# Create a new task
+cu task create
+
+# View task details
+cu task view <task-id>
+
+# Export tasks to CSV
+cu export tasks --format csv > tasks.csv
+```
+
+### Comment Management
+```bash
+# Add a comment to a task
+cu comment <task-id> -m "This is my comment"
+
+# List comments on a task
+cu comment list <task-id>
+
+# Add comment with assignee
+cu comment <task-id> -m "Please review" --assignee user@example.com
+```
+
+### Cache Management
+```bash
+# View cache statistics
+cu cache info
+
+# Clear all cache
+cu cache clear
+
+# Clean expired cache entries
+cu cache clean
+```
+
+### Project Configuration
+```bash
+# Initialize project config
+cu config init
+
+# Set default list for project
+cu config set default.list "My List ID"
+
+# View all configuration
+cu config list
+```
+
+### API Access
+```bash
+# Get workspace info
+cu api /team
+
+# Create a task via API
+cu api /list/abc123/task -X POST -d '{"name": "New Task"}'
+
+# Get tasks with query parameters
+cu api "/list/abc123/task?archived=false"
 ```
 
 ## Documentation
