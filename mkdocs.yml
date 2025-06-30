@@ -31,30 +31,66 @@ theme:
 
 nav:
   - Home: index.md
-  - Getting Started:
-    - Installation: getting-started/installation.md
-    - Authentication: getting-started/authentication.md
-    - Quick Start: getting-started/quickstart.md
   - Commands:
-    - Overview: commands/overview.md
-    - Task Management: commands/task.md
-    - Comments: commands/comment.md
-    - Cache: commands/cache.md
-    - Configuration: commands/config.md
-    - API Access: commands/api.md
-    - Export: commands/export.md
-  - Configuration:
-    - Global Config: configuration/global.md
-    - Project Config: configuration/project.md
-  - API Reference: api-reference.md
+    - cu: commands/cu.md
+    - Authentication:
+      - cu auth: commands/cu_auth.md
+      - cu auth login: commands/cu_auth_login.md
+      - cu auth logout: commands/cu_auth_logout.md
+      - cu auth status: commands/cu_auth_status.md
+    - Tasks:
+      - cu task: commands/cu_task.md
+      - cu task create: commands/cu_task_create.md
+      - cu task list: commands/cu_task_list.md
+      - cu task view: commands/cu_task_view.md
+      - cu task update: commands/cu_task_update.md
+      - cu task close: commands/cu_task_close.md
+      - cu task reopen: commands/cu_task_reopen.md
+      - cu task search: commands/cu_task_search.md
+      - cu task interactive: commands/cu_task_interactive.md
+    - Lists:
+      - cu list: commands/cu_list.md
+      - cu list list: commands/cu_list_list.md
+      - cu list default: commands/cu_list_default.md
+    - Spaces:
+      - cu space: commands/cu_space.md
+      - cu space list: commands/cu_space_list.md
+    - Comments:
+      - cu comment: commands/cu_comment.md
+      - cu comment list: commands/cu_comment_list.md
+      - cu comment delete: commands/cu_comment_delete.md
+    - Configuration:
+      - cu config: commands/cu_config.md
+      - cu config init: commands/cu_config_init.md
+      - cu config list: commands/cu_config_list.md
+      - cu config get: commands/cu_config_get.md
+      - cu config set: commands/cu_config_set.md
+      - cu config show: commands/cu_config_show.md
+    - Cache:
+      - cu cache: commands/cu_cache.md
+      - cu cache info: commands/cu_cache_info.md
+      - cu cache clear: commands/cu_cache_clear.md
+      - cu cache clean: commands/cu_cache_clean.md
+    - Bulk Operations:
+      - cu bulk: commands/cu_bulk.md
+      - cu bulk update: commands/cu_bulk_update.md
+      - cu bulk close: commands/cu_bulk_close.md
+      - cu bulk delete: commands/cu_bulk_delete.md
+    - Export:
+      - cu export: commands/cu_export.md
+      - cu export tasks: commands/cu_export_tasks.md
+    - Users:
+      - cu user: commands/cu_user.md
+      - cu user list: commands/cu_user_list.md
+    - Other Commands:
+      - cu api: commands/cu_api.md
+      - cu me: commands/cu_me.md
+      - cu interactive: commands/cu_interactive.md
+      - cu completion: commands/cu_completion.md
+      - cu version: commands/cu_version.md
 
 plugins:
   - search
-  - mkdocstrings:
-      handlers:
-        go:
-          options:
-            show_source: true
 
 markdown_extensions:
   - pymdownx.highlight:

@@ -114,3 +114,23 @@ jobs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: gosec-results.sarif
+
+  docs-test:
+    name: Test Documentation Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+        
+    - name: Install MkDocs and theme
+      run: |
+        pip install mkdocs-material
+        
+    - name: Test documentation build
+      run: mkdocs build --strict --site-dir _test_site
