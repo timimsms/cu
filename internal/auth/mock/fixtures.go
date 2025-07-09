@@ -13,19 +13,19 @@ import (
 // Common test tokens
 const (
 	// ValidToken represents a valid API token
-	ValidToken = "pk_12345678_ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	ValidToken = "pk_12345678_ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" // #nosec G101 - Test fixture
 	
 	// ExpiredToken represents an expired API token
-	ExpiredToken = "pk_87654321_ZYXWVUTSRQPONMLKJIHGFEDCBA0987654321"
+	ExpiredToken = "pk_87654321_ZYXWVUTSRQPONMLKJIHGFEDCBA0987654321" // #nosec G101 - Test fixture
 	
 	// InvalidToken represents a malformed token
 	InvalidToken = "invalid_token_format"
 	
 	// LegacyToken represents a legacy format token (plain string)
-	LegacyToken = "1234567890abcdef"
+	LegacyToken = "1234567890abcdef" // #nosec G101 - Test fixture
 	
 	// RefreshToken represents a token used for refresh scenarios
-	RefreshToken = "pk_refresh_NEWTOKEN1234567890ABCDEFGHIJKLMNOP"
+	RefreshToken = "pk_refresh_NEWTOKEN1234567890ABCDEFGHIJKLMNOP" // #nosec G101 - This is a test fixture, not a real credential
 )
 
 // Common test workspaces
