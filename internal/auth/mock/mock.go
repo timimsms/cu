@@ -82,10 +82,12 @@ func (m *AuthProvider) SaveToken(workspace string, token *auth.Token) error {
 
 // GetToken mocks retrieving a token
 func (m *AuthProvider) GetToken(workspace string) (*auth.Token, error) {
+	m.mu.Lock()
+	m.calls = append(m.calls, fmt.Sprintf("GetToken(%s)", workspace))
+	m.mu.Unlock()
+	
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
-	m.calls = append(m.calls, fmt.Sprintf("GetToken(%s)", workspace))
 	
 	if m.getError != nil {
 		return nil, m.getError
@@ -165,18 +167,28 @@ func (m *AuthProvider) ListWorkspaces() ([]string, error) {
 
 // IsAuthenticated mocks checking authentication status
 func (m *AuthProvider) IsAuthenticated(workspace string) bool {
+	m.mu.Lock()
+	m.calls = append(m.calls, fmt.Sprintf("IsAuthenticated(%s)", workspace))
+	m.mu.Unlock()
+	
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
-	m.calls = append(m.calls, fmt.Sprintf("IsAuthenticated(%s)", workspace))
 	
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
 	
 	// Check if token exists and not expired
-	if _, err := m.GetToken(workspace); err != nil {
+	// Direct check to avoid nested locks
+	if _, ok := m.tokens[workspace]; !ok {
 		return false
+	}
+	
+	// Check expiry
+	if expiry, ok := m.tokenExpiry[workspace]; ok {
+		if time.Now().After(expiry) {
+			return false
+		}
 	}
 	
 	return m.authenticated[workspace]
