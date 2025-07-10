@@ -64,6 +64,8 @@ func (f *Factory) CreateCommand(name string) (interfaces.Command, error) {
 		return f.createVersionCommand(), nil
 	case "completion":
 		return f.createCompletionCommand(), nil
+	case "interactive":
+		return f.createInteractiveCommand(), nil
 	case "auth":
 		return f.createAuthCommand(), nil
 	case "task":
