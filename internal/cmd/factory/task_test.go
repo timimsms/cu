@@ -488,10 +488,12 @@ func TestTaskCommand_Helpers(t *testing.T) {
 
 // MockAPIClient is a mock implementation of the APIClient interface
 type MockAPIClient struct {
-	GetTasksFunc   func(ctx context.Context, listID string, options *interfaces.TaskQueryOptions) ([]clickup.Task, error)
-	GetTaskFunc    func(ctx context.Context, taskID string) (*clickup.Task, error)
-	CreateTaskFunc func(ctx context.Context, listID string, options *interfaces.TaskCreateOptions) (*clickup.Task, error)
-	UpdateTaskFunc func(ctx context.Context, taskID string, options *interfaces.TaskUpdateOptions) (*clickup.Task, error)
+	GetTasksFunc      func(ctx context.Context, listID string, options *interfaces.TaskQueryOptions) ([]clickup.Task, error)
+	GetTaskFunc       func(ctx context.Context, taskID string) (*clickup.Task, error)
+	CreateTaskFunc    func(ctx context.Context, listID string, options *interfaces.TaskCreateOptions) (*clickup.Task, error)
+	UpdateTaskFunc    func(ctx context.Context, taskID string, options *interfaces.TaskUpdateOptions) (*clickup.Task, error)
+	GetWorkspacesFunc func(ctx context.Context) ([]clickup.Team, error)
+	GetSpacesFunc     func(ctx context.Context, teamID string) ([]clickup.Space, error)
 }
 
 func (m *MockAPIClient) GetTasks(ctx context.Context, listID string, options *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
@@ -532,11 +534,17 @@ func (m *MockAPIClient) GetAuthorizedTeams(ctx context.Context) ([]clickup.Team,
 }
 
 func (m *MockAPIClient) GetWorkspaces(ctx context.Context) ([]clickup.Team, error) {
-	return nil, fmt.Errorf("not implemented")
+	if m.GetWorkspacesFunc != nil {
+		return m.GetWorkspacesFunc(ctx)
+	}
+	return nil, fmt.Errorf("GetWorkspaces not implemented")
 }
 
 func (m *MockAPIClient) GetSpaces(ctx context.Context, teamID string) ([]clickup.Space, error) {
-	return nil, fmt.Errorf("not implemented")
+	if m.GetSpacesFunc != nil {
+		return m.GetSpacesFunc(ctx, teamID)
+	}
+	return nil, fmt.Errorf("GetSpaces not implemented")
 }
 
 func (m *MockAPIClient) GetSpace(ctx context.Context, spaceID string) (*clickup.Space, error) {

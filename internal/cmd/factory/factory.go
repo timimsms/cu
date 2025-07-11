@@ -91,10 +91,6 @@ func (f *Factory) createAuthCommand() interfaces.Command {
 }
 
 
-func (f *Factory) createSpaceCommand() interfaces.Command {
-	// Will be implemented in space.go
-	return nil
-}
 
 func (f *Factory) createListCommand() interfaces.Command {
 	// Will be implemented in list.go
