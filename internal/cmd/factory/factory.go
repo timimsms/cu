@@ -76,6 +76,8 @@ func (f *Factory) CreateCommand(name string) (interfaces.Command, error) {
 		return f.createSpaceCommand(), nil
 	case "list":
 		return f.createListCommand(), nil
+	case "user":
+		return f.createUserCommand(), nil
 	default:
 		return nil, fmt.Errorf("unknown command: %s", name)
 	}
@@ -85,14 +87,8 @@ func (f *Factory) CreateCommand(name string) (interfaces.Command, error) {
 // These are placeholder declarations that will be implemented
 // when we refactor each command
 
-func (f *Factory) createAuthCommand() interfaces.Command {
-	// Will be implemented in auth.go
-	return nil
-}
+// Auth command is implemented in auth.go
 
 
 
-func (f *Factory) createListCommand() interfaces.Command {
-	// Will be implemented in list.go
-	return nil
-}
+// List command is implemented in list.go
