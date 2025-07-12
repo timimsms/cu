@@ -17,14 +17,22 @@ type Client struct {
 	client      *clickup.Client
 	rateLimiter *RateLimiter
 	userLookup  *UserLookup
+	authManager interface{ GetCurrentToken() (*auth.Token, error) }
 }
 
-// NewClient creates a new API client
-func NewClient() (*Client, error) {
-	authMgr := auth.NewManager()
-	token, err := authMgr.GetCurrentToken()
+// NewClient creates a new API client with the provided auth manager
+func NewClient(authManager interface{ GetCurrentToken() (*auth.Token, error) }) *Client {
+	return &Client{
+		authManager: authManager,
+		rateLimiter: NewRateLimiter(100, time.Minute), // 100 requests per minute for free tier
+	}
+}
+
+// Connect initializes the API connection using the current token
+func (c *Client) Connect() error {
+	token, err := c.authManager.GetCurrentToken()
 	if err != nil {
-		return nil, errors.ErrNotAuthenticated
+		return errors.ErrNotAuthenticated
 	}
 
 	httpClient := &http.Client{
@@ -34,15 +42,10 @@ func NewClient() (*Client, error) {
 		},
 	}
 
-	client := clickup.NewClient(httpClient, token.Value)
-
-	c := &Client{
-		client:      client,
-		rateLimiter: NewRateLimiter(100, time.Minute), // 100 requests per minute for free tier
-	}
+	c.client = clickup.NewClient(httpClient, token.Value)
 	c.userLookup = NewUserLookup(c)
 
-	return c, nil
+	return nil
 }
 
 // UserLookup returns the user lookup service

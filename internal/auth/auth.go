@@ -26,12 +26,14 @@ type Token struct {
 // Manager handles authentication
 type Manager struct {
 	service string
+	config  interface{ GetString(string) string }
 }
 
 // NewManager creates a new authentication manager
-func NewManager() *Manager {
+func NewManager(config interface{ GetString(string) string }) *Manager {
 	return &Manager{
 		service: ServiceName,
+		config:  config,
 	}
 }
 
@@ -111,6 +113,11 @@ func (m *Manager) IsAuthenticated(workspace string) bool {
 
 // GetCurrentToken gets the token for the current workspace
 func (m *Manager) GetCurrentToken() (*Token, error) {
-	// TODO: Get current workspace from config
-	return m.GetToken(DefaultWorkspace)
+	workspace := DefaultWorkspace
+	if m.config != nil {
+		if ws := m.config.GetString("workspace"); ws != "" {
+			workspace = ws
+		}
+	}
+	return m.GetToken(workspace)
 }

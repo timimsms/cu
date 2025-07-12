@@ -35,8 +35,10 @@ enabling efficient task management and seamless integration with development wor
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
+// This is kept for backward compatibility, but delegates to the new factory-based implementation.
 func Execute() error {
-	return rootCmd.Execute()
+	// Use the new factory-based implementation
+	return ExecuteWithFactory()
 }
 
 func init() {

@@ -1,0 +1,79 @@
+name: Improved Security Scan Example
+
+# This is an example of how to improve the security scan visibility
+# It could be integrated into the main CI workflow
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  security-improved:
+    name: Security Scan with Better Visibility
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'go.mod'
+
+    - name: Run GoSec (Console Output)
+      id: gosec-console
+      run: |
+        # Install gosec
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
+        
+        # Run gosec with text output to see issues immediately
+        echo "::group::GoSec Security Scan Results"
+        if ~/go/bin/gosec -fmt text -severity high ./... 2>&1 | tee gosec-output.txt; then
+          echo "✅ No security issues found"
+          echo "GOSEC_PASSED=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Security issues detected"
+          echo "GOSEC_PASSED=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        echo "::endgroup::"
+
+    - name: Generate SARIF for GitHub Security Tab
+      if: always()
+      run: |
+        ~/go/bin/gosec -fmt sarif -out gosec-results.sarif ./... || true
+
+    - name: Upload SARIF file
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: gosec-results.sarif
+
+    - name: Create Security Scan Summary
+      if: always()
+      run: |
+        echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ steps.gosec-console.outputs.GOSEC_PASSED }}" == "true" ]]; then
+          echo "✅ **All security checks passed!**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Security issues found**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Issues:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          # Extract just the issues from gosec output
+          grep -E "^\[.*\] - G[0-9]+" gosec-output.txt || echo "No issues extracted"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View detailed results in the [Security tab](../../security/code-scanning)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Add statistics
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Scan Statistics:" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        tail -n 6 gosec-output.txt | grep -E "(Files|Lines|Issues|Nosec)" || echo "No statistics found"
+        echo '```' >> $GITHUB_STEP_SUMMARY
