@@ -87,3 +87,48 @@ func (m *MockConfigProvider) AllSettings() map[string]interface{} {
 	}
 	return result
 }
+
+// MockConfigWithProject is a mock config that supports project config operations
+type MockConfigWithProject struct {
+	*MockConfigProvider
+	HasProjectConfigVal   bool
+	ProjectConfigSaved    bool
+	ProjectSettings       map[string]interface{}
+	SaveProjectConfigErr  error
+	ProjectConfigPath     string
+}
+
+func (m *MockConfigWithProject) HasProjectConfig() bool {
+	return m.HasProjectConfigVal
+}
+
+func (m *MockConfigWithProject) SaveProjectConfig(settings map[string]interface{}) error {
+	if m.SaveProjectConfigErr != nil {
+		return m.SaveProjectConfigErr
+	}
+	m.ProjectConfigSaved = true
+	if m.ProjectSettings == nil {
+		m.ProjectSettings = make(map[string]interface{})
+	}
+	for k, v := range settings {
+		m.ProjectSettings[k] = v
+	}
+	return nil
+}
+
+func (m *MockConfigWithProject) GetProjectConfigPath() string {
+	if m.ProjectConfigPath != "" {
+		return m.ProjectConfigPath
+	}
+	return ".cu.yml"
+}
+
+// MockConfigWithSaveError is a mock config that returns save errors
+type MockConfigWithSaveError struct {
+	*MockConfigProvider
+	SaveErr error
+}
+
+func (m *MockConfigWithSaveError) Save() error {
+	return m.SaveErr
+}
