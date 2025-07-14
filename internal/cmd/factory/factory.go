@@ -78,6 +78,10 @@ func (f *Factory) CreateCommand(name string) (interfaces.Command, error) {
 		return f.createListCommand(), nil
 	case "user":
 		return f.createUserCommand(), nil
+	case "bulk":
+		return f.createBulkCommand(), nil
+	case "export":
+		return f.createExportCommand(), nil
 	default:
 		return nil, fmt.Errorf("unknown command: %s", name)
 	}
