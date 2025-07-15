@@ -34,12 +34,9 @@ func TestUserCommand(t *testing.T) {
 		}
 		mockUsers := []clickup.TeamUser{
 			{
-				User: clickup.User{
-					ID:       123,
-					Username: "testuser",
-					Email:    "test@example.com",
-				},
-				Role: &[]int{1}[0], // Admin role
+				ID:       123,
+				Username: "testuser",
+				Email:    "test@example.com",
 			},
 		}
 
@@ -100,20 +97,14 @@ func TestUserCommand_List(t *testing.T) {
 		}
 		mockUsers := []clickup.TeamUser{
 			{
-				User: clickup.User{
-					ID:       123,
-					Username: "alice",
-					Email:    "alice@example.com",
-				},
-				Role: &[]int{1}[0], // Admin role
+				ID:       123,
+				Username: "alice",
+				Email:    "alice@example.com",
 			},
 			{
-				User: clickup.User{
-					ID:       456,
-					Username: "bob",
-					Email:    "bob@example.com",
-				},
-				Role: &[]int{2}[0], // Member role
+				ID:       456,
+				Username: "bob",
+				Email:    "bob@example.com",
 			},
 		}
 
@@ -237,12 +228,9 @@ func TestUserCommand_List(t *testing.T) {
 		}
 		mockUsers := []clickup.TeamUser{
 			{
-				User: clickup.User{
-					ID:       123,
-					Username: "testuser",
-					Email:    "test@example.com",
-				},
-				Role: &[]int{1}[0],
+				ID:       123,
+				Username: "testuser",
+				Email:    "test@example.com",
 			},
 		}
 
@@ -265,7 +253,7 @@ func TestUserCommand_List(t *testing.T) {
 		assert.Len(t, mockOutput.Printed, 1)
 		if users, ok := mockOutput.Printed[0].([]clickup.TeamUser); ok {
 			assert.Len(t, users, 1)
-			assert.Equal(t, 123, users[0].User.ID)
+			assert.Equal(t, 123, users[0].ID)
 		}
 	})
 
@@ -291,12 +279,9 @@ func TestUserCommand_List(t *testing.T) {
 		}
 		mockUsers := []clickup.TeamUser{
 			{
-				User: clickup.User{
-					ID:       123,
-					Username: "testuser",
-					Email:    "test@example.com",
-				},
-				Role: nil, // No role assigned
+				ID:       123,
+				Username: "testuser",
+				Email:    "test@example.com",
 			},
 		}
 

@@ -59,8 +59,8 @@ func TestExportCommand_Tasks(t *testing.T) {
 			{
 				ID:          "task1",
 				Name:        "Test Task 1",
-				Status:      clickup.Status{Status: "open"},
-				Priority:    &clickup.TaskPriority{ID: "2"},
+				Status:      clickup.TaskStatus{Status: "open"},
+				Priority:    clickup.TaskPriority{Priority: "2"},
 				Assignees:   []clickup.User{{Username: "john"}},
 				URL:         "https://app.clickup.com/task1",
 				DateCreated: "1234567890",
@@ -69,8 +69,8 @@ func TestExportCommand_Tasks(t *testing.T) {
 			{
 				ID:          "task2",
 				Name:        "Test Task 2",
-				Status:      clickup.Status{Status: "done"},
-				Priority:    &clickup.TaskPriority{ID: "1"},
+				Status:      clickup.TaskStatus{Status: "done"},
+				Priority:    clickup.TaskPriority{Priority: "1"},
 				Assignees:   []clickup.User{{Username: "jane"}},
 				URL:         "https://app.clickup.com/task2",
 				DateCreated: "1234567891",
@@ -78,7 +78,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 			},
 		}
 
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			assert.Equal(t, "list123", listID)
 			return mockTasks, nil
 		}
@@ -124,11 +124,11 @@ func TestExportCommand_Tasks(t *testing.T) {
 			{
 				ID:     "task1",
 				Name:   "Test Task 1",
-				Status: clickup.Status{Status: "open"},
+				Status: clickup.TaskStatus{Status: "open"},
 			},
 		}
 
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return mockTasks, nil
 		}
 
@@ -174,19 +174,19 @@ func TestExportCommand_Tasks(t *testing.T) {
 			{
 				ID:          "task1",
 				Name:        "Open Task",
-				Status:      clickup.Status{Status: "open"},
-				Priority:    &clickup.TaskPriority{ID: "2"},
+				Status:      clickup.TaskStatus{Status: "open"},
+				Priority:    clickup.TaskPriority{Priority: "2"},
 				Description: "This is a test task",
 				URL:         "https://app.clickup.com/task1",
 			},
 			{
 				ID:     "task2",
 				Name:   "Done Task",
-				Status: clickup.Status{Status: "done"},
+				Status: clickup.TaskStatus{Status: "done"},
 			},
 		}
 
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return mockTasks, nil
 		}
 
@@ -232,13 +232,13 @@ func TestExportCommand_Tasks(t *testing.T) {
 
 		// Mock tasks
 		mockTasks := []clickup.Task{
-			{ID: "task1", Status: clickup.Status{Status: "open"}},
-			{ID: "task2", Status: clickup.Status{Status: "done"}},
+			{ID: "task1", Status: clickup.TaskStatus{Status: "open"}},
+			{ID: "task2", Status: clickup.TaskStatus{Status: "done"}},
 		}
 
 		// Track query options
 		var capturedOpts *interfaces.TaskQueryOptions
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			capturedOpts = opts
 			// Return only open tasks when status filter is applied
 			if opts != nil && len(opts.Statuses) > 0 && opts.Statuses[0] == "open" {
@@ -289,7 +289,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 
 		// Track query options
 		var capturedOpts *interfaces.TaskQueryOptions
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			capturedOpts = opts
 			return []clickup.Task{}, nil
 		}
@@ -370,7 +370,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 
 		// Track which lists were queried
 		var queriedLists []string
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			queriedLists = append(queriedLists, listID)
 			return []clickup.Task{{ID: "task-from-" + listID}}, nil
 		}
@@ -414,7 +414,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 		)
 
 		// Mock tasks
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return []clickup.Task{{ID: "task1", Name: "Test"}}, nil
 		}
 
@@ -469,7 +469,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 		factory := New(WithAPIClient(mockAPI))
 
 		// Mock tasks
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return []clickup.Task{}, nil
 		}
 
@@ -531,27 +531,27 @@ func TestExportCommand_Tasks(t *testing.T) {
 		}
 
 		// Return mixed tasks for client-side filtering
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return []clickup.Task{
 				{
 					ID:        "task1",
 					Name:      "High Priority Task",
-					Status:    clickup.Status{Status: "open"},
-					Priority:  &clickup.TaskPriority{ID: "2"},
+					Status:    clickup.TaskStatus{Status: "open"},
+					Priority:  clickup.TaskPriority{Priority: "2"},
 					Assignees: []clickup.User{{ID: 123, Username: "john"}},
 				},
 				{
 					ID:        "task2",
 					Name:      "Low Priority Task",
-					Status:    clickup.Status{Status: "done"},
-					Priority:  &clickup.TaskPriority{ID: "4"},
+					Status:    clickup.TaskStatus{Status: "done"},
+					Priority:  clickup.TaskPriority{Priority: "4"},
 					Assignees: []clickup.User{{ID: 456, Username: "jane"}},
 				},
 				{
 					ID:       "task3",
 					Name:     "No Priority Task",
-					Status:   clickup.Status{Status: "open"},
-					Priority: nil,
+					Status:   clickup.TaskStatus{Status: "open"},
+					Priority: clickup.TaskPriority{},
 				},
 			}, nil
 		}
@@ -594,7 +594,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 		)
 
 		// Mock tasks
-		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return []clickup.Task{{ID: "task1", Name: "Test"}}, nil
 		}
 
@@ -637,13 +637,13 @@ func TestExportCommand_GetCobraCommand(t *testing.T) {
 		tasksCmd, _, err := cobraCmd.Find([]string{"tasks"})
 		require.NoError(t, err)
 		assert.Equal(t, "tasks", tasksCmd.Use)
-		assert.True(t, tasksCmd.Flags().HasFlag("list"))
-		assert.True(t, tasksCmd.Flags().HasFlag("space"))
-		assert.True(t, tasksCmd.Flags().HasFlag("format"))
-		assert.True(t, tasksCmd.Flags().HasFlag("output"))
-		assert.True(t, tasksCmd.Flags().HasFlag("status"))
-		assert.True(t, tasksCmd.Flags().HasFlag("priority"))
-		assert.True(t, tasksCmd.Flags().HasFlag("assignee"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("list"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("space"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("format"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("output"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("status"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("priority"))
+		assert.NotNil(t, tasksCmd.Flags().Lookup("assignee"))
 	})
 }
 
@@ -652,7 +652,7 @@ type ExportMockAPIClient struct {
 	*MockAPIClient
 	GetWorkspacesFunc      func(ctx context.Context) ([]clickup.Team, error)
 	GetSpacesFunc          func(ctx context.Context, workspaceID string) ([]clickup.Space, error)
-	GetTasksFunc           func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error)
+	GetTasksFunc           func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error)
 	GetFoldersFunc         func(ctx context.Context, spaceID string) ([]clickup.Folder, error)
 	GetListsFunc           func(ctx context.Context, folderID string) ([]clickup.List, error)
 	GetFolderlessListsFunc func(ctx context.Context, spaceID string) ([]clickup.List, error)
@@ -672,7 +672,7 @@ func (m *ExportMockAPIClient) GetSpaces(ctx context.Context, workspaceID string)
 	return nil, fmt.Errorf("GetSpaces not implemented")
 }
 
-func (m *ExportMockAPIClient) GetTasks(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
+func (m *ExportMockAPIClient) GetTasks(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 	if m.GetTasksFunc != nil {
 		return m.GetTasksFunc(ctx, listID, opts)
 	}

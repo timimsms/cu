@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/tim/cu/internal/mocks"
 )
 
@@ -95,7 +96,7 @@ func BenchmarkCobraCommandCreation(b *testing.B) {
 
 	// Pre-create commands
 	commands := make(map[string]interface {
-		GetCobraCommand() interface{}
+		GetCobraCommand() *cobra.Command
 	})
 
 	cmdNames := []string{"version", "task", "auth", "bulk", "export"}

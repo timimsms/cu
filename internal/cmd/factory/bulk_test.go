@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/raksul/go-clickup/clickup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tim/cu/internal/interfaces"
@@ -55,7 +56,7 @@ func TestBulkCommand_Update(t *testing.T) {
 
 		// Track updated tasks
 		updatedTasks := make(map[string]*interfaces.TaskUpdateOptions)
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			updatedTasks[taskID] = opts
 			return nil, nil
 		}
@@ -103,7 +104,7 @@ func TestBulkCommand_Update(t *testing.T) {
 
 		// Track updated tasks
 		var capturedOpts *interfaces.TaskUpdateOptions
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			capturedOpts = opts
 			return nil, nil
 		}
@@ -145,7 +146,7 @@ func TestBulkCommand_Update(t *testing.T) {
 
 		// Track updated tasks
 		var capturedOpts *interfaces.TaskUpdateOptions
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			capturedOpts = opts
 			return nil, nil
 		}
@@ -187,7 +188,7 @@ func TestBulkCommand_Update(t *testing.T) {
 
 		// Track if update was called
 		updateCalled := false
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			updateCalled = true
 			return nil, nil
 		}
@@ -279,7 +280,7 @@ func TestBulkCommand_Update(t *testing.T) {
 
 		// Track if update was called
 		updateCalled := false
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			updateCalled = true
 			return nil, nil
 		}
@@ -323,7 +324,7 @@ func TestBulkCommand_Update(t *testing.T) {
 
 		// Track updated tasks
 		var updatedTasks []string
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			updatedTasks = append(updatedTasks, taskID)
 			return nil, nil
 		}
@@ -397,7 +398,7 @@ func TestBulkCommand_Update(t *testing.T) {
 		)
 
 		// Mock API errors for some tasks
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			if taskID == "task2" {
 				return nil, fmt.Errorf("API error")
 			}
@@ -449,7 +450,7 @@ func TestBulkCommand_Close(t *testing.T) {
 
 		// Track updated tasks
 		closedTasks := make(map[string]string)
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			closedTasks[taskID] = opts.Status
 			return nil, nil
 		}
@@ -501,7 +502,7 @@ func TestBulkCommand_Close(t *testing.T) {
 
 		// Track if close was called
 		closeCalled := false
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			closeCalled = true
 			return nil, nil
 		}
@@ -541,7 +542,7 @@ func TestBulkCommand_Close(t *testing.T) {
 
 		// Track closed tasks
 		var closedTasks []string
-		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			if opts.Status == "complete" {
 				closedTasks = append(closedTasks, taskID)
 			}
@@ -770,36 +771,36 @@ func TestBulkCommand_GetCobraCommand(t *testing.T) {
 		updateCmd, _, err := cobraCmd.Find([]string{"update"})
 		require.NoError(t, err)
 		assert.Equal(t, "update [task-ids...]", updateCmd.Use)
-		assert.True(t, updateCmd.Flags().HasFlag("status"))
-		assert.True(t, updateCmd.Flags().HasFlag("priority"))
-		assert.True(t, updateCmd.Flags().HasFlag("tag"))
-		assert.True(t, updateCmd.Flags().HasFlag("add-assignee"))
-		assert.True(t, updateCmd.Flags().HasFlag("remove-assignee"))
-		assert.True(t, updateCmd.Flags().HasFlag("yes"))
-		assert.True(t, updateCmd.Flags().HasFlag("dry-run"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("status"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("priority"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("tag"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("add-assignee"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("remove-assignee"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("yes"))
+		assert.NotNil(t, updateCmd.Flags().Lookup("dry-run"))
 
 		// Check close subcommand
 		closeCmd, _, err := cobraCmd.Find([]string{"close"})
 		require.NoError(t, err)
 		assert.Equal(t, "close [task-ids...]", closeCmd.Use)
-		assert.True(t, closeCmd.Flags().HasFlag("yes"))
+		assert.NotNil(t, closeCmd.Flags().Lookup("yes"))
 
 		// Check delete subcommand
 		deleteCmd, _, err := cobraCmd.Find([]string{"delete"})
 		require.NoError(t, err)
 		assert.Equal(t, "delete [task-ids...]", deleteCmd.Use)
-		assert.True(t, deleteCmd.Flags().HasFlag("yes"))
+		assert.NotNil(t, deleteCmd.Flags().Lookup("yes"))
 	})
 }
 
 // BulkMockAPIClient extends MockAPIClient with bulk-specific functions
 type BulkMockAPIClient struct {
 	*MockAPIClient
-	UpdateTaskFunc func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error)
+	UpdateTaskFunc func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error)
 	DeleteTaskFunc func(ctx context.Context, taskID string) error
 }
 
-func (m *BulkMockAPIClient) UpdateTask(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (interface{}, error) {
+func (m *BulkMockAPIClient) UpdateTask(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 	if m.UpdateTaskFunc != nil {
 		return m.UpdateTaskFunc(ctx, taskID, opts)
 	}

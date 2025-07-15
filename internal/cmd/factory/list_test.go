@@ -2,6 +2,7 @@ package factory
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -31,7 +32,7 @@ func TestListCommand(t *testing.T) {
 				ID:        "list1",
 				Name:      "Test List 1",
 				Archived:  false,
-				TaskCount: 5,
+				TaskCount: json.Number("5"),
 			},
 		}
 		mockAPI.GetFolderlessListsFunc = func(ctx context.Context, spaceID string) ([]clickup.List, error) {
@@ -96,13 +97,13 @@ func TestListCommand_List(t *testing.T) {
 				ID:        "list1",
 				Name:      "Test List 1",
 				Archived:  false,
-				TaskCount: 5,
+				TaskCount: json.Number("5"),
 			},
 			{
 				ID:        "list2",
 				Name:      "Test List 2",
 				Archived:  true,
-				TaskCount: 2,
+				TaskCount: json.Number("2"),
 			},
 		}
 		mockAPI.GetFolderlessListsFunc = func(ctx context.Context, spaceID string) ([]clickup.List, error) {
@@ -152,7 +153,7 @@ func TestListCommand_List(t *testing.T) {
 				ID:        "list1",
 				Name:      "Folder List 1",
 				Archived:  false,
-				TaskCount: 3,
+				TaskCount: json.Number("3"),
 			},
 		}
 		mockAPI.GetListsFunc = func(ctx context.Context, folderID string) ([]clickup.List, error) {
@@ -199,13 +200,13 @@ func TestListCommand_List(t *testing.T) {
 				ID:        "list1",
 				Name:      "Active List",
 				Archived:  false,
-				TaskCount: 3,
+				TaskCount: json.Number("3"),
 			},
 			{
 				ID:        "list2",
 				Name:      "Archived List",
 				Archived:  true,
-				TaskCount: 1,
+				TaskCount: json.Number("1"),
 			},
 		}
 		mockAPI.GetFolderlessListsFunc = func(ctx context.Context, spaceID string) ([]clickup.List, error) {
@@ -255,7 +256,7 @@ func TestListCommand_List(t *testing.T) {
 				ID:        "list1",
 				Name:      "Folderless List",
 				Archived:  false,
-				TaskCount: 2,
+				TaskCount: json.Number("2"),
 			},
 		}
 
@@ -273,7 +274,7 @@ func TestListCommand_List(t *testing.T) {
 				ID:        "list2",
 				Name:      "Folder List",
 				Archived:  false,
-				TaskCount: 4,
+				TaskCount: json.Number("4"),
 			},
 		}
 
@@ -428,7 +429,7 @@ func TestListCommand_List(t *testing.T) {
 				ID:        "list1",
 				Name:      "Test List",
 				Archived:  false,
-				TaskCount: 5,
+				TaskCount: json.Number("5"),
 			},
 		}
 		mockAPI.GetFolderlessListsFunc = func(ctx context.Context, spaceID string) ([]clickup.List, error) {
@@ -636,10 +637,10 @@ func TestListCommand_GetCobraCommand(t *testing.T) {
 		assert.Equal(t, "default <list-id>", defaultCmd.Use)
 
 		// Verify flags
-		assert.True(t, listCmd.Flags().HasFlag("space"))
-		assert.True(t, listCmd.Flags().HasFlag("folder"))
-		assert.True(t, listCmd.Flags().HasFlag("archived"))
-		assert.True(t, defaultCmd.Flags().HasFlag("project"))
+		assert.NotNil(t, listCmd.Flags().Lookup("space"))
+		assert.NotNil(t, listCmd.Flags().Lookup("folder"))
+		assert.NotNil(t, listCmd.Flags().Lookup("archived"))
+		assert.NotNil(t, defaultCmd.Flags().Lookup("project"))
 	})
 }
 
