@@ -15,7 +15,7 @@ type APIClient interface {
 
 	// Workspace operations
 	GetWorkspaces(ctx context.Context) ([]clickup.Team, error)
-	
+
 	// Space operations
 	GetSpaces(ctx context.Context, teamID string) ([]clickup.Space, error)
 	GetSpace(ctx context.Context, spaceID string) (*clickup.Space, error)
@@ -112,4 +112,10 @@ type TaskUpdateOptions struct {
 	DueDate         string
 	AddAssignees    []string
 	RemoveAssignees []string
+}
+
+// HasUpdates checks if any updates are specified
+func (o *TaskUpdateOptions) HasUpdates() bool {
+	return o.Name != "" || o.Description != "" || o.Status != "" || o.Priority != "" ||
+		len(o.Tags) > 0 || o.DueDate != "" || len(o.AddAssignees) > 0 || len(o.RemoveAssignees) > 0
 }

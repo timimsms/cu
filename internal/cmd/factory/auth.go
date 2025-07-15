@@ -18,12 +18,12 @@ import (
 type AuthCommand struct {
 	*base.Command
 	subcommands map[string]func(context.Context, []string) error
-	
+
 	// Input/output dependencies for testing
 	stdin  io.Reader
 	stdout io.Writer
 	stderr io.Writer
-	
+
 	// Flags
 	token     string
 	workspace string
@@ -33,9 +33,9 @@ type AuthCommand struct {
 func (f *Factory) createAuthCommand() interfaces.Command {
 	cmd := &AuthCommand{
 		Command: &base.Command{
-			Use:   "auth",
-			Short: "Manage authentication with ClickUp",
-			Long:  `Authenticate cu with ClickUp API using personal tokens or OAuth.`,
+			Use:    "auth",
+			Short:  "Manage authentication with ClickUp",
+			Long:   `Authenticate cu with ClickUp API using personal tokens or OAuth.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -206,7 +206,7 @@ func (c *AuthCommand) GetCobraCommand() *cobra.Command {
 			// Set flags from cobra command
 			c.token, _ = cmd.Flags().GetString("token")
 			c.workspace, _ = cmd.Flags().GetString("workspace")
-			
+
 			return c.runLogin(cmd.Context(), args)
 		},
 	}
@@ -229,7 +229,7 @@ func (c *AuthCommand) GetCobraCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Set flags from cobra command
 			c.workspace, _ = cmd.Flags().GetString("workspace")
-			
+
 			return c.runLogout(cmd.Context(), args)
 		},
 	}

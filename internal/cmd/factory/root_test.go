@@ -15,17 +15,17 @@ func TestNewRootCommand(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create root command
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
 		require.NotNil(t, rootCmd)
-		
+
 		// Verify properties
 		assert.Equal(t, "cu", rootCmd.Use)
 		assert.Contains(t, rootCmd.Short, "GitHub CLI-inspired")
@@ -37,14 +37,14 @@ func TestNewRootCommand(t *testing.T) {
 	t.Run("initializes subcommands", func(t *testing.T) {
 		// Setup
 		factory := New()
-		
+
 		// Create root command
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Should have some subcommands
 		assert.NotEmpty(t, rootCmd.subcommands)
-		
+
 		// Check specific commands were created
 		commandNames := make(map[string]bool)
 		for _, cmd := range rootCmd.subcommands {
@@ -55,7 +55,7 @@ func TestNewRootCommand(t *testing.T) {
 				}
 			}
 		}
-		
+
 		// These commands should exist (already refactored)
 		assert.True(t, commandNames["version"])
 		assert.True(t, commandNames["completion"])
@@ -70,11 +70,11 @@ func TestRootCommand_Run(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Get cobra command to enable help
 		cobraCmd := rootCmd.GetCobraCommand()
 		require.NotNil(t, cobraCmd)
-		
+
 		// Execute with no args
 		err = rootCmd.run(context.Background(), []string{})
 		// Help returns nil error
@@ -86,7 +86,7 @@ func TestRootCommand_Run(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Execute with args (subcommand would handle)
 		err = rootCmd.run(context.Background(), []string{"version"})
 		assert.NoError(t, err)
@@ -99,24 +99,24 @@ func TestRootCommand_GetCobraCommand(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Get cobra command
 		cobraCmd := rootCmd.GetCobraCommand()
 		require.NotNil(t, cobraCmd)
-		
+
 		// Verify basic properties
 		assert.Equal(t, "cu", cobraCmd.Use)
 		assert.Contains(t, cobraCmd.Short, "GitHub CLI-inspired")
-		
+
 		// Check persistent flags
 		configFlag := cobraCmd.PersistentFlags().Lookup("config")
 		assert.NotNil(t, configFlag)
 		assert.Equal(t, "config file (default is $HOME/.config/cu/config.yml)", configFlag.Usage)
-		
+
 		debugFlag := cobraCmd.PersistentFlags().Lookup("debug")
 		assert.NotNil(t, debugFlag)
 		assert.Equal(t, "enable debug mode", debugFlag.Usage)
-		
+
 		outputFlag := cobraCmd.PersistentFlags().Lookup("output")
 		assert.NotNil(t, outputFlag)
 		assert.Equal(t, "output format (table|json|yaml|csv)", outputFlag.Usage)
@@ -128,20 +128,20 @@ func TestRootCommand_GetCobraCommand(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Get cobra command
 		cobraCmd := rootCmd.GetCobraCommand()
-		
+
 		// Verify subcommands were added
 		// Check for refactored commands
 		versionCmd, _, err := cobraCmd.Find([]string{"version"})
 		assert.NoError(t, err)
 		assert.NotNil(t, versionCmd)
-		
+
 		completionCmd, _, err := cobraCmd.Find([]string{"completion"})
 		assert.NoError(t, err)
 		assert.NotNil(t, completionCmd)
-		
+
 		configCmd, _, err := cobraCmd.Find([]string{"config"})
 		assert.NoError(t, err)
 		assert.NotNil(t, configCmd)
@@ -152,11 +152,11 @@ func TestRootCommand_GetCobraCommand(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Get cobra command twice
 		cmd1 := rootCmd.GetCobraCommand()
 		cmd2 := rootCmd.GetCobraCommand()
-		
+
 		// Should be same instance
 		assert.Same(t, cmd1, cmd2)
 	})
@@ -168,15 +168,15 @@ func TestRootCommand_AddCommand(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Create a mock command
 		mockCmd := &MockCommand{
 			name: "test",
 		}
-		
+
 		// Add command
 		rootCmd.AddCommand(mockCmd)
-		
+
 		// Verify it was added
 		assert.Contains(t, rootCmd.subcommands, mockCmd)
 	})
@@ -186,10 +186,10 @@ func TestRootCommand_AddCommand(t *testing.T) {
 		factory := New()
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// Initialize cobra command first
 		cobraCmd := rootCmd.GetCobraCommand()
-		
+
 		// Create a mock command
 		mockCmd := &MockCommand{
 			name: "test",
@@ -197,13 +197,13 @@ func TestRootCommand_AddCommand(t *testing.T) {
 				Use: "test",
 			},
 		}
-		
+
 		// Add command
 		rootCmd.AddCommand(mockCmd)
-		
+
 		// Verify it was added to both places
 		assert.Contains(t, rootCmd.subcommands, mockCmd)
-		
+
 		// Check cobra command was added
 		testCmd, _, err := cobraCmd.Find([]string{"test"})
 		assert.NoError(t, err)
@@ -216,10 +216,10 @@ func TestRootCommand_Execute(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		rootCmd, err := NewRootCommand(factory)
 		require.NoError(t, err)
-		
+
 		// We can't easily test Execute() as it calls cobra's Execute
 		// which processes os.Args. Instead we verify the setup is correct
 		cobraCmd := rootCmd.GetCobraCommand()

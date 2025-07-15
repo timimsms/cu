@@ -15,17 +15,17 @@ func TestConfigCommand(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Execute without subcommand
 		err = cmd.Execute(context.Background(), []string{})
 		assert.Error(t, err)
@@ -36,16 +36,16 @@ func TestConfigCommand(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute with unknown subcommand
 		err = cmd.Execute(context.Background(), []string{"unknown"})
 		assert.Error(t, err)
@@ -58,30 +58,30 @@ func TestConfigCommand_List(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		// Mock config values
 		mockConfig.Set("output", "table")
 		mockConfig.Set("default_list", "list123")
 		mockConfig.Set("debug", true)
 		mockConfig.Set("test_number", 42)
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.NoError(t, err)
-		
+
 		// Verify output
 		assert.Len(t, mockOutput.InfoMsg, 1)
 		output := mockOutput.InfoMsg[0]
-		
+
 		// Check all settings are present
 		assert.Contains(t, output, "output=table")
 		assert.Contains(t, output, "default_list=list123")
@@ -94,20 +94,20 @@ func TestConfigCommand_List(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		// Empty config
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.NoError(t, err)
-		
+
 		// Should output empty string
 		assert.Len(t, mockOutput.InfoMsg, 1)
 		assert.Equal(t, "", mockOutput.InfoMsg[0])
@@ -120,20 +120,20 @@ func TestConfigCommand_Get(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("test_key", "test_value")
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"get", "test_key"})
 		assert.NoError(t, err)
-		
+
 		// Verify output
 		assert.Len(t, mockOutput.InfoMsg, 1)
 		assert.Equal(t, "test_value", mockOutput.InfoMsg[0])
@@ -143,16 +143,16 @@ func TestConfigCommand_Get(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"get", "nonexistent"})
 		assert.Error(t, err)
@@ -164,7 +164,7 @@ func TestConfigCommand_Get(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"get"})
 		assert.Error(t, err)
@@ -177,20 +177,20 @@ func TestConfigCommand_Set(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"set", "key1", "value1"})
 		assert.NoError(t, err)
-		
+
 		// Verify
 		assert.Equal(t, "value1", mockConfig.Get("key1"))
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Set key1 to value1")
@@ -200,20 +200,20 @@ func TestConfigCommand_Set(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"set", "debug", "true"})
 		assert.NoError(t, err)
-		
+
 		// Verify
 		assert.Equal(t, true, mockConfig.Get("debug"))
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Set debug to true")
@@ -223,20 +223,20 @@ func TestConfigCommand_Set(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"set", "debug", "FALSE"})
 		assert.NoError(t, err)
-		
+
 		// Verify - should be lowercase
 		assert.Equal(t, false, mockConfig.Get("debug"))
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Set debug to FALSE")
@@ -248,20 +248,20 @@ func TestConfigCommand_Set(t *testing.T) {
 		mockConfig := &MockConfigWithSave{
 			MockConfigProvider: mocks.NewMockConfigProvider(),
 		}
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"set", "key", "value"})
 		assert.NoError(t, err)
-		
+
 		// Verify save was called
 		assert.True(t, mockConfig.SaveCalled)
 	})
@@ -273,16 +273,16 @@ func TestConfigCommand_Set(t *testing.T) {
 			MockConfigProvider: mocks.NewMockConfigProvider(),
 			SaveError:          fmt.Errorf("save failed"),
 		}
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"set", "key", "value"})
 		assert.Error(t, err)
@@ -294,7 +294,7 @@ func TestConfigCommand_Set(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute with one arg
 		err = cmd.Execute(context.Background(), []string{"set", "key"})
 		assert.Error(t, err)
@@ -310,20 +310,20 @@ func TestConfigCommand_Init(t *testing.T) {
 			MockConfigProvider:  mocks.NewMockConfigProvider(),
 			HasProjectConfigVal: false,
 		}
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"init"})
 		assert.NoError(t, err)
-		
+
 		// Verify
 		assert.True(t, mockConfig.InitProjectConfigCalled)
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Initialized project configuration")
@@ -334,20 +334,20 @@ func TestConfigCommand_Init(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := &MockConfigWithProject{
-			MockConfigProvider:     mocks.NewMockConfigProvider(),
-			HasProjectConfigVal:    true,
-			ProjectConfigPath:      "/path/to/.cu.yml",
+			MockConfigProvider:  mocks.NewMockConfigProvider(),
+			HasProjectConfigVal: true,
+			ProjectConfigPath:   "/path/to/.cu.yml",
 		}
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"init"})
 		assert.Error(t, err)
@@ -358,16 +358,16 @@ func TestConfigCommand_Init(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"init"})
 		assert.Error(t, err)
@@ -384,20 +384,20 @@ func TestConfigCommand_Show(t *testing.T) {
 		mockConfig.Set("default_list", "list456")
 		mockConfig.Set("output", "table")
 		mockConfig.Set("debug", true)
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"show"})
 		assert.NoError(t, err)
-		
+
 		// Verify output
 		assert.Len(t, mockOutput.InfoMsg, 1)
 		output := mockOutput.InfoMsg[0]
@@ -417,20 +417,20 @@ func TestConfigCommand_Show(t *testing.T) {
 		}
 		mockConfig.Set("default_space", "space123")
 		mockConfig.Set("output", "table")
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"show"})
 		assert.NoError(t, err)
-		
+
 		// Verify output
 		assert.Len(t, mockOutput.InfoMsg, 1)
 		output := mockOutput.InfoMsg[0]
@@ -445,20 +445,20 @@ func TestConfigCommand_Show(t *testing.T) {
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("output", "json")
 		mockConfig.Set("default_space", "space123")
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"show"})
 		assert.NoError(t, err)
-		
+
 		// Verify structured output was called
 		assert.Len(t, mockOutput.Printed, 1)
 		data := mockOutput.Printed[0].(map[string]interface{})
@@ -471,13 +471,13 @@ func TestConfigCommand_CobraIntegration(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		cobraCmd := cmd.GetCobraCommand()
 		require.NotNil(t, cobraCmd)
-		
+
 		assert.Equal(t, "config", cobraCmd.Use)
 		assert.Equal(t, "Manage cu configuration", cobraCmd.Short)
-		
+
 		// Check subcommands
 		subcommands := []string{"list", "get", "set", "init", "show"}
 		for _, sub := range subcommands {

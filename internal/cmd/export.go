@@ -12,7 +12,10 @@ import (
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/api"
+	"github.com/tim/cu/internal/auth"
+	"github.com/tim/cu/internal/interfaces"
 )
 
 var exportCmd = &cobra.Command{
@@ -58,18 +61,15 @@ Examples:
 		}
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get tasks based on parameters
 		var tasks []clickup.Task
 
 		if listID != "" {
 			// Get tasks from specific list
-			queryOpts := &api.TaskQueryOptions{}
+			queryOpts := &interfaces.TaskQueryOptions{}
 			if status != "" {
 				queryOpts.Statuses = []string{status}
 			}
@@ -93,6 +93,7 @@ Examples:
 				}
 			}
 
+			var err error
 			tasks, err = client.GetTasks(ctx, listID, queryOpts)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to get tasks: %v\n", err)
@@ -122,7 +123,7 @@ Examples:
 					for _, folder := range folders {
 						lists, _ := client.GetLists(ctx, folder.ID)
 						for _, list := range lists {
-							listTasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
+							listTasks, err := client.GetTasks(ctx, list.ID, &interfaces.TaskQueryOptions{})
 							if err == nil {
 								tasks = append(tasks, listTasks...)
 							}
@@ -132,7 +133,7 @@ Examples:
 					// Get folderless lists
 					lists, _ := client.GetFolderlessLists(ctx, space.ID)
 					for _, list := range lists {
-						listTasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
+						listTasks, err := client.GetTasks(ctx, list.ID, &interfaces.TaskQueryOptions{})
 						if err == nil {
 							tasks = append(tasks, listTasks...)
 						}
@@ -165,6 +166,7 @@ Examples:
 		}
 
 		// Export based on format
+		var err error
 		switch format {
 		case "csv":
 			err = exportTasksToCSV(output, tasks)

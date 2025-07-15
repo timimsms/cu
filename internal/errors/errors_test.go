@@ -15,7 +15,7 @@ func TestAPIError(t *testing.T) {
 		assert.Equal(t, "Not Found", err.Message)
 		assert.Equal(t, "Resource not found", err.Details)
 	})
-	
+
 	t.Run("APIError formats message", func(t *testing.T) {
 		err := NewAPIError(500, "Internal Server Error", "Database connection failed")
 		assert.Contains(t, err.Error(), "500")
@@ -32,13 +32,13 @@ func TestUserError(t *testing.T) {
 		assert.Equal(t, "Try logging in again", err.Suggestion)
 		assert.Equal(t, ErrInvalidToken, err.Err)
 	})
-	
+
 	t.Run("UserError formats with suggestion", func(t *testing.T) {
 		err := NewUserError("Authentication failed", "Run 'cu auth login'", ErrNotAuthenticated)
 		assert.Contains(t, err.Error(), "Authentication failed")
 		assert.Contains(t, err.Error(), "Suggestion: Run 'cu auth login'")
 	})
-	
+
 	t.Run("UserError without suggestion", func(t *testing.T) {
 		err := NewUserError("Something went wrong", "", nil)
 		assert.Equal(t, "Something went wrong", err.Error())
@@ -47,9 +47,9 @@ func TestUserError(t *testing.T) {
 
 func TestHandleHTTPError(t *testing.T) {
 	tests := []struct {
-		name       string
-		statusCode int
-		body       string
+		name        string
+		statusCode  int
+		body        string
 		expectedMsg string
 	}{
 		{
@@ -83,7 +83,7 @@ func TestHandleHTTPError(t *testing.T) {
 			expectedMsg: "ClickUp service error",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := HandleHTTPError(tt.statusCode, tt.body)
@@ -91,7 +91,7 @@ func TestHandleHTTPError(t *testing.T) {
 			assert.Contains(t, err.Error(), tt.expectedMsg)
 		})
 	}
-	
+
 	t.Run("200 OK returns nil", func(t *testing.T) {
 		err := HandleHTTPError(200, "success")
 		assert.NoError(t, err)
@@ -145,7 +145,7 @@ func TestIsRetryable(t *testing.T) {
 			expected: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsRetryable(tt.err)

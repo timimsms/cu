@@ -21,9 +21,9 @@ type ConfigCommand struct {
 func (f *Factory) createConfigCommand() interfaces.Command {
 	cmd := &ConfigCommand{
 		Command: &base.Command{
-			Use:   "config",
-			Short: "Manage cu configuration",
-			Long:  `View and modify cu configuration settings.`,
+			Use:    "config",
+			Short:  "Manage cu configuration",
+			Long:   `View and modify cu configuration settings.`,
 			Output: f.output,
 			Config: f.config,
 		},
@@ -63,7 +63,7 @@ func (c *ConfigCommand) run(ctx context.Context, args []string) error {
 // runList lists all configuration settings
 func (c *ConfigCommand) runList(ctx context.Context, args []string) error {
 	settings := c.Config.AllSettings()
-	
+
 	// Sort keys for consistent output
 	keys := make([]string, 0, len(settings))
 	for k := range settings {
@@ -154,7 +154,7 @@ You can now use project-specific settings such as:
   - Team member aliases
 
 Edit .cu.yml to customize your project settings.`)
-	
+
 	return nil
 }
 
@@ -178,11 +178,11 @@ func (c *ConfigCommand) runShow(ctx context.Context, args []string) error {
 			"default_list":  c.Config.GetString("default_list"),
 			"output":        c.Config.GetString("output"),
 		}
-		
+
 		if pathGetter, ok := c.Config.(interface{ GetProjectConfigPath() string }); ok {
 			projectData["config_path"] = pathGetter.GetProjectConfigPath()
 		}
-		
+
 		configData["project"] = projectData
 	}
 
@@ -215,7 +215,7 @@ func (c *ConfigCommand) runShow(ctx context.Context, args []string) error {
 // GetCobraCommand returns the cobra command with subcommands
 func (c *ConfigCommand) GetCobraCommand() *cobra.Command {
 	cmd := c.Command.GetCobraCommand()
-	
+
 	// Add subcommands
 	listCmd := &cobra.Command{
 		Use:   "list",
@@ -226,7 +226,7 @@ func (c *ConfigCommand) GetCobraCommand() *cobra.Command {
 			return c.runList(cmd.Context(), args)
 		},
 	}
-	
+
 	getCmd := &cobra.Command{
 		Use:   "get <key>",
 		Short: "Get a configuration value",
@@ -236,7 +236,7 @@ func (c *ConfigCommand) GetCobraCommand() *cobra.Command {
 			return c.runGet(cmd.Context(), args)
 		},
 	}
-	
+
 	setCmd := &cobra.Command{
 		Use:   "set <key> <value>",
 		Short: "Set a configuration value",
@@ -246,7 +246,7 @@ func (c *ConfigCommand) GetCobraCommand() *cobra.Command {
 			return c.runSet(cmd.Context(), args)
 		},
 	}
-	
+
 	initCmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize project configuration",
@@ -256,7 +256,7 @@ func (c *ConfigCommand) GetCobraCommand() *cobra.Command {
 			return c.runInit(cmd.Context(), args)
 		},
 	}
-	
+
 	showCmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show current configuration",
@@ -266,8 +266,8 @@ func (c *ConfigCommand) GetCobraCommand() *cobra.Command {
 			return c.runShow(cmd.Context(), args)
 		},
 	}
-	
+
 	cmd.AddCommand(listCmd, getCmd, setCmd, initCmd, showCmd)
-	
+
 	return cmd
 }

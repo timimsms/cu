@@ -60,14 +60,14 @@ func TestVersionCommand(t *testing.T) {
 		assert.Len(t, mockOutput.Printed, 1)
 		data, ok := mockOutput.Printed[0].(map[string]string)
 		require.True(t, ok, "Expected map[string]string output")
-		
+
 		assert.Equal(t, version.Version, data["version"])
 		assert.Equal(t, version.Commit, data["commit"])
 		assert.Equal(t, version.Date, data["date"])
 		assert.Equal(t, version.BuiltBy, data["builtBy"])
 		assert.NotEmpty(t, data["goVersion"])
 		assert.NotEmpty(t, data["platform"])
-		
+
 		assert.Empty(t, mockOutput.InfoMsg) // No text output
 	})
 
@@ -94,7 +94,7 @@ func TestVersionCommand(t *testing.T) {
 		assert.Len(t, mockOutput.Printed, 1)
 		data, ok := mockOutput.Printed[0].(map[string]string)
 		require.True(t, ok, "Expected map[string]string output")
-		
+
 		assert.Equal(t, version.Version, data["version"])
 		assert.Empty(t, mockOutput.InfoMsg) // No text output
 	})
@@ -138,7 +138,7 @@ func TestVersionCommand(t *testing.T) {
 		// Get cobra command
 		cobraCmd := cmd.GetCobraCommand()
 		require.NotNil(t, cobraCmd)
-		
+
 		assert.Equal(t, "version", cobraCmd.Use)
 		assert.Equal(t, "Show cu version information", cobraCmd.Short)
 		assert.Contains(t, cobraCmd.Long, "Display the version")
@@ -148,11 +148,11 @@ func TestVersionCommand(t *testing.T) {
 func TestVersionCommandFactory(t *testing.T) {
 	t.Run("create version command", func(t *testing.T) {
 		factory := New()
-		
+
 		cmd, err := factory.CreateCommand("version")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Verify it's a VersionCommand
 		_, ok := cmd.(*VersionCommand)
 		assert.True(t, ok, "Expected VersionCommand type")
@@ -160,7 +160,7 @@ func TestVersionCommandFactory(t *testing.T) {
 
 	t.Run("unknown command error", func(t *testing.T) {
 		factory := New()
-		
+
 		cmd, err := factory.CreateCommand("unknown")
 		assert.Error(t, err)
 		assert.Nil(t, cmd)

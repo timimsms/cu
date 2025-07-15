@@ -17,12 +17,12 @@ type Factory struct {
 // New creates a new command factory
 func New(options ...Option) *Factory {
 	f := &Factory{}
-	
+
 	// Apply options
 	for _, opt := range options {
 		opt(f)
 	}
-	
+
 	return f
 }
 
@@ -92,7 +92,5 @@ func (f *Factory) CreateCommand(name string) (interfaces.Command, error) {
 // when we refactor each command
 
 // Auth command is implemented in auth.go
-
-
 
 // List command is implemented in list.go

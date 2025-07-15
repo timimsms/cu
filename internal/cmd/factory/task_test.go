@@ -18,17 +18,17 @@ func TestTaskCommand(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Execute without subcommand
 		err = cmd.Execute(context.Background(), []string{})
 		assert.Error(t, err)
@@ -40,7 +40,7 @@ func TestTaskCommand(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute with unknown subcommand
 		err = cmd.Execute(context.Background(), []string{"unknown"})
 		assert.Error(t, err)
@@ -56,13 +56,13 @@ func TestTaskCommand_List(t *testing.T) {
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("default_list", "list123")
 		mockConfig.Set("output", "table")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		mockTasks := []clickup.Task{
 			{
@@ -87,15 +87,15 @@ func TestTaskCommand_List(t *testing.T) {
 			assert.Equal(t, "list123", listID)
 			return mockTasks, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.NoError(t, err)
-		
+
 		// Verify output was called
 		assert.Len(t, mockOutput.Printed, 1)
 		// Output should have task rows
@@ -108,17 +108,17 @@ func TestTaskCommand_List(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		// No default list set
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute list without list ID
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.Error(t, err)
@@ -131,22 +131,22 @@ func TestTaskCommand_List(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("default_list", "list123")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API error
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, options *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 			return nil, fmt.Errorf("API error")
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.Error(t, err)
@@ -161,13 +161,13 @@ func TestTaskCommand_Create(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("default_list", "list123")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		createdTask := &clickup.Task{
 			ID:   "task123",
@@ -178,15 +178,15 @@ func TestTaskCommand_Create(t *testing.T) {
 			assert.Equal(t, "New Task", options.Name)
 			return createdTask, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute create subcommand
 		err = cmd.Execute(context.Background(), []string{"create", "New Task"})
 		assert.NoError(t, err)
-		
+
 		// Verify success message
 		assert.Len(t, mockOutput.SuccessMsg, 1)
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Created task: New Task (task123)")
@@ -197,14 +197,14 @@ func TestTaskCommand_Create(t *testing.T) {
 		mockAPI := &MockAPIClient{}
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("default_list", "list123")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithConfigProvider(mockConfig),
 		)
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute create without name
 		err = cmd.Execute(context.Background(), []string{"create"})
 		assert.Error(t, err)
@@ -217,13 +217,13 @@ func TestTaskCommand_Create(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("default_list", "list123")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		mockAPI.CreateTaskFunc = func(ctx context.Context, listID string, options *interfaces.TaskCreateOptions) (*clickup.Task, error) {
 			// Verify options
@@ -233,21 +233,21 @@ func TestTaskCommand_Create(t *testing.T) {
 			assert.Contains(t, options.Tags, "important")
 			return &clickup.Task{ID: "task456", Name: options.Name}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Get cobra command to set flags
 		cobraCmd := cmd.GetCobraCommand()
 		createCmd, _, err := cobraCmd.Find([]string{"create"})
 		require.NoError(t, err)
-		
+
 		// Set flags
 		createCmd.Flags().Set("description", "Task description")
 		createCmd.Flags().Set("priority", "high")
 		createCmd.Flags().Set("tag", "important")
-		
+
 		// Execute
 		err = createCmd.RunE(createCmd, []string{"Task with options"})
 		assert.NoError(t, err)
@@ -261,17 +261,17 @@ func TestTaskCommand_View(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("output", "table")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		mockTask := &clickup.Task{
-			ID:   "task123",
-			Name: "Test Task",
+			ID:          "task123",
+			Name:        "Test Task",
 			Description: "Task description",
 			Status: clickup.TaskStatus{
 				Status: "open",
@@ -284,15 +284,15 @@ func TestTaskCommand_View(t *testing.T) {
 			assert.Equal(t, "task123", taskID)
 			return mockTask, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute view subcommand
 		err = cmd.Execute(context.Background(), []string{"view", "task123"})
 		assert.NoError(t, err)
-		
+
 		// Verify output
 		assert.Contains(t, mockOutput.InfoMsg, "Task: Test Task")
 		assert.Contains(t, mockOutput.InfoMsg, "ID: task123")
@@ -304,7 +304,7 @@ func TestTaskCommand_View(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute view without ID
 		err = cmd.Execute(context.Background(), []string{"view"})
 		assert.Error(t, err)
@@ -318,13 +318,13 @@ func TestTaskCommand_Update(t *testing.T) {
 		mockAPI := &MockAPIClient{}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		updatedTask := &clickup.Task{
 			ID:   "task123",
@@ -335,23 +335,23 @@ func TestTaskCommand_Update(t *testing.T) {
 			assert.Equal(t, "Updated Task", options.Name)
 			return updatedTask, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Get cobra command to set flags
 		cobraCmd := cmd.GetCobraCommand()
 		updateCmd, _, err := cobraCmd.Find([]string{"update"})
 		require.NoError(t, err)
-		
+
 		// Set flags
 		updateCmd.Flags().Set("name", "Updated Task")
-		
+
 		// Execute
 		err = updateCmd.RunE(updateCmd, []string{"task123"})
 		assert.NoError(t, err)
-		
+
 		// Verify success message
 		assert.Len(t, mockOutput.SuccessMsg, 1)
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Updated task: Updated Task")
@@ -363,12 +363,12 @@ func TestTaskCommand_Update(t *testing.T) {
 		factory := New(WithAPIClient(mockAPI))
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Get cobra command
 		cobraCmd := cmd.GetCobraCommand()
 		updateCmd, _, err := cobraCmd.Find([]string{"update"})
 		require.NoError(t, err)
-		
+
 		// Execute without any update flags
 		err = updateCmd.RunE(updateCmd, []string{"task123"})
 		assert.Error(t, err)
@@ -381,27 +381,27 @@ func TestTaskCommand_Close(t *testing.T) {
 		// Setup
 		mockAPI := &MockAPIClient{}
 		mockOutput := mocks.NewMockOutputFormatter()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 		)
-		
+
 		// Mock API response
 		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, options *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			assert.Equal(t, "task123", taskID)
 			assert.Equal(t, "closed", options.Status)
 			return &clickup.Task{ID: taskID, Name: "Closed Task"}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute close subcommand
 		err = cmd.Execute(context.Background(), []string{"close", "task123"})
 		assert.NoError(t, err)
-		
+
 		// Verify success message
 		assert.Len(t, mockOutput.SuccessMsg, 1)
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Closed task: Closed Task")
@@ -413,27 +413,27 @@ func TestTaskCommand_Reopen(t *testing.T) {
 		// Setup
 		mockAPI := &MockAPIClient{}
 		mockOutput := mocks.NewMockOutputFormatter()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 		)
-		
+
 		// Mock API response
 		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, options *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 			assert.Equal(t, "task123", taskID)
 			assert.Equal(t, "open", options.Status)
 			return &clickup.Task{ID: taskID, Name: "Reopened Task"}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute reopen subcommand
 		err = cmd.Execute(context.Background(), []string{"reopen", "task123"})
 		assert.NoError(t, err)
-		
+
 		// Verify success message
 		assert.Len(t, mockOutput.SuccessMsg, 1)
 		assert.Contains(t, mockOutput.SuccessMsg[0], "Reopened task: Reopened Task")
@@ -447,7 +447,7 @@ func TestTaskCommand_Search(t *testing.T) {
 		factory := New(WithAPIClient(mockAPI))
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Execute search
 		err = cmd.Execute(context.Background(), []string{"search", "query"})
 		assert.Error(t, err)
@@ -463,23 +463,23 @@ func TestTaskCommand_Helpers(t *testing.T) {
 
 	t.Run("parse due dates", func(t *testing.T) {
 		now := time.Now()
-		
+
 		// Test relative dates
 		today, err := parseDueDate("today")
 		assert.NoError(t, err)
 		assert.Equal(t, now.Day(), today.Day())
-		
+
 		tomorrow, err := parseDueDate("tomorrow")
 		assert.NoError(t, err)
 		assert.Equal(t, now.AddDate(0, 0, 1).Day(), tomorrow.Day())
-		
+
 		// Test absolute date
 		specific, err := parseDueDate("2024-12-25")
 		assert.NoError(t, err)
 		assert.Equal(t, 25, specific.Day())
 		assert.Equal(t, time.December, specific.Month())
 		assert.Equal(t, 2024, specific.Year())
-		
+
 		// Test invalid date
 		_, err = parseDueDate("invalid")
 		assert.Error(t, err)

@@ -10,8 +10,11 @@ import (
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/api"
+	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/config"
+	"github.com/tim/cu/internal/interfaces"
 	"github.com/tim/cu/internal/output"
 )
 
@@ -29,11 +32,8 @@ var taskListCmd = &cobra.Command{
 		ctx := context.Background()
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get flags
 		listID, _ := cmd.Flags().GetString("list")
@@ -66,7 +66,7 @@ var taskListCmd = &cobra.Command{
 		}
 
 		// Build query options
-		queryOpts := &api.TaskQueryOptions{
+		queryOpts := &interfaces.TaskQueryOptions{
 			Page: page,
 		}
 
@@ -160,11 +160,8 @@ var taskCreateCmd = &cobra.Command{
 		}
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get flags
 		listID, _ := cmd.Flags().GetString("list")
@@ -185,7 +182,7 @@ var taskCreateCmd = &cobra.Command{
 		}
 
 		// Build task creation options
-		createOpts := &api.TaskCreateOptions{
+		createOpts := &interfaces.TaskCreateOptions{
 			Name:        name,
 			Description: description,
 			Status:      status,
@@ -241,11 +238,8 @@ var taskViewCmd = &cobra.Command{
 		taskID := args[0]
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get task
 		task, err := client.GetTask(ctx, taskID)
@@ -324,11 +318,8 @@ var taskUpdateCmd = &cobra.Command{
 		taskID := args[0]
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get flags
 		name, _ := cmd.Flags().GetString("name")
@@ -341,7 +332,7 @@ var taskUpdateCmd = &cobra.Command{
 		tags, _ := cmd.Flags().GetStringSlice("tag")
 
 		// Build update options
-		updateOpts := &api.TaskUpdateOptions{
+		updateOpts := &interfaces.TaskUpdateOptions{
 			Name:            name,
 			Description:     description,
 			Status:          status,
@@ -393,16 +384,13 @@ var taskCloseCmd = &cobra.Command{
 		taskID := args[0]
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Find a closed status in the same list
 		// For now, we'll use "complete" as the closed status
 		// TODO: Query the list's statuses to find the actual closed status
-		updateOpts := &api.TaskUpdateOptions{
+		updateOpts := &interfaces.TaskUpdateOptions{
 			Status: "complete",
 		}
 
@@ -441,11 +429,8 @@ var taskReopenCmd = &cobra.Command{
 		taskID := args[0]
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get the status flag or use default
 		status, _ := cmd.Flags().GetString("status")
@@ -454,7 +439,7 @@ var taskReopenCmd = &cobra.Command{
 		}
 
 		// Update task
-		updateOpts := &api.TaskUpdateOptions{
+		updateOpts := &interfaces.TaskUpdateOptions{
 			Status: status,
 		}
 
@@ -493,11 +478,8 @@ var taskSearchCmd = &cobra.Command{
 		query := strings.Join(args, " ")
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get search scope from flags
 		spaceID, _ := cmd.Flags().GetString("space")
@@ -522,7 +504,7 @@ var taskSearchCmd = &cobra.Command{
 
 		// If specific list is provided, search only that list
 		if listID != "" {
-			tasks, err := client.GetTasks(ctx, listID, &api.TaskQueryOptions{})
+			tasks, err := client.GetTasks(ctx, listID, &interfaces.TaskQueryOptions{})
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to get tasks from list %s: %v\n", listID, err)
 				os.Exit(1)
@@ -559,7 +541,7 @@ var taskSearchCmd = &cobra.Command{
 						}
 
 						for _, list := range lists {
-							tasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
+							tasks, err := client.GetTasks(ctx, list.ID, &interfaces.TaskQueryOptions{})
 							if err != nil {
 								searchErrors = append(searchErrors, fmt.Sprintf("Failed to get tasks for list %s: %v", list.Name, err))
 								continue
@@ -576,7 +558,7 @@ var taskSearchCmd = &cobra.Command{
 					}
 
 					for _, list := range lists {
-						tasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
+						tasks, err := client.GetTasks(ctx, list.ID, &interfaces.TaskQueryOptions{})
 						if err != nil {
 							searchErrors = append(searchErrors, fmt.Sprintf("Failed to get tasks for list %s: %v", list.Name, err))
 							continue

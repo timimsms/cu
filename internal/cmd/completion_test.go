@@ -15,11 +15,11 @@ func TestCompletionCommand_Structure(t *testing.T) {
 		assert.NotEmpty(t, cmd.Short)
 		assert.NotEmpty(t, cmd.Long)
 		assert.NotNil(t, cmd.Run)
-		
+
 		// Should accept exactly 1 argument
 		args := cmd.Args
 		assert.NotNil(t, args)
-		
+
 		// Check valid args
 		assert.Contains(t, cmd.ValidArgs, "bash")
 		assert.Contains(t, cmd.ValidArgs, "zsh")

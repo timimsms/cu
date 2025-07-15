@@ -17,7 +17,7 @@ import (
 type TaskCommand struct {
 	*base.Command
 	subcommands map[string]func(context.Context, []string) error
-	
+
 	// Flags
 	listID      string
 	spaceID     string
@@ -41,9 +41,9 @@ type TaskCommand struct {
 func (f *Factory) createTaskCommand() interfaces.Command {
 	cmd := &TaskCommand{
 		Command: &base.Command{
-			Use:   "task",
-			Short: "Manage tasks",
-			Long:  `Create, view, update, and manage ClickUp tasks.`,
+			Use:    "task",
+			Short:  "Manage tasks",
+			Long:   `Create, view, update, and manage ClickUp tasks.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -240,13 +240,13 @@ func (c *TaskCommand) runCreate(ctx context.Context, args []string) error {
 	}
 
 	c.Output.PrintSuccess(fmt.Sprintf("Created task: %s (%s)", task.Name, task.ID))
-	
+
 	// Output task details if requested
 	format := c.Config.GetString("output")
 	if format != "table" {
 		return c.Output.Print(task)
 	}
-	
+
 	return nil
 }
 
@@ -277,19 +277,19 @@ func (c *TaskCommand) runView(ctx context.Context, args []string) error {
 		c.Output.PrintInfo(fmt.Sprintf("ID: %s", task.ID))
 		c.Output.PrintInfo(fmt.Sprintf("Status: %s", c.getTaskStatus(task)))
 		c.Output.PrintInfo(fmt.Sprintf("Priority: %s", c.getTaskPriority(task)))
-		
+
 		if task.Description != "" {
 			c.Output.PrintInfo(fmt.Sprintf("\nDescription:\n%s", task.Description))
 		}
-		
+
 		if len(task.Assignees) > 0 {
 			c.Output.PrintInfo(fmt.Sprintf("\nAssignees: %s", c.getTaskAssignee(task)))
 		}
-		
+
 		if task.DueDate != nil {
 			c.Output.PrintInfo(fmt.Sprintf("Due: %s", c.getTaskDueDate(task)))
 		}
-		
+
 		return nil
 	}
 
@@ -557,7 +557,7 @@ func (c *TaskCommand) GetCobraCommand() *cobra.Command {
 			c.order, _ = cmd.Flags().GetString("order")
 			c.limit, _ = cmd.Flags().GetInt("limit")
 			c.page, _ = cmd.Flags().GetInt("page")
-			
+
 			return c.runList(cmd.Context(), args)
 		},
 	}
@@ -590,7 +590,7 @@ func (c *TaskCommand) GetCobraCommand() *cobra.Command {
 			c.priority, _ = cmd.Flags().GetString("priority")
 			c.due, _ = cmd.Flags().GetString("due")
 			c.tags, _ = cmd.Flags().GetStringSlice("tag")
-			
+
 			return c.runCreate(cmd.Context(), args)
 		},
 	}
@@ -628,7 +628,7 @@ func (c *TaskCommand) GetCobraCommand() *cobra.Command {
 			c.status, _ = cmd.Flags().GetString("status")
 			c.priority, _ = cmd.Flags().GetString("priority")
 			c.due, _ = cmd.Flags().GetString("due")
-			
+
 			return c.runUpdate(cmd.Context(), args)
 		},
 	}
@@ -712,7 +712,7 @@ func parseClickUpTime(timeStr string) (time.Time, error) {
 	if _, err := fmt.Sscanf(timeStr, "%d", &ts); err == nil {
 		return time.Unix(ts/1000, (ts%1000)*1000000), nil
 	}
-	
+
 	// Fallback to RFC3339
 	return time.Parse(time.RFC3339, timeStr)
 }

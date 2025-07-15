@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/raksul/go-clickup/clickup"
@@ -22,7 +21,7 @@ func TestExportCommand(t *testing.T) {
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Execute without subcommand
 		err = cmd.Execute(context.Background(), []string{})
 		assert.Error(t, err)
@@ -34,7 +33,7 @@ func TestExportCommand(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
-		
+
 		// Execute with unknown subcommand
 		err = cmd.Execute(context.Background(), []string{"unknown"})
 		assert.Error(t, err)
@@ -48,13 +47,13 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock tasks
 		mockTasks := []clickup.Task{
 			{
@@ -78,29 +77,29 @@ func TestExportCommand_Tasks(t *testing.T) {
 				DateUpdated: "1234567898",
 			},
 		}
-		
+
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			assert.Equal(t, "list123", listID)
 			return mockTasks, nil
 		}
-		
+
 		// Create command and cast to ExportCommand
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
-		
+
 		// Set output to buffer
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Set flags
 		exportCmd.listID = "list123"
 		exportCmd.format = "csv"
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.NoError(t, err)
-		
+
 		// Verify CSV output
 		csvOutput := outputBuffer.String()
 		assert.Contains(t, csvOutput, "ID,Name,Status,Priority,Assignees,Due Date,Created,Updated,URL")
@@ -113,13 +112,13 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock tasks
 		mockTasks := []clickup.Task{
 			{
@@ -128,28 +127,28 @@ func TestExportCommand_Tasks(t *testing.T) {
 				Status: clickup.Status{Status: "open"},
 			},
 		}
-		
+
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			return mockTasks, nil
 		}
-		
+
 		// Create command and cast to ExportCommand
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
-		
+
 		// Set output to buffer
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Set flags
 		exportCmd.listID = "list123"
 		exportCmd.format = "json"
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.NoError(t, err)
-		
+
 		// Verify JSON output
 		var tasks []clickup.Task
 		err = json.Unmarshal(outputBuffer.Bytes(), &tasks)
@@ -163,13 +162,13 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock tasks with different statuses
 		mockTasks := []clickup.Task{
 			{
@@ -186,28 +185,28 @@ func TestExportCommand_Tasks(t *testing.T) {
 				Status: clickup.Status{Status: "done"},
 			},
 		}
-		
+
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			return mockTasks, nil
 		}
-		
+
 		// Create command and cast to ExportCommand
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
-		
+
 		// Set output to buffer
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Set flags
 		exportCmd.listID = "list123"
 		exportCmd.format = "markdown"
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.NoError(t, err)
-		
+
 		// Verify Markdown output
 		mdOutput := outputBuffer.String()
 		assert.Contains(t, mdOutput, "# Task Report")
@@ -224,19 +223,19 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock tasks
 		mockTasks := []clickup.Task{
 			{ID: "task1", Status: clickup.Status{Status: "open"}},
 			{ID: "task2", Status: clickup.Status{Status: "done"}},
 		}
-		
+
 		// Track query options
 		var capturedOpts *interfaces.TaskQueryOptions
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
@@ -247,30 +246,30 @@ func TestExportCommand_Tasks(t *testing.T) {
 			}
 			return mockTasks, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
-		
+
 		// Get cobra command to set flags
 		cobraCmd := cmd.GetCobraCommand()
 		tasksCmd, _, err := cobraCmd.Find([]string{"tasks"})
 		require.NoError(t, err)
-		
+
 		// Set flags
 		tasksCmd.Flags().Set("list", "list123")
 		tasksCmd.Flags().Set("status", "open")
 		tasksCmd.Flags().Set("format", "json")
-		
+
 		// Set output to buffer
 		exportCmd := cmd.(*ExportCommand)
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Execute
 		err = tasksCmd.RunE(tasksCmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Verify status filter was applied
 		assert.NotNil(t, capturedOpts)
 		assert.Equal(t, []string{"open"}, capturedOpts.Statuses)
@@ -281,43 +280,43 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Track query options
 		var capturedOpts *interfaces.TaskQueryOptions
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			capturedOpts = opts
 			return []clickup.Task{}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
-		
+
 		// Get cobra command to set flags
 		cobraCmd := cmd.GetCobraCommand()
 		tasksCmd, _, err := cobraCmd.Find([]string{"tasks"})
 		require.NoError(t, err)
-		
+
 		// Set flags
 		tasksCmd.Flags().Set("list", "list123")
 		tasksCmd.Flags().Set("priority", "high")
 		tasksCmd.Flags().Set("format", "csv")
-		
+
 		// Set output to buffer
 		exportCmd := cmd.(*ExportCommand)
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Execute
 		err = tasksCmd.RunE(tasksCmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Verify priority filter was applied
 		assert.NotNil(t, capturedOpts)
 		assert.NotNil(t, capturedOpts.Priority)
@@ -329,72 +328,72 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock workspace and space structure
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return []clickup.Team{{ID: "workspace1"}}, nil
 		}
-		
+
 		mockAPI.GetSpacesFunc = func(ctx context.Context, workspaceID string) ([]clickup.Space, error) {
 			return []clickup.Space{
 				{ID: "space1", Name: "Test Space"},
 				{ID: "space2", Name: "Other Space"},
 			}, nil
 		}
-		
+
 		mockAPI.GetFoldersFunc = func(ctx context.Context, spaceID string) ([]clickup.Folder, error) {
 			if spaceID == "space1" {
 				return []clickup.Folder{{ID: "folder1"}}, nil
 			}
 			return []clickup.Folder{}, nil
 		}
-		
+
 		mockAPI.GetListsFunc = func(ctx context.Context, folderID string) ([]clickup.List, error) {
 			if folderID == "folder1" {
 				return []clickup.List{{ID: "list1"}}, nil
 			}
 			return []clickup.List{}, nil
 		}
-		
+
 		mockAPI.GetFolderlessListsFunc = func(ctx context.Context, spaceID string) ([]clickup.List, error) {
 			if spaceID == "space1" {
 				return []clickup.List{{ID: "list2"}}, nil
 			}
 			return []clickup.List{}, nil
 		}
-		
+
 		// Track which lists were queried
 		var queriedLists []string
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			queriedLists = append(queriedLists, listID)
 			return []clickup.Task{{ID: "task-from-" + listID}}, nil
 		}
-		
+
 		// Create command and set space filter
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
 		exportCmd.spaceID = "space1"
 		exportCmd.format = "json"
-		
+
 		// Set output to buffer
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.NoError(t, err)
-		
+
 		// Verify lists from space1 were queried
 		assert.Contains(t, queriedLists, "list1")
 		assert.Contains(t, queriedLists, "list2")
-		
+
 		// Verify JSON output contains tasks from both lists
 		var tasks []clickup.Task
 		err = json.Unmarshal(outputBuffer.Bytes(), &tasks)
@@ -407,39 +406,39 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock tasks
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			return []clickup.Task{{ID: "task1", Name: "Test"}}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
-		
+
 		// Get cobra command to set flags
 		cobraCmd := cmd.GetCobraCommand()
 		tasksCmd, _, err := cobraCmd.Find([]string{"tasks"})
 		require.NoError(t, err)
-		
+
 		// Set flags with output file
 		tasksCmd.Flags().Set("list", "list123")
 		tasksCmd.Flags().Set("format", "csv")
 		tasksCmd.Flags().Set("output", "test-export.csv")
-		
+
 		// Execute
 		err = tasksCmd.RunE(tasksCmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Verify success message
 		assert.Contains(t, mockOutput.SuccessMsg, "Exported 1 task(s) to test-export.csv")
-		
+
 		// Clean up test file
 		// Note: In a real test, we would create a temp directory
 	})
@@ -448,16 +447,16 @@ func TestExportCommand_Tasks(t *testing.T) {
 		// Setup
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		factory := New(WithAPIClient(mockAPI))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
-		
+
 		// Set invalid format
 		exportCmd.format = "invalid"
 		exportCmd.listID = "list123"
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.Error(t, err)
@@ -468,22 +467,22 @@ func TestExportCommand_Tasks(t *testing.T) {
 		// Setup
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		factory := New(WithAPIClient(mockAPI))
-		
+
 		// Mock tasks
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			return []clickup.Task{}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
-		
+
 		// Set invalid output path
 		exportCmd.outputFile = "../../../etc/passwd"
 		exportCmd.format = "csv"
 		exportCmd.listID = "list123"
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.Error(t, err)
@@ -495,7 +494,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 		factory := New() // No API client
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"tasks"})
 		assert.Error(t, err)
@@ -507,30 +506,30 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock workspace structure without specific list
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return []clickup.Team{{ID: "workspace1"}}, nil
 		}
-		
+
 		mockAPI.GetSpacesFunc = func(ctx context.Context, workspaceID string) ([]clickup.Space, error) {
 			return []clickup.Space{{ID: "space1"}}, nil
 		}
-		
+
 		mockAPI.GetFoldersFunc = func(ctx context.Context, spaceID string) ([]clickup.Folder, error) {
 			return []clickup.Folder{}, nil
 		}
-		
+
 		mockAPI.GetFolderlessListsFunc = func(ctx context.Context, spaceID string) ([]clickup.List, error) {
 			return []clickup.List{{ID: "list1"}}, nil
 		}
-		
+
 		// Return mixed tasks for client-side filtering
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			return []clickup.Task{
@@ -556,7 +555,7 @@ func TestExportCommand_Tasks(t *testing.T) {
 				},
 			}, nil
 		}
-		
+
 		// Create command with filters
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
@@ -565,15 +564,15 @@ func TestExportCommand_Tasks(t *testing.T) {
 		exportCmd.priority = "high"
 		exportCmd.assignee = "john"
 		exportCmd.format = "json"
-		
+
 		// Set output to buffer
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.NoError(t, err)
-		
+
 		// Verify only matching task was exported
 		var tasks []clickup.Task
 		err = json.Unmarshal(outputBuffer.Bytes(), &tasks)
@@ -587,35 +586,35 @@ func TestExportCommand_Tasks(t *testing.T) {
 		mockAPI := &ExportMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock tasks
 		mockAPI.GetTasksFunc = func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error) {
 			return []clickup.Task{{ID: "task1", Name: "Test"}}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
 		exportCmd := cmd.(*ExportCommand)
-		
+
 		// Set output to buffer
 		outputBuffer := &bytes.Buffer{}
 		exportCmd.SetOutputWriter(outputBuffer)
-		
+
 		// Set flags with "md" format
 		exportCmd.listID = "list123"
 		exportCmd.format = "md"
-		
+
 		// Execute
 		err = exportCmd.Execute(context.Background(), []string{"tasks"})
 		assert.NoError(t, err)
-		
+
 		// Verify markdown output was generated
 		assert.Contains(t, outputBuffer.String(), "# Task Report")
 	})
@@ -627,13 +626,13 @@ func TestExportCommand_GetCobraCommand(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("export")
 		require.NoError(t, err)
-		
+
 		// Get cobra command
 		cobraCmd := cmd.GetCobraCommand()
-		
+
 		// Verify subcommands exist
 		assert.True(t, cobraCmd.HasSubCommands())
-		
+
 		// Check tasks subcommand
 		tasksCmd, _, err := cobraCmd.Find([]string{"tasks"})
 		require.NoError(t, err)
@@ -651,7 +650,7 @@ func TestExportCommand_GetCobraCommand(t *testing.T) {
 // ExportMockAPIClient extends MockAPIClient with export-specific functions
 type ExportMockAPIClient struct {
 	*MockAPIClient
-	GetWorkspacesFunc       func(ctx context.Context) ([]clickup.Team, error)
+	GetWorkspacesFunc      func(ctx context.Context) ([]clickup.Team, error)
 	GetSpacesFunc          func(ctx context.Context, workspaceID string) ([]clickup.Space, error)
 	GetTasksFunc           func(ctx context.Context, listID string, opts *interfaces.TaskQueryOptions) (interface{}, error)
 	GetFoldersFunc         func(ctx context.Context, spaceID string) ([]clickup.Folder, error)

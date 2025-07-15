@@ -17,17 +17,17 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("interactive")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Cast to InteractiveCommand and override prompts
 		interactiveCmd := cmd.(*InteractiveCommand)
 		interactiveCmd.selectPrompt = func(label string, items []string) (int, string, error) {
@@ -36,7 +36,7 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 			}
 			return 0, "", fmt.Errorf("unexpected prompt")
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{})
 		assert.NoError(t, err)
@@ -46,11 +46,11 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("interactive")
 		require.NoError(t, err)
-		
+
 		// Cast and override prompts
 		interactiveCmd := cmd.(*InteractiveCommand)
 		callCount := 0
@@ -61,7 +61,7 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 			}
 			return 3, "Exit", nil
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{})
 		assert.NoError(t, err)
@@ -72,17 +72,17 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("interactive")
 		require.NoError(t, err)
-		
+
 		// Cast and override prompts to return error
 		interactiveCmd := cmd.(*InteractiveCommand)
 		interactiveCmd.selectPrompt = func(label string, items []string) (int, string, error) {
 			return 0, "", errors.New("user cancelled")
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{})
 		assert.Error(t, err)
@@ -98,13 +98,13 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("interactive")
 		require.NoError(t, err)
-		
+
 		interactiveCmd := cmd.(*InteractiveCommand)
-		
+
 		// Create test task
 		task := clickup.Task{
 			ID:          "task123",
@@ -119,15 +119,15 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 				{Username: "user2"},
 			},
 		}
-		
+
 		// Override input prompt to just return
 		interactiveCmd.inputPrompt = func(label string) (string, error) {
 			return "", nil
 		}
-		
+
 		// Display task details
 		interactiveCmd.displayTaskDetails(task)
-		
+
 		// Verify output
 		assert.Len(t, mockOutput.InfoMsg, 1)
 		output := mockOutput.InfoMsg[0]
@@ -142,13 +142,13 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("interactive")
 		require.NoError(t, err)
-		
+
 		interactiveCmd := cmd.(*InteractiveCommand)
-		
+
 		// Test with nil priority
 		task := clickup.Task{}
 		assert.Equal(t, "Normal", interactiveCmd.getTaskPriority(task))
-		
+
 		// Test with various priorities
 		testCases := []struct {
 			priority string
@@ -160,7 +160,7 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 			{"low", "Low"},
 			{"unknown", "Normal"},
 		}
-		
+
 		for _, tc := range testCases {
 			task.Priority = clickup.TaskPriority{Priority: tc.priority}
 			assert.Equal(t, tc.expected, interactiveCmd.getTaskPriority(task))
@@ -173,10 +173,10 @@ func TestInteractiveCommand_CobraIntegration(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("interactive")
 		require.NoError(t, err)
-		
+
 		cobraCmd := cmd.GetCobraCommand()
 		require.NotNil(t, cobraCmd)
-		
+
 		assert.Equal(t, "interactive", cobraCmd.Use)
 		assert.Equal(t, "Interactive mode for task management", cobraCmd.Short)
 		assert.Contains(t, cobraCmd.Long, "Enter interactive mode")

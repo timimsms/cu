@@ -8,7 +8,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/api"
+	"github.com/tim/cu/internal/auth"
+	"github.com/tim/cu/internal/interfaces"
 	"github.com/tim/cu/internal/output"
 )
 
@@ -66,7 +69,7 @@ Examples:
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 		// Build update options
-		updateOpts := &api.TaskUpdateOptions{
+		updateOpts := &interfaces.TaskUpdateOptions{
 			Status:          status,
 			Priority:        priority,
 			Tags:            tags,
@@ -117,11 +120,8 @@ Examples:
 		}
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Update tasks
 		var successCount, errorCount int
@@ -198,14 +198,11 @@ Examples:
 		}
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Close tasks
-		updateOpts := &api.TaskUpdateOptions{
+		updateOpts := &interfaces.TaskUpdateOptions{
 			Status: "complete",
 		}
 
@@ -284,11 +281,8 @@ Examples:
 		}
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Delete tasks
 		var successCount, errorCount int

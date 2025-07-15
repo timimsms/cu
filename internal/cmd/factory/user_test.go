@@ -18,13 +18,13 @@ func TestUserCommand(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("output", "table")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		mockWorkspaces := []clickup.Team{
 			{
@@ -42,7 +42,7 @@ func TestUserCommand(t *testing.T) {
 				Role: &[]int{1}[0], // Admin role
 			},
 		}
-		
+
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return mockWorkspaces, nil
 		}
@@ -50,16 +50,16 @@ func TestUserCommand(t *testing.T) {
 			assert.Equal(t, "workspace1", workspaceID)
 			return mockUsers, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Execute without subcommand (should default to list)
 		err = cmd.Execute(context.Background(), []string{})
 		assert.NoError(t, err)
-		
+
 		// Verify output was called
 		assert.Len(t, mockOutput.Printed, 1)
 	})
@@ -69,7 +69,7 @@ func TestUserCommand(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute with unknown subcommand
 		err = cmd.Execute(context.Background(), []string{"unknown"})
 		assert.Error(t, err)
@@ -84,13 +84,13 @@ func TestUserCommand_List(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("output", "table")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		mockWorkspaces := []clickup.Team{
 			{
@@ -116,7 +116,7 @@ func TestUserCommand_List(t *testing.T) {
 				Role: &[]int{2}[0], // Member role
 			},
 		}
-		
+
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return mockWorkspaces, nil
 		}
@@ -124,18 +124,18 @@ func TestUserCommand_List(t *testing.T) {
 			assert.Equal(t, "workspace123", workspaceID)
 			return mockUsers, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.NoError(t, err)
-		
+
 		// Verify output was called
 		assert.Len(t, mockOutput.Printed, 1)
-		
+
 		// Verify table data structure
 		if rows, ok := mockOutput.Printed[0].([]interface{}); ok {
 			assert.Len(t, rows, 2) // Two users
@@ -146,21 +146,21 @@ func TestUserCommand_List(t *testing.T) {
 		// Setup
 		mockAPI := &UserMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock empty workspaces
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return []clickup.Team{}, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.Error(t, err)
@@ -171,16 +171,16 @@ func TestUserCommand_List(t *testing.T) {
 		// Setup
 		mockAPI := &UserMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		factory := New(WithAPIClient(mockAPI))
-		
+
 		// Mock API error
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return nil, fmt.Errorf("API error")
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.Error(t, err)
@@ -191,12 +191,12 @@ func TestUserCommand_List(t *testing.T) {
 		// Setup
 		mockAPI := &UserMockAPIClient{MockAPIClient: &MockAPIClient{}}
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock workspaces success but members error
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return []clickup.Team{{ID: "workspace1", Name: "Test"}}, nil
@@ -204,11 +204,11 @@ func TestUserCommand_List(t *testing.T) {
 		mockAPI.GetWorkspaceMembersFunc = func(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error) {
 			return nil, fmt.Errorf("members API error")
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.Error(t, err)
@@ -221,13 +221,13 @@ func TestUserCommand_List(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("output", "json")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response
 		mockWorkspaces := []clickup.Team{
 			{
@@ -245,22 +245,22 @@ func TestUserCommand_List(t *testing.T) {
 				Role: &[]int{1}[0],
 			},
 		}
-		
+
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return mockWorkspaces, nil
 		}
 		mockAPI.GetWorkspaceMembersFunc = func(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error) {
 			return mockUsers, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.NoError(t, err)
-		
+
 		// Verify raw user data was output (not table rows)
 		assert.Len(t, mockOutput.Printed, 1)
 		if users, ok := mockOutput.Printed[0].([]clickup.TeamUser); ok {
@@ -275,13 +275,13 @@ func TestUserCommand_List(t *testing.T) {
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("output", "table")
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Mock API response with nil roles
 		mockWorkspaces := []clickup.Team{
 			{
@@ -299,22 +299,22 @@ func TestUserCommand_List(t *testing.T) {
 				Role: nil, // No role assigned
 			},
 		}
-		
+
 		mockAPI.GetWorkspacesFunc = func(ctx context.Context) ([]clickup.Team, error) {
 			return mockWorkspaces, nil
 		}
 		mockAPI.GetWorkspaceMembersFunc = func(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error) {
 			return mockUsers, nil
 		}
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.NoError(t, err)
-		
+
 		// Verify output was called without error
 		assert.Len(t, mockOutput.Printed, 1)
 	})
@@ -324,7 +324,7 @@ func TestUserCommand_List(t *testing.T) {
 		factory := New() // No API client
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Execute list subcommand
 		err = cmd.Execute(context.Background(), []string{"list"})
 		assert.Error(t, err)
@@ -338,13 +338,13 @@ func TestUserCommand_GetCobraCommand(t *testing.T) {
 		factory := New()
 		cmd, err := factory.CreateCommand("user")
 		require.NoError(t, err)
-		
+
 		// Get cobra command
 		cobraCmd := cmd.GetCobraCommand()
-		
+
 		// Verify subcommands exist
 		assert.True(t, cobraCmd.HasSubCommands())
-		
+
 		// Check list subcommand
 		listCmd, _, err := cobraCmd.Find([]string{"list"})
 		require.NoError(t, err)
@@ -356,8 +356,8 @@ func TestUserCommand_GetCobraCommand(t *testing.T) {
 // UserMockAPIClient extends MockAPIClient with user-specific functions
 type UserMockAPIClient struct {
 	*MockAPIClient
-	GetWorkspacesFunc        func(ctx context.Context) ([]clickup.Team, error)
-	GetWorkspaceMembersFunc  func(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error)
+	GetWorkspacesFunc       func(ctx context.Context) ([]clickup.Team, error)
+	GetWorkspaceMembersFunc func(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error)
 }
 
 func (m *UserMockAPIClient) GetWorkspaces(ctx context.Context) ([]clickup.Team, error) {

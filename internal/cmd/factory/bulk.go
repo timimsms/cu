@@ -17,12 +17,12 @@ import (
 type BulkCommand struct {
 	*base.Command
 	subcommands map[string]func(context.Context, []string) error
-	
+
 	// Input/output dependencies for testing
 	stdin  io.Reader
 	stdout io.Writer
 	stderr io.Writer
-	
+
 	// Flags
 	status          string
 	priority        string
@@ -37,9 +37,9 @@ type BulkCommand struct {
 func (f *Factory) createBulkCommand() interfaces.Command {
 	cmd := &BulkCommand{
 		Command: &base.Command{
-			Use:   "bulk",
-			Short: "Perform bulk operations on tasks",
-			Long:  `Perform bulk operations on multiple tasks at once.`,
+			Use:    "bulk",
+			Short:  "Perform bulk operations on tasks",
+			Long:   `Perform bulk operations on multiple tasks at once.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -156,7 +156,7 @@ func (c *BulkCommand) runUpdate(ctx context.Context, args []string) error {
 		_, err := c.API.UpdateTask(ctx, taskID, updateOpts)
 		if err != nil {
 			errorCount++
-			c.Output.PrintError(fmt.Sprintf("%s: %v", taskID, err))
+			c.Output.PrintError(fmt.Errorf("%s: %v", taskID, err))
 		} else {
 			successCount++
 			c.Output.PrintSuccess(taskID)
@@ -217,7 +217,7 @@ func (c *BulkCommand) runClose(ctx context.Context, args []string) error {
 		_, err := c.API.UpdateTask(ctx, taskID, updateOpts)
 		if err != nil {
 			errorCount++
-			c.Output.PrintError(fmt.Sprintf("%s: %v", taskID, err))
+			c.Output.PrintError(fmt.Errorf("%s: %v", taskID, err))
 		} else {
 			successCount++
 			c.Output.PrintSuccess(taskID)
@@ -258,13 +258,13 @@ func (c *BulkCommand) runDelete(ctx context.Context, args []string) error {
 	if !c.yes {
 		c.Output.PrintWarning(fmt.Sprintf("WARNING: This will permanently delete %d task(s).", len(taskIDs)))
 		fmt.Fprint(c.stdout, "Are you absolutely sure? Type 'delete' to confirm: ")
-		
+
 		reader := bufio.NewReader(c.stdin)
 		response, err := reader.ReadString('\n')
 		if err != nil {
 			return fmt.Errorf("failed to read confirmation: %w", err)
 		}
-		
+
 		if strings.TrimSpace(response) != "delete" {
 			c.Output.PrintInfo("Cancelled")
 			return nil
@@ -280,7 +280,7 @@ func (c *BulkCommand) runDelete(ctx context.Context, args []string) error {
 		err := c.API.DeleteTask(ctx, taskID)
 		if err != nil {
 			errorCount++
-			c.Output.PrintError(fmt.Sprintf("%s: %v", taskID, err))
+			c.Output.PrintError(fmt.Errorf("%s: %v", taskID, err))
 		} else {
 			successCount++
 			deletedTasks = append(deletedTasks, taskID)
@@ -312,7 +312,7 @@ func (c *BulkCommand) runDelete(ctx context.Context, args []string) error {
 // getTaskIDs gets task IDs from arguments or stdin
 func (c *BulkCommand) getTaskIDs(args []string) ([]string, error) {
 	taskIDs := args
-	
+
 	if len(taskIDs) == 0 {
 		// Read from stdin
 		scanner := bufio.NewScanner(c.stdin)
@@ -326,20 +326,20 @@ func (c *BulkCommand) getTaskIDs(args []string) ([]string, error) {
 			return nil, fmt.Errorf("error reading from stdin: %w", err)
 		}
 	}
-	
+
 	return taskIDs, nil
 }
 
 // confirmAction prompts the user for confirmation
 func (c *BulkCommand) confirmAction(action string) (bool, error) {
 	fmt.Fprintf(c.stdout, "Are you sure you want to %s? [y/N] ", action)
-	
+
 	reader := bufio.NewReader(c.stdin)
 	response, err := reader.ReadString('\n')
 	if err != nil {
 		return false, fmt.Errorf("failed to read confirmation: %w", err)
 	}
-	
+
 	return strings.ToLower(strings.TrimSpace(response)) == "y", nil
 }
 
@@ -380,7 +380,7 @@ Examples:
 			c.removeAssignees, _ = cmd.Flags().GetStringSlice("remove-assignee")
 			c.yes, _ = cmd.Flags().GetBool("yes")
 			c.dryRun, _ = cmd.Flags().GetBool("dry-run")
-			
+
 			return c.runUpdate(cmd.Context(), args)
 		},
 	}
@@ -400,7 +400,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Set flags from cobra command
 			c.yes, _ = cmd.Flags().GetBool("yes")
-			
+
 			return c.runClose(cmd.Context(), args)
 		},
 	}
@@ -420,7 +420,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Set flags from cobra command
 			c.yes, _ = cmd.Flags().GetBool("yes")
-			
+
 			return c.runDelete(cmd.Context(), args)
 		},
 	}

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/errors"
+	"github.com/tim/cu/internal/interfaces"
 )
 
 // Client wraps the ClickUp API client
@@ -81,6 +83,80 @@ func (c *Client) GetSpaces(ctx context.Context, workspaceID string) ([]clickup.S
 	return spaces, nil
 }
 
+// GetSpace returns a single space
+func (c *Client) GetSpace(ctx context.Context, spaceID string) (*clickup.Space, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	space, _, err := c.client.Spaces.GetSpace(ctx, spaceID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return space, nil
+}
+
+// CreateSpace creates a new space in a workspace
+func (c *Client) CreateSpace(ctx context.Context, teamID string, request *clickup.SpaceRequest) (*clickup.Space, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert teamID from string to int (required by the ClickUp API)
+	teamIDInt, err := strconv.Atoi(teamID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid team ID: %w", err)
+	}
+
+	space, _, err := c.client.Spaces.CreateSpace(ctx, teamIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return space, nil
+}
+
+// UpdateSpace updates a space
+func (c *Client) UpdateSpace(ctx context.Context, spaceID string, request *clickup.SpaceRequest) (*clickup.Space, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert spaceID from string to int (required by the ClickUp API)
+	spaceIDInt, err := strconv.Atoi(spaceID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid space ID: %w", err)
+	}
+
+	space, _, err := c.client.Spaces.UpdateSpace(ctx, spaceIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return space, nil
+}
+
+// DeleteSpace deletes a space
+func (c *Client) DeleteSpace(ctx context.Context, spaceID string) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	// Convert spaceID from string to int (required by the ClickUp API)
+	spaceIDInt, err := strconv.Atoi(spaceID)
+	if err != nil {
+		return fmt.Errorf("invalid space ID: %w", err)
+	}
+
+	_, err = c.client.Spaces.DeleteSpace(ctx, spaceIDInt)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
+}
+
 // GetFolders returns all folders in a space
 func (c *Client) GetFolders(ctx context.Context, spaceID string) ([]clickup.Folder, error) {
 	if err := c.rateLimiter.Wait(ctx); err != nil {
@@ -93,6 +169,80 @@ func (c *Client) GetFolders(ctx context.Context, spaceID string) ([]clickup.Fold
 	}
 
 	return folders, nil
+}
+
+// CreateFolder creates a new folder in a space
+func (c *Client) CreateFolder(ctx context.Context, spaceID string, request *clickup.FolderRequest) (*clickup.Folder, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert spaceID from string to int (required by the ClickUp API)
+	spaceIDInt, err := strconv.Atoi(spaceID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid space ID: %w", err)
+	}
+
+	folder, _, err := c.client.Folders.CreateFolder(ctx, spaceIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return folder, nil
+}
+
+// GetFolder returns a single folder
+func (c *Client) GetFolder(ctx context.Context, folderID string) (*clickup.Folder, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	folder, _, err := c.client.Folders.GetFolder(ctx, folderID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return folder, nil
+}
+
+// UpdateFolder updates a folder
+func (c *Client) UpdateFolder(ctx context.Context, folderID string, request *clickup.FolderRequest) (*clickup.Folder, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert folderID from string to int (required by the ClickUp API)
+	folderIDInt, err := strconv.Atoi(folderID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid folder ID: %w", err)
+	}
+
+	folder, _, err := c.client.Folders.UpdateFolder(ctx, folderIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return folder, nil
+}
+
+// DeleteFolder deletes a folder
+func (c *Client) DeleteFolder(ctx context.Context, folderID string) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	// Convert folderID from string to int (required by the ClickUp API)
+	folderIDInt, err := strconv.Atoi(folderID)
+	if err != nil {
+		return fmt.Errorf("invalid folder ID: %w", err)
+	}
+
+	_, err = c.client.Folders.DeleteFolder(ctx, folderIDInt)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
 }
 
 // GetLists returns all lists in a folder or space
@@ -109,6 +259,34 @@ func (c *Client) GetLists(ctx context.Context, folderID string) ([]clickup.List,
 	return lists, nil
 }
 
+// CreateList creates a new list in a folder
+func (c *Client) CreateList(ctx context.Context, folderID string, request *clickup.ListRequest) (*clickup.List, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	list, _, err := c.client.Lists.CreateList(ctx, folderID, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return &list, nil
+}
+
+// GetList returns a single list
+func (c *Client) GetList(ctx context.Context, listID string) (*clickup.List, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	list, _, err := c.client.Lists.GetList(ctx, listID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return &list, nil
+}
+
 // GetFolderlessLists returns lists directly in a space (not in folders)
 func (c *Client) GetFolderlessLists(ctx context.Context, spaceID string) ([]clickup.List, error) {
 	if err := c.rateLimiter.Wait(ctx); err != nil {
@@ -121,6 +299,54 @@ func (c *Client) GetFolderlessLists(ctx context.Context, spaceID string) ([]clic
 	}
 
 	return lists, nil
+}
+
+// CreateFolderlessList creates a list directly in a space (not in a folder)
+func (c *Client) CreateFolderlessList(ctx context.Context, spaceID string, request *clickup.ListRequest) (*clickup.List, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert spaceID from string to int (required by the ClickUp API)
+	spaceIDInt, err := strconv.Atoi(spaceID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid space ID: %w", err)
+	}
+
+	list, _, err := c.client.Lists.CreateFolderlessList(ctx, spaceIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return &list, nil
+}
+
+// UpdateList updates a list
+func (c *Client) UpdateList(ctx context.Context, listID string, request *clickup.ListRequest) (*clickup.List, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	list, _, err := c.client.Lists.UpdateList(ctx, listID, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return &list, nil
+}
+
+// DeleteList deletes a list
+func (c *Client) DeleteList(ctx context.Context, listID string) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	_, err := c.client.Lists.DeleteList(ctx, listID)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
 }
 
 // GetTask returns a single task
@@ -138,7 +364,7 @@ func (c *Client) GetTask(ctx context.Context, taskID string) (*clickup.Task, err
 }
 
 // GetTasks returns tasks based on query options
-func (c *Client) GetTasks(ctx context.Context, listID string, options *TaskQueryOptions) ([]clickup.Task, error) {
+func (c *Client) GetTasks(ctx context.Context, listID string, options *interfaces.TaskQueryOptions) ([]clickup.Task, error) {
 	if err := c.rateLimiter.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -193,6 +419,25 @@ func (c *Client) GetCurrentUser(ctx context.Context) (*clickup.User, error) {
 	return user, nil
 }
 
+// GetAuthorizedUser returns the authenticated user (alias for GetCurrentUser)
+func (c *Client) GetAuthorizedUser(ctx context.Context) (*clickup.User, error) {
+	return c.GetCurrentUser(ctx)
+}
+
+// GetAuthorizedTeams returns the teams the user has access to
+func (c *Client) GetAuthorizedTeams(ctx context.Context) ([]clickup.Team, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	teams, _, err := c.client.Teams.GetTeams(ctx)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return teams, nil
+}
+
 // GetWorkspaceMembers returns all members of a workspace
 func (c *Client) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error) {
 	if err := c.rateLimiter.Wait(ctx); err != nil {
@@ -226,6 +471,50 @@ func (c *Client) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([
 	}
 
 	return users, nil
+}
+
+// GetMembers returns all members of a list
+func (c *Client) GetMembers(ctx context.Context, listID string) ([]clickup.Member, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	members, _, err := c.client.Members.GetListMembers(ctx, listID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return members, nil
+}
+
+// View operations
+
+// GetViews returns all views for a list
+func (c *Client) GetViews(ctx context.Context, listID string) ([]clickup.View, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	views, _, err := c.client.Views.GetViewsOf(ctx, clickup.ListView, listID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return views, nil
+}
+
+// GetView returns a single view
+func (c *Client) GetView(ctx context.Context, viewID string) (*clickup.View, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	view, _, err := c.client.Views.GetView(ctx, viewID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return view, nil
 }
 
 // handleError converts API errors to user-friendly errors
@@ -279,7 +568,7 @@ func (o *TaskUpdateOptions) HasUpdates() bool {
 }
 
 // CreateTask creates a new task with simplified options
-func (c *Client) CreateTask(ctx context.Context, listID string, options *TaskCreateOptions) (*clickup.Task, error) {
+func (c *Client) CreateTask(ctx context.Context, listID string, options *interfaces.TaskCreateOptions) (*clickup.Task, error) {
 	if err := c.rateLimiter.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -379,7 +668,7 @@ func parseDueDate(input string) (time.Time, error) {
 }
 
 // UpdateTask updates an existing task with simplified options
-func (c *Client) UpdateTask(ctx context.Context, taskID string, options *TaskUpdateOptions) (*clickup.Task, error) {
+func (c *Client) UpdateTask(ctx context.Context, taskID string, options *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
 	if err := c.rateLimiter.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -563,6 +852,186 @@ func (c *Client) DeleteTaskComment(ctx context.Context, commentID string) error 
 	}
 
 	_, err := c.client.Comments.DeleteComment(ctx, commentIDInt)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
+}
+
+// Custom field operations
+
+// GetCustomFields returns custom fields for a list
+func (c *Client) GetCustomFields(ctx context.Context, listID string) ([]clickup.CustomField, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	fields, _, err := c.client.CustomFields.GetAccessibleCustomFields(ctx, listID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return fields, nil
+}
+
+// SetCustomFieldValue sets a custom field value for a task
+func (c *Client) SetCustomFieldValue(ctx context.Context, taskID string, fieldID string, value map[string]interface{}) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	_, err := c.client.CustomFields.SetCustomFieldValue(ctx, taskID, fieldID, value, nil)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
+}
+
+// Goal-related methods
+
+// GetGoals returns all goals for a team
+func (c *Client) GetGoals(ctx context.Context, teamID string, includeCompleted bool) ([]clickup.Goal, []clickup.GoalFolder, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, nil, err
+	}
+
+	goals, folders, _, err := c.client.Goals.GetGoals(ctx, teamID, includeCompleted)
+	if err != nil {
+		return nil, nil, c.handleError(err)
+	}
+
+	return goals, folders, nil
+}
+
+// CreateGoal creates a new goal
+func (c *Client) CreateGoal(ctx context.Context, teamID string, request *clickup.CreateGoalRequest) (*clickup.Goal, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert teamID from string to int (required by the ClickUp API)
+	teamIDInt, err := strconv.Atoi(teamID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid team ID: %w", err)
+	}
+
+	goal, _, err := c.client.Goals.CreateGoal(ctx, teamIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return goal, nil
+}
+
+// GetGoal returns a single goal
+func (c *Client) GetGoal(ctx context.Context, goalID string) (*clickup.Goal, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	goal, _, err := c.client.Goals.GetGoal(ctx, goalID)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return goal, nil
+}
+
+// UpdateGoal updates a goal
+func (c *Client) UpdateGoal(ctx context.Context, goalID string, request *clickup.UpdateGoalRequest) (*clickup.Goal, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	goal, _, err := c.client.Goals.UpdateGoal(ctx, goalID, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return goal, nil
+}
+
+// DeleteGoal deletes a goal
+func (c *Client) DeleteGoal(ctx context.Context, goalID string) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	_, err := c.client.Goals.DeleteGoal(ctx, goalID)
+	if err != nil {
+		return c.handleError(err)
+	}
+
+	return nil
+}
+
+// Webhook-related methods
+
+// GetWebhooks returns all webhooks for a team
+func (c *Client) GetWebhooks(ctx context.Context, teamID string) ([]clickup.Webhook, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert teamID from string to int (required by the ClickUp API)
+	teamIDInt, err := strconv.Atoi(teamID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid team ID: %w", err)
+	}
+
+	webhooks, _, err := c.client.Webhooks.GetWebhook(ctx, teamIDInt)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	return webhooks, nil
+}
+
+// CreateWebhook creates a new webhook
+func (c *Client) CreateWebhook(ctx context.Context, teamID string, request *clickup.WebhookRequest) (*clickup.Webhook, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	// Convert teamID from string to int (required by the ClickUp API)
+	teamIDInt, err := strconv.Atoi(teamID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid team ID: %w", err)
+	}
+
+	webhookResp, _, err := c.client.Webhooks.CreateWebhook(ctx, teamIDInt, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	// Return the webhook from the response
+	return &webhookResp.Webhook, nil
+}
+
+// UpdateWebhook updates a webhook
+func (c *Client) UpdateWebhook(ctx context.Context, webhookID string, request *clickup.WebhookRequest) (*clickup.Webhook, error) {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	webhookResp, _, err := c.client.Webhooks.UpdateWebhook(ctx, webhookID, request)
+	if err != nil {
+		return nil, c.handleError(err)
+	}
+
+	// Return the webhook from the response
+	return &webhookResp.Webhook, nil
+}
+
+// DeleteWebhook deletes a webhook
+func (c *Client) DeleteWebhook(ctx context.Context, webhookID string) error {
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	_, err := c.client.Webhooks.DeleteWebhook(ctx, webhookID)
 	if err != nil {
 		return c.handleError(err)
 	}

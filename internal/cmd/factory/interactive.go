@@ -15,8 +15,8 @@ import (
 type InteractiveCommand struct {
 	*base.Command
 	// Allow injection of promptui for testing
-	selectPrompt func(label string, items []string) (int, string, error)
-	inputPrompt  func(label string) (string, error)
+	selectPrompt  func(label string, items []string) (int, string, error)
+	inputPrompt   func(label string) (string, error)
 	confirmPrompt func(label string) (string, error)
 }
 
@@ -24,9 +24,9 @@ type InteractiveCommand struct {
 func (f *Factory) createInteractiveCommand() interfaces.Command {
 	cmd := &InteractiveCommand{
 		Command: &base.Command{
-			Use:   "interactive",
-			Short: "Interactive mode for task management",
-			Long:  `Enter interactive mode to browse and manage tasks with a user-friendly interface.`,
+			Use:    "interactive",
+			Short:  "Interactive mode for task management",
+			Long:   `Enter interactive mode to browse and manage tasks with a user-friendly interface.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -54,7 +54,7 @@ func (c *InteractiveCommand) run(ctx context.Context, args []string) error {
 			"Switch Workspace",
 			"Exit",
 		})
-		
+
 		if err != nil {
 			return fmt.Errorf("prompt failed: %w", err)
 		}
@@ -175,7 +175,7 @@ Priority: %s
 	}
 
 	c.Output.PrintInfo(details)
-	
+
 	// Wait for user acknowledgment
 	_, _ = c.inputPrompt("Press Enter to continue...")
 }
@@ -290,7 +290,7 @@ func (c *InteractiveCommand) getTaskPriority(task clickup.Task) string {
 	if task.Priority.Priority == "" {
 		return "Normal"
 	}
-	
+
 	switch task.Priority.Priority {
 	case "urgent":
 		return "Urgent"

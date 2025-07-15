@@ -14,7 +14,7 @@ import (
 type ListCommand struct {
 	*base.Command
 	subcommands map[string]func(context.Context, []string) error
-	
+
 	// Flags
 	spaceID         string
 	folderID        string
@@ -26,9 +26,9 @@ type ListCommand struct {
 func (f *Factory) createListCommand() interfaces.Command {
 	cmd := &ListCommand{
 		Command: &base.Command{
-			Use:   "list",
-			Short: "Manage lists",
-			Long:  `View and manage ClickUp lists.`,
+			Use:    "list",
+			Short:  "Manage lists",
+			Long:   `View and manage ClickUp lists.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -148,11 +148,19 @@ func (c *ListCommand) runList(ctx context.Context, args []string) error {
 				defaultMarker = "*"
 			}
 
+			// Convert json.Number to int
+			taskCount := 0
+			if list.TaskCount != "" {
+				if tc, err := list.TaskCount.Int64(); err == nil {
+					taskCount = int(tc)
+				}
+			}
+
 			row := listRow{
 				ID:       list.ID,
 				Name:     list.Name,
 				Default:  defaultMarker,
-				Tasks:    list.TaskCount,
+				Tasks:    taskCount,
 				Archived: list.Archived,
 			}
 			rows = append(rows, row)
@@ -236,7 +244,7 @@ func (c *ListCommand) GetCobraCommand() *cobra.Command {
 			c.spaceID, _ = cmd.Flags().GetString("space")
 			c.folderID, _ = cmd.Flags().GetString("folder")
 			c.includeArchived, _ = cmd.Flags().GetBool("archived")
-			
+
 			return c.runList(cmd.Context(), args)
 		},
 	}
@@ -255,7 +263,7 @@ func (c *ListCommand) GetCobraCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Set flags from cobra command
 			c.isProjectFlag, _ = cmd.Flags().GetBool("project")
-			
+
 			return c.runDefault(cmd.Context(), args)
 		},
 	}

@@ -21,10 +21,10 @@ import (
 type ExportCommand struct {
 	*base.Command
 	subcommands map[string]func(context.Context, []string) error
-	
+
 	// Output writer for testing
 	outputWriter io.Writer
-	
+
 	// Flags
 	listID     string
 	spaceID    string
@@ -39,9 +39,9 @@ type ExportCommand struct {
 func (f *Factory) createExportCommand() interfaces.Command {
 	cmd := &ExportCommand{
 		Command: &base.Command{
-			Use:   "export",
-			Short: "Export data to various formats",
-			Long:  `Export ClickUp data to CSV, JSON, or Markdown formats.`,
+			Use:    "export",
+			Short:  "Export data to various formats",
+			Long:   `Export ClickUp data to CSV, JSON, or Markdown formats.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -102,14 +102,14 @@ func (c *ExportCommand) runExportTasks(ctx context.Context, args []string) error
 	// Open output file or use stdout
 	var output io.Writer
 	var outputCloser io.Closer
-	
+
 	if c.outputFile != "" {
 		// Sanitize the file path to prevent directory traversal
 		cleanPath := filepath.Clean(c.outputFile)
 		if filepath.IsAbs(cleanPath) || strings.Contains(cleanPath, "..") {
 			return fmt.Errorf("invalid output file path: %s", c.outputFile)
 		}
-		
+
 		file, err := os.Create(cleanPath)
 		if err != nil {
 			return fmt.Errorf("failed to create output file: %w", err)
@@ -163,16 +163,10 @@ func (c *ExportCommand) getTasks(ctx context.Context) ([]clickup.Task, error) {
 			queryOpts.Priority = &p
 		}
 
-		listTasks, err := c.API.GetTasks(ctx, c.listID, queryOpts)
+		var err error
+		tasks, err = c.API.GetTasks(ctx, c.listID, queryOpts)
 		if err != nil {
 			return nil, err
-		}
-		
-		// Convert interface{} to []clickup.Task
-		if taskList, ok := listTasks.([]clickup.Task); ok {
-			tasks = taskList
-		} else {
-			return nil, fmt.Errorf("unexpected task list type")
 		}
 	} else {
 		// Get all tasks from workspace or space
@@ -199,9 +193,7 @@ func (c *ExportCommand) getTasks(ctx context.Context) ([]clickup.Task, error) {
 					for _, list := range lists {
 						listTasks, err := c.API.GetTasks(ctx, list.ID, &interfaces.TaskQueryOptions{})
 						if err == nil {
-							if taskList, ok := listTasks.([]clickup.Task); ok {
-								tasks = append(tasks, taskList...)
-							}
+							tasks = append(tasks, listTasks...)
 						}
 					}
 				}
@@ -211,9 +203,7 @@ func (c *ExportCommand) getTasks(ctx context.Context) ([]clickup.Task, error) {
 				for _, list := range lists {
 					listTasks, err := c.API.GetTasks(ctx, list.ID, &interfaces.TaskQueryOptions{})
 					if err == nil {
-						if taskList, ok := listTasks.([]clickup.Task); ok {
-							tasks = append(tasks, taskList...)
-						}
+						tasks = append(tasks, listTasks...)
 					}
 				}
 			}
@@ -282,22 +272,13 @@ func (c *ExportCommand) parsePriority(priority string) (int, error) {
 
 // getTaskPriority returns the task priority as a string
 func (c *ExportCommand) getTaskPriority(task clickup.Task) string {
-	if task.Priority == nil {
+	// Priority is a struct with Priority field containing the text
+	if task.Priority.Priority == "" {
 		return ""
 	}
-	
-	switch task.Priority.ID {
-	case "1":
-		return "urgent"
-	case "2":
-		return "high"
-	case "3":
-		return "normal"
-	case "4":
-		return "low"
-	default:
-		return ""
-	}
+
+	// The Priority field contains text like "urgent", "high", etc.
+	return strings.ToLower(task.Priority.Priority)
 }
 
 // getTaskDueDate returns the task due date as a string
@@ -305,12 +286,12 @@ func (c *ExportCommand) getTaskDueDate(task clickup.Task) string {
 	if task.DueDate == nil {
 		return ""
 	}
-	
+
 	// Convert millisecond timestamp to time
 	if task.DueDate.Time().IsZero() {
 		return ""
 	}
-	
+
 	return task.DueDate.Time().Format(time.RFC3339)
 }
 
@@ -467,7 +448,7 @@ Examples:
 			c.status, _ = cmd.Flags().GetString("status")
 			c.priority, _ = cmd.Flags().GetString("priority")
 			c.assignee, _ = cmd.Flags().GetString("assignee")
-			
+
 			return c.runExportTasks(cmd.Context(), args)
 		},
 	}

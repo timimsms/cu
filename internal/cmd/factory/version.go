@@ -41,7 +41,7 @@ func (c *VersionCommand) run(ctx context.Context, args []string) error {
 
 	// Check if we should output JSON or other formats
 	format := c.Config.GetString("output")
-	
+
 	switch format {
 	case "json":
 		// Output structured version data

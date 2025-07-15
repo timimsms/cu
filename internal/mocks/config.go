@@ -91,11 +91,11 @@ func (m *MockConfigProvider) AllSettings() map[string]interface{} {
 // MockConfigWithProject is a mock config that supports project config operations
 type MockConfigWithProject struct {
 	*MockConfigProvider
-	HasProjectConfigVal   bool
-	ProjectConfigSaved    bool
-	ProjectSettings       map[string]interface{}
-	SaveProjectConfigErr  error
-	ProjectConfigPath     string
+	HasProjectConfigVal  bool
+	ProjectConfigSaved   bool
+	ProjectSettings      map[string]interface{}
+	SaveProjectConfigErr error
+	ProjectConfigPath    string
 }
 
 func (m *MockConfigWithProject) HasProjectConfig() bool {

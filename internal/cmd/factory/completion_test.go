@@ -16,17 +16,17 @@ type MockWriterOutput struct {
 	*bytes.Buffer
 }
 
-func (m *MockWriterOutput) Print(data interface{}) error { return nil }
+func (m *MockWriterOutput) Print(data interface{}) error                { return nil }
 func (m *MockWriterOutput) PrintTo(w io.Writer, data interface{}) error { return nil }
-func (m *MockWriterOutput) PrintError(err error) {}
-func (m *MockWriterOutput) PrintSuccess(message string) {}
-func (m *MockWriterOutput) PrintWarning(message string) {}
-func (m *MockWriterOutput) PrintInfo(message string) {}
-func (m *MockWriterOutput) SetFormat(format string) error { return nil }
-func (m *MockWriterOutput) GetFormat() string { return "table" }
-func (m *MockWriterOutput) SetColor(enabled bool) {}
-func (m *MockWriterOutput) SetQuiet(enabled bool) {}
-func (m *MockWriterOutput) SetTableHeader(headers []string) {}
+func (m *MockWriterOutput) PrintError(err error)                        {}
+func (m *MockWriterOutput) PrintSuccess(message string)                 {}
+func (m *MockWriterOutput) PrintWarning(message string)                 {}
+func (m *MockWriterOutput) PrintInfo(message string)                    {}
+func (m *MockWriterOutput) SetFormat(format string) error               { return nil }
+func (m *MockWriterOutput) GetFormat() string                           { return "table" }
+func (m *MockWriterOutput) SetColor(enabled bool)                       {}
+func (m *MockWriterOutput) SetQuiet(enabled bool)                       {}
+func (m *MockWriterOutput) SetTableHeader(headers []string)             {}
 
 func TestCompletionCommand(t *testing.T) {
 	// Create a simple root command for testing
@@ -34,7 +34,7 @@ func TestCompletionCommand(t *testing.T) {
 		Use:   "testapp",
 		Short: "Test application",
 	}
-	
+
 	// Add a subcommand to make the completion more interesting
 	testRootCmd.AddCommand(&cobra.Command{
 		Use:   "subcommand",
@@ -45,21 +45,21 @@ func TestCompletionCommand(t *testing.T) {
 		// Setup
 		mockOutput := &MockWriterOutput{Buffer: &bytes.Buffer{}}
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
 		require.NotNil(t, cmd)
-		
+
 		// Set root command
 		if cc, ok := cmd.(*CompletionCommand); ok {
 			cc.SetRootCommand(testRootCmd)
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"bash"})
 		require.NoError(t, err)
-		
+
 		// Verify output contains bash completion
 		output := mockOutput.String()
 		assert.Contains(t, output, "bash completion")
@@ -70,20 +70,20 @@ func TestCompletionCommand(t *testing.T) {
 		// Setup
 		mockOutput := &MockWriterOutput{Buffer: &bytes.Buffer{}}
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Set root command
 		if cc, ok := cmd.(*CompletionCommand); ok {
 			cc.SetRootCommand(testRootCmd)
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"zsh"})
 		require.NoError(t, err)
-		
+
 		// Verify output contains zsh completion
 		output := mockOutput.String()
 		assert.Contains(t, output, "#compdef testapp")
@@ -93,20 +93,20 @@ func TestCompletionCommand(t *testing.T) {
 		// Setup
 		mockOutput := &MockWriterOutput{Buffer: &bytes.Buffer{}}
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Set root command
 		if cc, ok := cmd.(*CompletionCommand); ok {
 			cc.SetRootCommand(testRootCmd)
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"fish"})
 		require.NoError(t, err)
-		
+
 		// Verify output contains fish completion
 		output := mockOutput.String()
 		assert.Contains(t, output, "complete -c testapp")
@@ -116,20 +116,20 @@ func TestCompletionCommand(t *testing.T) {
 		// Setup
 		mockOutput := &MockWriterOutput{Buffer: &bytes.Buffer{}}
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Set root command
 		if cc, ok := cmd.(*CompletionCommand); ok {
 			cc.SetRootCommand(testRootCmd)
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"powershell"})
 		require.NoError(t, err)
-		
+
 		// Verify output contains powershell completion
 		output := mockOutput.String()
 		assert.Contains(t, output, "Register-ArgumentCompleter")
@@ -140,16 +140,16 @@ func TestCompletionCommand(t *testing.T) {
 		// Setup
 		mockOutput := &MockWriterOutput{Buffer: &bytes.Buffer{}}
 		factory := New(WithOutputFormatter(mockOutput))
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Set root command
 		if cc, ok := cmd.(*CompletionCommand); ok {
 			cc.SetRootCommand(testRootCmd)
 		}
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"unsupported"})
 		assert.Error(t, err)
@@ -159,11 +159,11 @@ func TestCompletionCommand(t *testing.T) {
 	t.Run("no arguments", func(t *testing.T) {
 		// Setup
 		factory := New()
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{})
 		assert.Error(t, err)
@@ -173,11 +173,11 @@ func TestCompletionCommand(t *testing.T) {
 	t.Run("too many arguments", func(t *testing.T) {
 		// Setup
 		factory := New()
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Execute
 		err = cmd.Execute(context.Background(), []string{"bash", "extra"})
 		assert.Error(t, err)
@@ -193,15 +193,15 @@ func TestCompletionCommand(t *testing.T) {
 	t.Run("cobra command integration", func(t *testing.T) {
 		// Setup
 		factory := New()
-		
+
 		// Create command
 		cmd, err := factory.CreateCommand("completion")
 		require.NoError(t, err)
-		
+
 		// Get cobra command
 		cobraCmd := cmd.GetCobraCommand()
 		require.NotNil(t, cobraCmd)
-		
+
 		assert.Equal(t, "completion [bash|zsh|fish|powershell]", cobraCmd.Use)
 		assert.Equal(t, "Generate shell completion script", cobraCmd.Short)
 		assert.Contains(t, cobraCmd.Long, "Generate a shell completion script")
@@ -212,22 +212,22 @@ func TestCompletionCommand(t *testing.T) {
 
 func TestCompletionCommandValidation(t *testing.T) {
 	validShells := []string{"bash", "zsh", "fish", "powershell"}
-	
+
 	for _, shell := range validShells {
 		t.Run("valid shell: "+shell, func(t *testing.T) {
 			// Setup
 			mockOutput := &MockWriterOutput{Buffer: &bytes.Buffer{}}
 			factory := New(WithOutputFormatter(mockOutput))
-			
+
 			// Create command
 			cmd, err := factory.CreateCommand("completion")
 			require.NoError(t, err)
-			
+
 			// Set a minimal root command
 			if cc, ok := cmd.(*CompletionCommand); ok {
 				cc.SetRootCommand(&cobra.Command{Use: "test"})
 			}
-			
+
 			// Execute
 			err = cmd.Execute(context.Background(), []string{shell})
 			// Should not error (might have warnings but no errors)

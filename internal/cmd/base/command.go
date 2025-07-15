@@ -37,7 +37,7 @@ func (c *Command) Setup() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Create context with command
 			ctx := context.WithValue(cmd.Context(), "command", cmd)
-			
+
 			// Check authentication if needed
 			if c.requiresAuth() && !c.isAuthenticated() {
 				return fmt.Errorf("not authenticated. Please run 'cu auth login' first")
@@ -47,7 +47,7 @@ func (c *Command) Setup() {
 			if c.RunFunc != nil {
 				return c.RunFunc(ctx, args)
 			}
-			
+
 			return fmt.Errorf("command not implemented")
 		},
 	}
@@ -110,7 +110,7 @@ func (c *Command) requiresAuth() bool {
 		"completion": true,
 		"auth":       true,
 	}
-	
+
 	return !noAuthCommands[c.Use]
 }
 
@@ -119,11 +119,11 @@ func (c *Command) isAuthenticated() bool {
 	if c.Auth == nil {
 		return false
 	}
-	
+
 	workspace := c.Config.GetString("workspace")
 	if workspace == "" {
 		workspace = "default"
 	}
-	
+
 	return c.Auth.IsAuthenticated(workspace)
 }

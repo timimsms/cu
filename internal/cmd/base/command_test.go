@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/tim/cu/internal/auth/mock"
 	"github.com/tim/cu/internal/mocks"
 )
@@ -110,7 +109,7 @@ func TestCommand_Authentication(t *testing.T) {
 		mockAuth := mock.NewAuthProvider()
 		mockAuth.SetToken("default", "test-token", time.Time{})
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		cmd := &Command{
 			Use:    "task",
 			Auth:   mockAuth,
@@ -129,7 +128,7 @@ func TestCommand_Authentication(t *testing.T) {
 	t.Run("command requires auth but user not authenticated", func(t *testing.T) {
 		mockAuth := mock.NewAuthProvider()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		cmd := &Command{
 			Use:    "task",
 			Auth:   mockAuth,
@@ -165,7 +164,7 @@ func TestCommand_Authentication(t *testing.T) {
 		mockAuth.SetToken("production", "prod-token", time.Time{})
 		mockConfig := mocks.NewMockConfigProvider()
 		mockConfig.Set("workspace", "production")
-		
+
 		cmd := &Command{
 			Use:    "task",
 			Auth:   mockAuth,

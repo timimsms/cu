@@ -15,11 +15,11 @@ func TestUserCommand_Structure(t *testing.T) {
 		assert.Equal(t, "user", cmd.Use)
 		assert.NotEmpty(t, cmd.Short)
 		assert.NotEmpty(t, cmd.Long)
-		
+
 		// Should have list subcommand at minimum
 		assert.NotEmpty(t, cmd.Commands())
 	})
-	
+
 	// Test user list command
 	t.Run("user list command", func(t *testing.T) {
 		// Find the list subcommand
@@ -30,11 +30,11 @@ func TestUserCommand_Structure(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if assert.NotNil(t, listCmd, "list subcommand should exist") {
 			assert.NotEmpty(t, listCmd.Short)
 			assert.NotNil(t, listCmd.Run)
-			
+
 			// Check for common flags
 			assert.NotNil(t, listCmd.Flags())
 		}

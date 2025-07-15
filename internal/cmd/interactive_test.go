@@ -15,10 +15,10 @@ func TestInteractiveCommand_Structure(t *testing.T) {
 		assert.NotEmpty(t, cmd.Short)
 		assert.NotEmpty(t, cmd.Long)
 		assert.NotNil(t, cmd.Run)
-		
+
 		// No aliases for interactive command
 	})
-	
+
 	// Test interactive command has no specific flags
 	t.Run("interactive command flags", func(t *testing.T) {
 		// Interactive command doesn't define its own flags

@@ -17,7 +17,7 @@ type OutputFormatter interface {
 	GetFormat() string
 	SetColor(enabled bool)
 	SetQuiet(enabled bool)
-	
+
 	// Table-specific (for table format)
 	SetTableHeader(headers []string)
 }

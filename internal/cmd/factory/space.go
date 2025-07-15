@@ -19,9 +19,9 @@ type SpaceCommand struct {
 func (f *Factory) createSpaceCommand() interfaces.Command {
 	cmd := &SpaceCommand{
 		Command: &base.Command{
-			Use:   "space",
-			Short: "Manage spaces",
-			Long:  `View and manage ClickUp spaces within your workspace.`,
+			Use:    "space",
+			Short:  "Manage spaces",
+			Long:   `View and manage ClickUp spaces within your workspace.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,

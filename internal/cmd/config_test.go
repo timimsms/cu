@@ -15,7 +15,7 @@ func TestConfigCommand_Basic(t *testing.T) {
 	assert.NotNil(t, cmd)
 	assert.Equal(t, "config", cmd.Use)
 	assert.NotEmpty(t, cmd.Short)
-	
+
 	// Verify subcommands
 	subcommands := map[string]bool{
 		"list": false,
@@ -24,14 +24,14 @@ func TestConfigCommand_Basic(t *testing.T) {
 		"init": false,
 		"show": false,
 	}
-	
+
 	for _, child := range cmd.Commands() {
 		name := strings.Split(child.Use, " ")[0]
 		if _, ok := subcommands[name]; ok {
 			subcommands[name] = true
 		}
 	}
-	
+
 	for name, found := range subcommands {
 		assert.True(t, found, "Subcommand %s should exist", name)
 	}
@@ -129,7 +129,7 @@ func TestConfigValueHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			viper.Reset()
 			tt.setup()
-			
+
 			value := viper.Get(tt.key)
 			assert.Equal(t, tt.expected, value)
 		})

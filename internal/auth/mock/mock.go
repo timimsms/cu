@@ -13,37 +13,37 @@ import (
 
 // AuthProvider is a mock implementation of auth.Manager for testing
 type AuthProvider struct {
-	mu              sync.RWMutex
-	tokens          map[string]*auth.Token
-	errors          map[string]error
-	authenticated   map[string]bool
-	workspaces      []string
+	mu               sync.RWMutex
+	tokens           map[string]*auth.Token
+	errors           map[string]error
+	authenticated    map[string]bool
+	workspaces       []string
 	currentWorkspace string
-	
+
 	// Behavior controls
-	saveError       error
-	getError        error
-	deleteError     error
-	listError       error
-	
+	saveError   error
+	getError    error
+	deleteError error
+	listError   error
+
 	// Advanced behaviors
 	tokenExpiry     map[string]time.Time
 	refreshBehavior func(workspace string) (*auth.Token, error)
-	
+
 	// Call tracking
-	calls           []string
+	calls []string
 }
 
 // NewAuthProvider creates a new mock auth provider
 func NewAuthProvider() *AuthProvider {
 	return &AuthProvider{
-		tokens:          make(map[string]*auth.Token),
-		errors:          make(map[string]error),
-		authenticated:   make(map[string]bool),
-		tokenExpiry:     make(map[string]time.Time),
-		workspaces:      []string{},
+		tokens:           make(map[string]*auth.Token),
+		errors:           make(map[string]error),
+		authenticated:    make(map[string]bool),
+		tokenExpiry:      make(map[string]time.Time),
+		workspaces:       []string{},
 		currentWorkspace: auth.DefaultWorkspace,
-		calls:           []string{},
+		calls:            []string{},
 	}
 }
 
@@ -51,20 +51,20 @@ func NewAuthProvider() *AuthProvider {
 func (m *AuthProvider) SaveToken(workspace string, token *auth.Token) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.calls = append(m.calls, fmt.Sprintf("SaveToken(%s)", workspace))
-	
+
 	if m.saveError != nil {
 		return m.saveError
 	}
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	m.tokens[workspace] = token
 	m.authenticated[workspace] = true
-	
+
 	// Update workspaces list if new
 	found := false
 	for _, w := range m.workspaces {
@@ -76,7 +76,7 @@ func (m *AuthProvider) SaveToken(workspace string, token *auth.Token) error {
 	if !found {
 		m.workspaces = append(m.workspaces, workspace)
 	}
-	
+
 	return nil
 }
 
@@ -85,23 +85,23 @@ func (m *AuthProvider) GetToken(workspace string) (*auth.Token, error) {
 	m.mu.Lock()
 	m.calls = append(m.calls, fmt.Sprintf("GetToken(%s)", workspace))
 	m.mu.Unlock()
-	
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if m.getError != nil {
 		return nil, m.getError
 	}
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	// Check for specific workspace error
 	if err, ok := m.errors[workspace]; ok {
 		return nil, err
 	}
-	
+
 	// Check token expiry
 	if expiry, ok := m.tokenExpiry[workspace]; ok {
 		if time.Now().After(expiry) {
@@ -111,12 +111,12 @@ func (m *AuthProvider) GetToken(workspace string) (*auth.Token, error) {
 			return nil, cuerrors.ErrTokenExpired
 		}
 	}
-	
+
 	token, ok := m.tokens[workspace]
 	if !ok {
 		return nil, cuerrors.ErrNotAuthenticated
 	}
-	
+
 	return token, nil
 }
 
@@ -124,21 +124,21 @@ func (m *AuthProvider) GetToken(workspace string) (*auth.Token, error) {
 func (m *AuthProvider) DeleteToken(workspace string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.calls = append(m.calls, fmt.Sprintf("DeleteToken(%s)", workspace))
-	
+
 	if m.deleteError != nil {
 		return m.deleteError
 	}
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	delete(m.tokens, workspace)
 	delete(m.authenticated, workspace)
 	delete(m.tokenExpiry, workspace)
-	
+
 	// Remove from workspaces list
 	newWorkspaces := []string{}
 	for _, w := range m.workspaces {
@@ -147,7 +147,7 @@ func (m *AuthProvider) DeleteToken(workspace string) error {
 		}
 	}
 	m.workspaces = newWorkspaces
-	
+
 	return nil
 }
 
@@ -155,13 +155,13 @@ func (m *AuthProvider) DeleteToken(workspace string) error {
 func (m *AuthProvider) ListWorkspaces() ([]string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	m.calls = append(m.calls, "ListWorkspaces()")
-	
+
 	if m.listError != nil {
 		return nil, m.listError
 	}
-	
+
 	return m.workspaces, nil
 }
 
@@ -170,27 +170,27 @@ func (m *AuthProvider) IsAuthenticated(workspace string) bool {
 	m.mu.Lock()
 	m.calls = append(m.calls, fmt.Sprintf("IsAuthenticated(%s)", workspace))
 	m.mu.Unlock()
-	
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	// Check if token exists and not expired
 	// Direct check to avoid nested locks
 	if _, ok := m.tokens[workspace]; !ok {
 		return false
 	}
-	
+
 	// Check expiry
 	if expiry, ok := m.tokenExpiry[workspace]; ok {
 		if time.Now().After(expiry) {
 			return false
 		}
 	}
-	
+
 	return m.authenticated[workspace]
 }
 
@@ -199,9 +199,9 @@ func (m *AuthProvider) GetCurrentToken() (*auth.Token, error) {
 	m.mu.RLock()
 	workspace := m.currentWorkspace
 	m.mu.RUnlock()
-	
+
 	m.calls = append(m.calls, "GetCurrentToken()")
-	
+
 	return m.GetToken(workspace)
 }
 
@@ -211,21 +211,21 @@ func (m *AuthProvider) GetCurrentToken() (*auth.Token, error) {
 func (m *AuthProvider) SetToken(workspace string, token string, expiry time.Time) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	m.tokens[workspace] = &auth.Token{
 		Value:     token,
 		Workspace: workspace,
 	}
 	m.authenticated[workspace] = true
-	
+
 	if !expiry.IsZero() {
 		m.tokenExpiry[workspace] = expiry
 	}
-	
+
 	// Update workspaces list
 	found := false
 	for _, w := range m.workspaces {
@@ -243,18 +243,18 @@ func (m *AuthProvider) SetToken(workspace string, token string, expiry time.Time
 func (m *AuthProvider) SetTokenWithEmail(workspace, token, email string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	m.tokens[workspace] = &auth.Token{
 		Value:     token,
 		Workspace: workspace,
 		Email:     email,
 	}
 	m.authenticated[workspace] = true
-	
+
 	// Update workspaces list
 	found := false
 	for _, w := range m.workspaces {
@@ -272,11 +272,11 @@ func (m *AuthProvider) SetTokenWithEmail(workspace, token, email string) {
 func (m *AuthProvider) SetError(workspace string, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if workspace == "" {
 		workspace = auth.DefaultWorkspace
 	}
-	
+
 	m.errors[workspace] = err
 }
 
@@ -326,7 +326,7 @@ func (m *AuthProvider) SetCurrentWorkspace(workspace string) {
 func (m *AuthProvider) GetCalls() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	calls := make([]string, len(m.calls))
 	copy(calls, m.calls)
 	return calls
@@ -336,7 +336,7 @@ func (m *AuthProvider) GetCalls() []string {
 func (m *AuthProvider) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.tokens = make(map[string]*auth.Token)
 	m.errors = make(map[string]error)
 	m.authenticated = make(map[string]bool)
@@ -344,7 +344,7 @@ func (m *AuthProvider) Reset() {
 	m.workspaces = []string{}
 	m.currentWorkspace = auth.DefaultWorkspace
 	m.calls = []string{}
-	
+
 	m.saveError = nil
 	m.getError = nil
 	m.deleteError = nil
@@ -370,17 +370,17 @@ func NewKeyringMock() *KeyringMock {
 func (k *KeyringMock) Get(service, account string) (string, error) {
 	k.mu.RLock()
 	defer k.mu.RUnlock()
-	
+
 	if k.err != nil {
 		return "", k.err
 	}
-	
+
 	if serviceStore, ok := k.store[service]; ok {
 		if secret, ok := serviceStore[account]; ok {
 			return secret, nil
 		}
 	}
-	
+
 	return "", fmt.Errorf("secret not found in keyring")
 }
 
@@ -388,15 +388,15 @@ func (k *KeyringMock) Get(service, account string) (string, error) {
 func (k *KeyringMock) Set(service, account, secret string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	
+
 	if k.err != nil {
 		return k.err
 	}
-	
+
 	if _, ok := k.store[service]; !ok {
 		k.store[service] = make(map[string]string)
 	}
-	
+
 	k.store[service][account] = secret
 	return nil
 }
@@ -405,18 +405,18 @@ func (k *KeyringMock) Set(service, account, secret string) error {
 func (k *KeyringMock) Delete(service, account string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	
+
 	if k.err != nil {
 		return k.err
 	}
-	
+
 	if serviceStore, ok := k.store[service]; ok {
 		delete(serviceStore, account)
 		if len(serviceStore) == 0 {
 			delete(k.store, service)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -431,7 +431,7 @@ func (k *KeyringMock) SetError(err error) {
 func (k *KeyringMock) Reset() {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	
+
 	k.store = make(map[string]map[string]string)
 	k.err = nil
 }

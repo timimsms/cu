@@ -15,11 +15,11 @@ func TestSpaceCommand_Structure(t *testing.T) {
 		assert.Equal(t, "space", cmd.Use)
 		assert.NotEmpty(t, cmd.Short)
 		assert.NotEmpty(t, cmd.Long)
-		
+
 		// Should have list subcommand at minimum
 		assert.NotEmpty(t, cmd.Commands())
 	})
-	
+
 	// Test space list command
 	t.Run("space list command", func(t *testing.T) {
 		// Find the list subcommand
@@ -30,7 +30,7 @@ func TestSpaceCommand_Structure(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if assert.NotNil(t, listCmd, "list subcommand should exist") {
 			assert.NotEmpty(t, listCmd.Short)
 			assert.NotNil(t, listCmd.Run)

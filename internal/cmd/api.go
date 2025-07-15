@@ -11,13 +11,14 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/output"
 )
 
 var (
-	apiMethod string
-	apiData   string
+	apiMethod  string
+	apiData    string
 	apiHeaders []string
 )
 
@@ -60,7 +61,7 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		endpoint := args[0]
-		
+
 		// Ensure endpoint starts with /
 		if !strings.HasPrefix(endpoint, "/") {
 			endpoint = "/" + endpoint
@@ -100,7 +101,7 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 		// Set headers
 		req.Header.Set("Authorization", token.Value)
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		// Add custom headers
 		for _, header := range apiHeaders {
 			parts := strings.SplitN(header, ":", 2)
@@ -113,7 +114,7 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 		client := &http.Client{
 			Timeout: 30 * time.Second,
 		}
-		
+
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Request failed: %v\n", err)
@@ -135,7 +136,7 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 		// Check for non-2xx status codes
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			fmt.Fprintf(os.Stderr, "API request failed with status %d: %s\n", resp.StatusCode, resp.Status)
-			
+
 			// Try to parse error response
 			var errResp map[string]interface{}
 			if err := json.Unmarshal(respBody, &errResp); err == nil {
@@ -174,7 +175,7 @@ For example, use "/team" for https://api.clickup.com/api/v2/team`,
 
 // getAuthToken is a variable to make auth testable
 var getAuthToken = func() (*auth.Token, error) {
-	authMgr := auth.NewManager()
+	authMgr := auth.NewManager(viper.GetViper())
 	return authMgr.GetCurrentToken()
 }
 

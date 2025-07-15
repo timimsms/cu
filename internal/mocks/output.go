@@ -19,7 +19,7 @@ type MockOutputFormatter struct {
 	Headers      []string
 
 	// Control behavior
-	PrintErr    error  // Renamed to avoid conflict with method
+	PrintErr    error // Renamed to avoid conflict with method
 	FormatError error
 }
 

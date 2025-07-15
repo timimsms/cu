@@ -13,12 +13,12 @@ import (
 // RootCommand implements the root command with dependency injection
 type RootCommand struct {
 	*base.Command
-	factory         *Factory
-	subcommands     []interfaces.Command
-	cfgFile         string
-	debug           bool
-	outputFormat    string
-	rootCobraCmd    *cobra.Command
+	factory      *Factory
+	subcommands  []interfaces.Command
+	cfgFile      string
+	debug        bool
+	outputFormat string
+	rootCobraCmd *cobra.Command
 }
 
 // NewRootCommand creates a new root command with the factory
@@ -64,7 +64,7 @@ func (c *RootCommand) initSubcommands() error {
 	// List of commands to create
 	commandNames := []string{
 		"auth",
-		"config", 
+		"config",
 		"completion",
 		"version",
 		"interactive",
@@ -146,7 +146,7 @@ func (c *RootCommand) Execute() error {
 // AddCommand adds a subcommand to the root command
 func (c *RootCommand) AddCommand(cmd interfaces.Command) {
 	c.subcommands = append(c.subcommands, cmd)
-	
+
 	// If cobra command is already created, add it directly
 	if c.rootCobraCmd != nil && cmd != nil {
 		c.rootCobraCmd.AddCommand(cmd.GetCobraCommand())

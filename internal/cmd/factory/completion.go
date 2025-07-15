@@ -123,11 +123,11 @@ func (c *CompletionCommand) SetRootCommand(rootCmd *cobra.Command) {
 // GetCobraCommand returns the cobra command with completion-specific settings
 func (c *CompletionCommand) GetCobraCommand() *cobra.Command {
 	cmd := c.Command.GetCobraCommand()
-	
+
 	// Apply completion-specific settings
 	cmd.DisableFlagsInUseLine = true
 	cmd.ValidArgs = []string{"bash", "zsh", "fish", "powershell"}
 	cmd.Args = cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs)
-	
+
 	return cmd
 }

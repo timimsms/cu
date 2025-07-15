@@ -18,12 +18,12 @@ func BenchmarkFactoryCreation(b *testing.B) {
 	)
 
 	commands := []string{
-		"version", "completion", "interactive", "config", 
+		"version", "completion", "interactive", "config",
 		"auth", "task", "space", "list", "user", "bulk", "export",
 	}
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, cmdName := range commands {
 			cmd, err := factory.CreateCommand(cmdName)
@@ -47,7 +47,7 @@ func BenchmarkIndividualCommands(b *testing.B) {
 	)
 
 	commands := []string{
-		"version", "completion", "interactive", "config", 
+		"version", "completion", "interactive", "config",
 		"auth", "task", "space", "list", "user", "bulk", "export",
 	}
 
@@ -72,7 +72,7 @@ func BenchmarkFactoryWithMinimalDeps(b *testing.B) {
 	factory := New() // Minimal dependencies
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		// Test simple commands that don't require many dependencies
 		cmd, err := factory.CreateCommand("version")
@@ -97,7 +97,7 @@ func BenchmarkCobraCommandCreation(b *testing.B) {
 	commands := make(map[string]interface {
 		GetCobraCommand() interface{}
 	})
-	
+
 	cmdNames := []string{"version", "task", "auth", "bulk", "export"}
 	for _, cmdName := range cmdNames {
 		cmd, err := factory.CreateCommand(cmdName)
@@ -108,7 +108,7 @@ func BenchmarkCobraCommandCreation(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for cmdName, cmd := range commands {
 			cobraCmd := cmd.GetCobraCommand()
@@ -133,7 +133,7 @@ func BenchmarkCommandExecution(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		err := cmd.Execute(context.Background(), []string{})
 		if err != nil {
@@ -152,7 +152,7 @@ func BenchmarkFactoryOptionApplication(b *testing.B) {
 	configOption := WithConfigProvider(mocks.NewMockConfigProvider())
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		_ = New(apiOption, authOption, outputOption, configOption)
 	}
@@ -161,18 +161,18 @@ func BenchmarkFactoryOptionApplication(b *testing.B) {
 // BenchmarkMemoryAllocation benchmarks memory allocation patterns
 func BenchmarkMemoryAllocation(b *testing.B) {
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		factory := New(
 			WithAPIClient(&MockAPIClient{}),
 			WithOutputFormatter(mocks.NewMockOutputFormatter()),
 		)
-		
+
 		cmd, err := factory.CreateCommand("version")
 		if err != nil {
 			b.Fatalf("Failed to create command: %v", err)
 		}
-		
+
 		_ = cmd.GetCobraCommand()
 	}
 }
@@ -188,11 +188,11 @@ func BenchmarkConcurrentAccess(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		commands := []string{"version", "completion", "config"}
 		cmdIndex := 0
-		
+
 		for pb.Next() {
 			cmdName := commands[cmdIndex%len(commands)]
 			cmdIndex++
-			
+
 			cmd, err := factory.CreateCommand(cmdName)
 			if err != nil {
 				b.Errorf("Failed to create command %s: %v", cmdName, err)
@@ -218,14 +218,14 @@ func BenchmarkComplexCommands(b *testing.B) {
 	complexCommands := []string{"task", "bulk", "export", "interactive"}
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, cmdName := range complexCommands {
 			cmd, err := factory.CreateCommand(cmdName)
 			if err != nil {
 				b.Fatalf("Failed to create complex command %s: %v", cmdName, err)
 			}
-			
+
 			// Also benchmark cobra command creation for complex commands
 			cobraCmd := cmd.GetCobraCommand()
 			if cobraCmd == nil {
@@ -245,7 +245,7 @@ func BenchmarkFactoryReuse(b *testing.B) {
 	commands := []string{"version", "config", "completion"}
 
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		// Simulate reusing factory for different commands
 		for _, cmdName := range commands {

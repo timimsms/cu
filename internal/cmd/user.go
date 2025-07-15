@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/api"
+	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/cache"
 	"github.com/tim/cu/internal/output"
 )
@@ -32,11 +34,8 @@ var userListCmd = &cobra.Command{
 		}
 
 		// Create API client
-		client, err := api.NewClient()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-			os.Exit(1)
-		}
+		authMgr := auth.NewManager(viper.GetViper())
+		client := api.NewClient(authMgr)
 
 		// Get workspaces first
 		workspaces, err := client.GetWorkspaces(ctx)

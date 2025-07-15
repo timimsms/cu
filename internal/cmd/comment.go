@@ -10,7 +10,9 @@ import (
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/api"
+	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/output"
 )
 
@@ -25,12 +27,12 @@ Without subcommands, adds a comment to the specified task.`,
 }
 
 var (
-	commentMessage string
+	commentMessage  string
 	commentAssignee string
-	notifyAll      bool
-	listComments   bool
-	deleteComment  string
-	yesFlag        bool
+	notifyAll       bool
+	listComments    bool
+	deleteComment   string
+	yesFlag         bool
 )
 
 func init() {
@@ -40,17 +42,17 @@ func init() {
 	commentCmd.Flags().StringVarP(&commentMessage, "message", "m", "", "Comment text (opens editor if not provided)")
 	commentCmd.Flags().StringVar(&commentAssignee, "assignee", "", "Assign comment to user")
 	commentCmd.Flags().BoolVar(&notifyAll, "notify-all", false, "Notify all task watchers")
-	
+
 	// List comments flag
 	commentCmd.Flags().BoolVarP(&listComments, "list", "l", false, "List all comments on the task")
-	
+
 	// Delete comment flag
 	commentCmd.Flags().StringVarP(&deleteComment, "delete", "d", "", "Delete comment by ID")
-	
+
 	// Subcommands
 	commentCmd.AddCommand(listCommentsCmd)
 	commentCmd.AddCommand(deleteCommentCmd)
-	
+
 	// Add yes flag to delete subcommand
 	deleteCommentCmd.Flags().BoolVarP(&yesFlag, "yes", "y", false, "Skip confirmation prompt")
 }
@@ -58,17 +60,17 @@ func init() {
 // addComment adds a new comment to a task
 func addComment(cmd *cobra.Command, args []string) error {
 	taskID := args[0]
-	
+
 	// If listing comments, delegate to list function
 	if listComments {
 		return listTaskComments(cmd, []string{taskID})
 	}
-	
+
 	// If deleting comment, delegate to delete function
 	if deleteComment != "" {
 		return deleteTaskComment(cmd, []string{deleteComment})
 	}
-	
+
 	// Get comment text
 	var text string
 	if commentMessage != "" {
@@ -79,7 +81,7 @@ func addComment(cmd *cobra.Command, args []string) error {
 		scanner := bufio.NewScanner(os.Stdin)
 		var lines []string
 		emptyLineCount := 0
-		
+
 		for scanner.Scan() {
 			line := scanner.Text()
 			if line == "" {
@@ -93,31 +95,29 @@ func addComment(cmd *cobra.Command, args []string) error {
 			lines = append(lines, line)
 			fmt.Print("> ")
 		}
-		
+
 		if err := scanner.Err(); err != nil {
 			return fmt.Errorf("failed to read comment: %w", err)
 		}
-		
+
 		text = strings.TrimSpace(strings.Join(lines, "\n"))
 		if text == "" {
 			return fmt.Errorf("comment text cannot be empty")
 		}
 	}
-	
+
 	// Create API client
-	client, err := api.NewClient()
-	if err != nil {
-		return fmt.Errorf("failed to create API client: %w", err)
-	}
-	
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
+
 	ctx := context.Background()
-	
+
 	// Create comment
 	comment, err := client.CreateTaskComment(ctx, taskID, text, commentAssignee, notifyAll)
 	if err != nil {
 		return fmt.Errorf("failed to create comment: %w", err)
 	}
-	
+
 	// Display result
 	if outputFormat == "json" || outputFormat == "yaml" || outputFormat == "csv" {
 		if err := output.Format(outputFormat, comment); err != nil {
@@ -125,14 +125,14 @@ func addComment(cmd *cobra.Command, args []string) error {
 		}
 		return nil
 	}
-	
+
 	// Human-readable output
 	fmt.Printf("Comment added successfully!\n")
 	fmt.Printf("ID: %d\n", comment.ID)
 	if comment.Date != nil {
 		fmt.Printf("Date: %s\n", comment.Date.String())
 	}
-	
+
 	return nil
 }
 
@@ -145,21 +145,19 @@ var listCommentsCmd = &cobra.Command{
 
 func listTaskComments(cmd *cobra.Command, args []string) error {
 	taskID := args[0]
-	
+
 	// Create API client
-	client, err := api.NewClient()
-	if err != nil {
-		return fmt.Errorf("failed to create API client: %w", err)
-	}
-	
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
+
 	ctx := context.Background()
-	
+
 	// Get comments
 	comments, err := client.GetTaskComments(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to get comments: %w", err)
 	}
-	
+
 	// Display results
 	if outputFormat == "json" || outputFormat == "yaml" || outputFormat == "csv" {
 		if err := output.Format(outputFormat, comments); err != nil {
@@ -167,10 +165,10 @@ func listTaskComments(cmd *cobra.Command, args []string) error {
 		}
 		return nil
 	}
-	
+
 	// Table output
 	var rows [][]string
-	
+
 	for _, comment := range comments {
 		text := comment.CommentText
 		if len(text) > 50 {
@@ -178,17 +176,17 @@ func listTaskComments(cmd *cobra.Command, args []string) error {
 		}
 		// Replace newlines with spaces for table display
 		text = strings.ReplaceAll(text, "\n", " ")
-		
+
 		resolved := ""
 		if comment.Resolved {
 			resolved = "✓"
 		}
-		
+
 		assignee := ""
 		if comment.Assignee.ID != 0 {
 			assignee = getUserDisplay(comment.Assignee)
 		}
-		
+
 		rows = append(rows, []string{
 			fmt.Sprintf("%d", comment.ID),
 			getUserDisplay(comment.User),
@@ -198,13 +196,13 @@ func listTaskComments(cmd *cobra.Command, args []string) error {
 			assignee,
 		})
 	}
-	
+
 	// Print table
 	if len(rows) > 0 {
 		// Print header
 		fmt.Printf("%-10s %-20s %-16s %-50s %-8s %-20s\n", "ID", "User", "Date", "Text", "Resolved", "Assignee")
 		fmt.Println(strings.Repeat("-", 134))
-		
+
 		// Print rows
 		for _, row := range rows {
 			fmt.Printf("%-10s %-20s %-16s %-50s %-8s %-20s\n", row[0], row[1], row[2], row[3], row[4], row[5])
@@ -212,9 +210,9 @@ func listTaskComments(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Println("No comments found")
 	}
-	
+
 	fmt.Printf("\nTotal comments: %d\n", len(comments))
-	
+
 	return nil
 }
 
@@ -227,7 +225,7 @@ var deleteCommentCmd = &cobra.Command{
 
 func deleteTaskComment(cmd *cobra.Command, args []string) error {
 	commentID := args[0]
-	
+
 	// Confirm deletion
 	if !yesFlag {
 		fmt.Printf("Are you sure you want to delete comment %s? (y/N): ", commentID)
@@ -236,29 +234,27 @@ func deleteTaskComment(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read confirmation: %w", err)
 		}
-		
+
 		response = strings.TrimSpace(strings.ToLower(response))
 		if response != "y" && response != "yes" {
 			fmt.Println("Deletion cancelled")
 			return nil
 		}
 	}
-	
+
 	// Create API client
-	client, err := api.NewClient()
-	if err != nil {
-		return fmt.Errorf("failed to create API client: %w", err)
-	}
-	
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
+
 	ctx := context.Background()
-	
+
 	// Delete comment
 	if err := client.DeleteTaskComment(ctx, commentID); err != nil {
 		return fmt.Errorf("failed to delete comment: %w", err)
 	}
-	
+
 	fmt.Printf("Comment %s deleted successfully\n", commentID)
-	
+
 	return nil
 }
 
@@ -313,11 +309,11 @@ func formatCommentDate(dateStr string) string {
 			return dateStr // Return as-is if we can't parse it
 		}
 	}
-	
+
 	// Format relative time
 	now := time.Now()
 	diff := now.Sub(t)
-	
+
 	switch {
 	case diff < time.Minute:
 		return "just now"

@@ -17,26 +17,26 @@ func TestFactoryIntegration(t *testing.T) {
 		mockAuth := &mocks.MockAuthManager{}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithAuthManager(mockAuth),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Test all supported commands can be created
 		supportedCommands := []string{
-			"version", "completion", "interactive", "config", 
+			"version", "completion", "interactive", "config",
 			"auth", "task", "space", "list", "user", "bulk", "export",
 		}
-		
+
 		for _, cmdName := range supportedCommands {
 			t.Run(cmdName, func(t *testing.T) {
 				cmd, err := factory.CreateCommand(cmdName)
 				require.NoError(t, err, "Failed to create %s command", cmdName)
 				require.NotNil(t, cmd, "%s command should not be nil", cmdName)
-				
+
 				// Verify command has cobra command
 				cobraCmd := cmd.GetCobraCommand()
 				assert.NotNil(t, cobraCmd, "%s should have cobra command", cmdName)
@@ -47,9 +47,9 @@ func TestFactoryIntegration(t *testing.T) {
 
 	t.Run("factory rejects unsupported commands", func(t *testing.T) {
 		factory := New()
-		
+
 		unsupportedCommands := []string{"unknown", "invalid", "missing"}
-		
+
 		for _, cmdName := range unsupportedCommands {
 			cmd, err := factory.CreateCommand(cmdName)
 			assert.Error(t, err, "Should error for unsupported command: %s", cmdName)
@@ -64,27 +64,27 @@ func TestFactoryIntegration(t *testing.T) {
 		mockAuth := &mocks.MockAuthManager{}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithAuthManager(mockAuth),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Test commands that use all dependencies
 		commandsWithDeps := []string{"task", "auth", "bulk", "export"}
-		
+
 		for _, cmdName := range commandsWithDeps {
 			t.Run(cmdName, func(t *testing.T) {
 				cmd, err := factory.CreateCommand(cmdName)
 				require.NoError(t, err)
-				
+
 				// Commands should have access to their dependencies
 				// We can't directly test private fields, but we can test that
 				// commands don't error when accessing their dependencies
 				assert.NotNil(t, cmd, "Command should be created successfully")
-				
+
 				// Test that command can be executed (even if it errors due to missing args)
 				// This verifies dependencies are properly injected
 				err = cmd.Execute(context.Background(), []string{})
@@ -101,16 +101,16 @@ func TestFactoryIntegration(t *testing.T) {
 		// Test that options are applied in correct order
 		mockAPI1 := &MockAPIClient{}
 		mockAPI2 := &MockAPIClient{}
-		
+
 		factory := New(
 			WithAPIClient(mockAPI1),
 			WithAPIClient(mockAPI2), // This should override the first
 		)
-		
+
 		// Create a command that uses API
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Verify the command was created (indicating the second API client was used)
 		assert.NotNil(t, cmd)
 	})
@@ -124,39 +124,41 @@ func TestCommandInteractions(t *testing.T) {
 		mockAuth := &mocks.MockAuthManager{}
 		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
-		
+
 		factory := New(
 			WithAPIClient(mockAPI),
 			WithAuthManager(mockAuth),
 			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
-		
+
 		// Create multiple commands
 		taskCmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		authCmd, err := factory.CreateCommand("auth")
 		require.NoError(t, err)
-		
+
 		bulkCmd, err := factory.CreateCommand("bulk")
 		require.NoError(t, err)
-		
+
 		// All commands should be created successfully
 		assert.NotNil(t, taskCmd)
 		assert.NotNil(t, authCmd)
 		assert.NotNil(t, bulkCmd)
-		
+
 		// Commands should be able to execute without nil pointer errors
 		// (they may error due to missing args, but dependencies should be available)
-		for name, cmd := range map[string]interface{ Execute(context.Context, []string) error }{
+		for name, cmd := range map[string]interface {
+			Execute(context.Context, []string) error
+		}{
 			"task": taskCmd,
 			"auth": authCmd,
 			"bulk": bulkCmd,
 		} {
 			err := cmd.Execute(context.Background(), []string{})
 			if err != nil {
-				assert.NotContains(t, err.Error(), "not initialized", 
+				assert.NotContains(t, err.Error(), "not initialized",
 					"Command %s should have initialized dependencies", name)
 			}
 		}
@@ -166,26 +168,26 @@ func TestCommandInteractions(t *testing.T) {
 		// Setup mock config that can be modified
 		mockConfig := mocks.NewMockConfigProvider()
 		mockOutput := mocks.NewMockOutputFormatter()
-		
+
 		factory := New(
 			WithConfigProvider(mockConfig),
 			WithOutputFormatter(mockOutput),
 		)
-		
+
 		// Create commands
 		configCmd, err := factory.CreateCommand("config")
 		require.NoError(t, err)
-		
+
 		taskCmd, err := factory.CreateCommand("task")
 		require.NoError(t, err)
-		
+
 		// Both commands should share the same config instance
 		assert.NotNil(t, configCmd)
 		assert.NotNil(t, taskCmd)
-		
+
 		// Set a config value
 		mockConfig.Set("test_setting", "test_value")
-		
+
 		// Both commands should see the same config state
 		assert.Equal(t, "test_value", mockConfig.GetString("test_setting"))
 	})
@@ -193,20 +195,20 @@ func TestCommandInteractions(t *testing.T) {
 	t.Run("output formatter shared across commands", func(t *testing.T) {
 		// Setup mock output to track calls
 		mockOutput := mocks.NewMockOutputFormatter()
-		
+
 		factory := New(
 			WithOutputFormatter(mockOutput),
 		)
-		
+
 		// Create multiple commands that use output
 		commands := []string{"config", "version", "completion"}
-		
+
 		for _, cmdName := range commands {
 			cmd, err := factory.CreateCommand(cmdName)
 			require.NoError(t, err, "Failed to create %s command", cmdName)
 			assert.NotNil(t, cmd, "%s command should not be nil", cmdName)
 		}
-		
+
 		// All commands should share the same output formatter instance
 		// This is verified by the fact that they were all created successfully
 		// and would use the same mock instance for output operations
@@ -223,19 +225,19 @@ func TestFactoryPerformance(t *testing.T) {
 			WithOutputFormatter(mocks.NewMockOutputFormatter()),
 			WithConfigProvider(mocks.NewMockConfigProvider()),
 		)
-		
+
 		// Measure command creation time for all commands
 		commands := []string{
-			"version", "completion", "interactive", "config", 
+			"version", "completion", "interactive", "config",
 			"auth", "task", "space", "list", "user", "bulk", "export",
 		}
-		
+
 		for _, cmdName := range commands {
 			// Each command should be created quickly
 			cmd, err := factory.CreateCommand(cmdName)
 			require.NoError(t, err, "Command %s creation should not error", cmdName)
 			require.NotNil(t, cmd, "Command %s should not be nil", cmdName)
-			
+
 			// Verify command is immediately usable
 			cobraCmd := cmd.GetCobraCommand()
 			assert.NotNil(t, cobraCmd, "Command %s should have cobra command", cmdName)
@@ -247,7 +249,7 @@ func TestFactoryPerformance(t *testing.T) {
 			WithAPIClient(&MockAPIClient{}),
 			WithOutputFormatter(mocks.NewMockOutputFormatter()),
 		)
-		
+
 		// Create the same command multiple times
 		const iterations = 100
 		for i := 0; i < iterations; i++ {
@@ -263,10 +265,10 @@ func TestFactoryErrorHandling(t *testing.T) {
 	t.Run("factory works with minimal dependencies", func(t *testing.T) {
 		// Create factory with no dependencies
 		factory := New()
-		
+
 		// Simple commands should still work
 		simpleCommands := []string{"version", "completion"}
-		
+
 		for _, cmdName := range simpleCommands {
 			cmd, err := factory.CreateCommand(cmdName)
 			require.NoError(t, err, "Simple command %s should work without dependencies", cmdName)
@@ -282,7 +284,7 @@ func TestFactoryErrorHandling(t *testing.T) {
 			WithOutputFormatter(nil),
 			WithConfigProvider(nil),
 		)
-		
+
 		// Commands should still be created (though they may error on execution)
 		cmd, err := factory.CreateCommand("version")
 		require.NoError(t, err, "Should create command even with nil dependencies")
@@ -294,15 +296,15 @@ func TestFactoryErrorHandling(t *testing.T) {
 		factory := New(
 			WithOutputFormatter(mocks.NewMockOutputFormatter()),
 		)
-		
+
 		// Commands requiring API should handle missing client gracefully
 		cmd, err := factory.CreateCommand("task")
 		require.NoError(t, err, "Should create command even without API client")
-		
+
 		// Execution should fail gracefully, not panic
 		err = cmd.Execute(context.Background(), []string{"list"})
 		if err != nil {
-			assert.Contains(t, err.Error(), "not initialized", 
+			assert.Contains(t, err.Error(), "not initialized",
 				"Should provide clear error about missing dependency")
 		}
 	})
@@ -312,20 +314,20 @@ func TestFactoryErrorHandling(t *testing.T) {
 func TestFactoryCompatibility(t *testing.T) {
 	t.Run("all commands maintain expected interface", func(t *testing.T) {
 		factory := New()
-		
+
 		commands := []string{
-			"version", "completion", "interactive", "config", 
+			"version", "completion", "interactive", "config",
 			"auth", "task", "space", "list", "user", "bulk", "export",
 		}
-		
+
 		for _, cmdName := range commands {
 			cmd, err := factory.CreateCommand(cmdName)
 			require.NoError(t, err)
-			
+
 			// All commands should implement the expected interface
 			assert.NotNil(t, cmd.Execute, "Command %s should have Execute method", cmdName)
 			assert.NotNil(t, cmd.GetCobraCommand, "Command %s should have GetCobraCommand method", cmdName)
-			
+
 			// Cobra commands should have expected properties
 			cobraCmd := cmd.GetCobraCommand()
 			assert.NotEmpty(t, cobraCmd.Use, "Command %s should have Use field", cmdName)
@@ -335,17 +337,17 @@ func TestFactoryCompatibility(t *testing.T) {
 
 	t.Run("commands work with existing cobra integration", func(t *testing.T) {
 		factory := New()
-		
+
 		// Create a command and verify it integrates with cobra
 		cmd, err := factory.CreateCommand("version")
 		require.NoError(t, err)
-		
+
 		cobraCmd := cmd.GetCobraCommand()
-		
+
 		// Should be able to add to parent command
 		assert.NotNil(t, cobraCmd.RunE, "Command should have RunE function")
 		assert.Equal(t, "version", cobraCmd.Use, "Command should have correct Use")
-		
+
 		// Should be executable through cobra
 		err = cobraCmd.RunE(cobraCmd, []string{})
 		// May error, but should not panic

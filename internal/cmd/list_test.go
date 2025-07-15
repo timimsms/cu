@@ -14,11 +14,11 @@ func TestListCommands_Structure(t *testing.T) {
 		assert.Equal(t, "list", cmd.Use)
 		assert.NotEmpty(t, cmd.Short)
 		assert.NotEmpty(t, cmd.Long)
-		
+
 		// Should have subcommands
 		assert.NotEmpty(t, cmd.Commands())
 	})
-	
+
 	// Test list lists command
 	t.Run("list lists command", func(t *testing.T) {
 		cmd := listListCmd
@@ -27,7 +27,7 @@ func TestListCommands_Structure(t *testing.T) {
 		assert.NotEmpty(t, cmd.Short)
 		assert.NotNil(t, cmd.Run)
 	})
-	
+
 	// Test list default command
 	t.Run("list default command", func(t *testing.T) {
 		cmd := listDefaultCmd

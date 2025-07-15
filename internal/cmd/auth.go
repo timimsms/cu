@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/config"
 )
@@ -25,7 +26,7 @@ var authLoginCmd = &cobra.Command{
 		token, _ := cmd.Flags().GetString("token")
 		workspace, _ := cmd.Flags().GetString("workspace")
 
-		authMgr := auth.NewManager()
+		authMgr := auth.NewManager(viper.GetViper())
 
 		// If token is provided via flag, use it
 		if token != "" {
@@ -91,7 +92,7 @@ var authStatusCmd = &cobra.Command{
 	Short: "Show authentication status",
 	Long:  `Display the current authentication status and user information.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		authMgr := auth.NewManager()
+		authMgr := auth.NewManager(viper.GetViper())
 		workspace := config.GetString("default_workspace")
 		if workspace == "" {
 			workspace = auth.DefaultWorkspace
@@ -126,7 +127,7 @@ var authLogoutCmd = &cobra.Command{
 			}
 		}
 
-		authMgr := auth.NewManager()
+		authMgr := auth.NewManager(viper.GetViper())
 		if err := authMgr.DeleteToken(workspace); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to logout: %v\n", err)
 			os.Exit(1)

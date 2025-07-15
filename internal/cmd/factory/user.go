@@ -19,9 +19,9 @@ type UserCommand struct {
 func (f *Factory) createUserCommand() interfaces.Command {
 	cmd := &UserCommand{
 		Command: &base.Command{
-			Use:   "user",
-			Short: "Manage users",
-			Long:  `View and manage workspace users.`,
+			Use:    "user",
+			Short:  "Manage users",
+			Long:   `View and manage workspace users.`,
 			API:    f.api,
 			Auth:   f.auth,
 			Output: f.output,
@@ -100,16 +100,13 @@ func (c *UserCommand) runList(ctx context.Context, args []string) error {
 
 		var rows []userRow
 		for _, user := range users {
-			// Handle role conversion based on the actual user structure
-			roleStr := ""
-			if user.Role != nil {
-				roleStr = fmt.Sprintf("%d", *user.Role)
-			}
+			// Role is an int field, not a pointer
+			roleStr := fmt.Sprintf("%d", user.Role)
 
 			row := userRow{
-				ID:       fmt.Sprintf("%d", user.User.ID),
-				Username: user.User.Username,
-				Email:    user.User.Email,
+				ID:       fmt.Sprintf("%d", user.ID),
+				Username: user.Username,
+				Email:    user.Email,
 				Role:     roleStr,
 			}
 			rows = append(rows, row)

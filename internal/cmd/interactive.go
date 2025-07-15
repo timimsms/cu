@@ -9,8 +9,11 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tim/cu/internal/api"
+	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/config"
+	"github.com/tim/cu/internal/interfaces"
 )
 
 var interactiveCmd = &cobra.Command{
@@ -70,11 +73,8 @@ func runTaskInteractive() {
 	ctx := context.Background()
 
 	// Create API client
-	client, err := api.NewClient()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create API client: %v\n", err)
-		os.Exit(1)
-	}
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
 
 	// Get default list or prompt for one
 	listID := config.GetString("default_list")
@@ -84,7 +84,7 @@ func runTaskInteractive() {
 	}
 
 	// Get tasks
-	tasks, err := client.GetTasks(ctx, listID, &api.TaskQueryOptions{})
+	tasks, err := client.GetTasks(ctx, listID, &interfaces.TaskQueryOptions{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to get tasks: %v\n", err)
 		return
@@ -223,9 +223,10 @@ func updateTaskStatusInteractive(task clickup.Task) {
 	}
 
 	ctx := context.Background()
-	client, _ := api.NewClient()
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
 
-	updateOpts := &api.TaskUpdateOptions{
+	updateOpts := &interfaces.TaskUpdateOptions{
 		Status: status,
 	}
 
@@ -252,9 +253,10 @@ func updateTaskPriorityInteractive(task clickup.Task) {
 	}
 
 	ctx := context.Background()
-	client, _ := api.NewClient()
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
 
-	updateOpts := &api.TaskUpdateOptions{
+	updateOpts := &interfaces.TaskUpdateOptions{
 		Priority: priority,
 	}
 
@@ -279,9 +281,10 @@ func closeTaskInteractive(task clickup.Task) {
 	}
 
 	ctx := context.Background()
-	client, _ := api.NewClient()
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
 
-	updateOpts := &api.TaskUpdateOptions{
+	updateOpts := &interfaces.TaskUpdateOptions{
 		Status: "complete",
 	}
 
@@ -329,9 +332,10 @@ func runCreateTaskInteractive() {
 
 	// Create task
 	ctx := context.Background()
-	client, _ := api.NewClient()
+	authMgr := auth.NewManager(viper.GetViper())
+	client := api.NewClient(authMgr)
 
-	createOpts := &api.TaskCreateOptions{
+	createOpts := &interfaces.TaskCreateOptions{
 		Name:        name,
 		Description: description,
 		Priority:    priority,

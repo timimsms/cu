@@ -49,7 +49,7 @@ func TestRateLimiterWait(t *testing.T) {
 			start := time.Now()
 			err := rl.Wait(ctx)
 			elapsed := time.Since(start)
-			
+
 			assert.NoError(t, err)
 			assert.Less(t, elapsed, 10*time.Millisecond, "Should not wait for burst")
 		}
@@ -149,19 +149,19 @@ func TestRateLimiterConcurrency(t *testing.T) {
 
 		start := time.Now()
 		requestCount := 0
-		
+
 		// Try to make 10 requests
 		for i := 0; i < 10; i++ {
 			if err := rl.Wait(ctx); err == nil {
 				requestCount++
 			}
 		}
-		
+
 		elapsed := time.Since(start)
-		
+
 		// Should have made all 10 requests
 		assert.Equal(t, 10, requestCount)
-		
+
 		// Should have taken at least 200ms to complete
 		// (5 immediate, then wait ~40ms, get 1, wait ~40ms, etc)
 		assert.True(t, elapsed >= 200*time.Millisecond, "Should respect rate limit timing")
@@ -191,14 +191,14 @@ func TestTryAcquire(t *testing.T) {
 
 		// Wait for one refill period
 		time.Sleep(55 * time.Millisecond)
-		
+
 		// Should have 1 token
 		assert.True(t, rl.tryAcquire())
 		assert.False(t, rl.tryAcquire())
 
 		// Wait for full refill
 		time.Sleep(55 * time.Millisecond)
-		
+
 		// Should have 1 more token (not exceeding max)
 		assert.True(t, rl.tryAcquire())
 		assert.False(t, rl.tryAcquire())
