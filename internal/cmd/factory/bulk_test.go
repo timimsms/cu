@@ -71,8 +71,8 @@ func TestBulkCommand_Update(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		updateCmd.Flags().Set("status", "done")
-		updateCmd.Flags().Set("yes", "true")
+		_ = updateCmd.Flags().Set("status", "done")
+		_ = updateCmd.Flags().Set("yes", "true")
 
 		// Execute
 		err = updateCmd.RunE(updateCmd, []string{"task1", "task2", "task3"})
@@ -119,9 +119,9 @@ func TestBulkCommand_Update(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		updateCmd.Flags().Set("priority", "high")
-		updateCmd.Flags().Set("tag", "important,urgent")
-		updateCmd.Flags().Set("yes", "true")
+		_ = updateCmd.Flags().Set("priority", "high")
+		_ = updateCmd.Flags().Set("tag", "important,urgent")
+		_ = updateCmd.Flags().Set("yes", "true")
 
 		// Execute
 		err = updateCmd.RunE(updateCmd, []string{"task1"})
@@ -161,9 +161,9 @@ func TestBulkCommand_Update(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		updateCmd.Flags().Set("add-assignee", "@john,@jane")
-		updateCmd.Flags().Set("remove-assignee", "@bob")
-		updateCmd.Flags().Set("yes", "true")
+		_ = updateCmd.Flags().Set("add-assignee", "@john,@jane")
+		_ = updateCmd.Flags().Set("remove-assignee", "@bob")
+		_ = updateCmd.Flags().Set("yes", "true")
 
 		// Execute
 		err = updateCmd.RunE(updateCmd, []string{"task1"})
@@ -203,8 +203,8 @@ func TestBulkCommand_Update(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		updateCmd.Flags().Set("status", "done")
-		updateCmd.Flags().Set("dry-run", "true")
+		_ = updateCmd.Flags().Set("status", "done")
+		_ = updateCmd.Flags().Set("dry-run", "true")
 
 		// Execute
 		err = updateCmd.RunE(updateCmd, []string{"task1", "task2"})
@@ -465,7 +465,7 @@ func TestBulkCommand_Close(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		closeCmd.Flags().Set("yes", "true")
+		_ = closeCmd.Flags().Set("yes", "true")
 
 		// Execute
 		err = closeCmd.RunE(closeCmd, []string{"task1", "task2"})
@@ -631,7 +631,7 @@ func TestBulkCommand_Delete(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		deleteCmd.Flags().Set("yes", "true")
+		_ = deleteCmd.Flags().Set("yes", "true")
 
 		// Execute
 		err = deleteCmd.RunE(deleteCmd, []string{"task1", "task2"})

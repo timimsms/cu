@@ -180,9 +180,8 @@ func TestErrorScenarios(t *testing.T) {
 			Ch chan int // channels can't be marshaled
 		}
 
-		// Create a channel without using make() to avoid the staticcheck warning
-		ch := make(chan int)
-		_, err := json.Marshal(&badToken{Ch: ch})
+		// Create a badToken with a channel field to test marshal error handling
+		_, err := json.Marshal(&badToken{Ch: make(chan int)})
 		assert.Error(t, err)
 	})
 }
