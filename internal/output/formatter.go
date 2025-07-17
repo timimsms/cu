@@ -95,6 +95,53 @@ func (f *CSVFormatter) Format(data interface{}) error {
 			}
 		}
 		return nil
+	case []map[string]string:
+		if len(v) == 0 {
+			return nil
+		}
+		// Extract headers
+		var headers []string
+		for k := range v[0] {
+			headers = append(headers, k)
+		}
+		if err := writer.Write(headers); err != nil {
+			return err
+		}
+		// Write rows
+		for _, row := range v {
+			var values []string
+			for _, h := range headers {
+				values = append(values, row[h])
+			}
+			if err := writer.Write(values); err != nil {
+				return err
+			}
+		}
+		return nil
+	case map[string]interface{}:
+		// Handle single map as a single row
+		var headers []string
+		var values []string
+		for k, val := range v {
+			headers = append(headers, k)
+			values = append(values, fmt.Sprint(val))
+		}
+		if err := writer.Write(headers); err != nil {
+			return err
+		}
+		return writer.Write(values)
+	case map[string]string:
+		// Handle single map as a single row
+		var headers []string
+		var values []string
+		for k, val := range v {
+			headers = append(headers, k)
+			values = append(values, val)
+		}
+		if err := writer.Write(headers); err != nil {
+			return err
+		}
+		return writer.Write(values)
 	default:
 		// Try to convert to slice of maps using reflection
 		rv := reflect.ValueOf(data)

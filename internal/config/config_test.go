@@ -142,7 +142,7 @@ output: json
 		// Change to project directory
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(projectDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Reset globals
 		hasProjectConfig = false
@@ -192,7 +192,7 @@ func TestFindProjectConfig(t *testing.T) {
 		// Change to child directory
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(childDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Find config
 		found := findProjectConfig()
@@ -206,7 +206,7 @@ func TestFindProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		found := findProjectConfig()
 		assert.Empty(t, found)
@@ -224,7 +224,7 @@ func TestFindProjectConfig(t *testing.T) {
 
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Should not find symlink
 		found := findProjectConfig()
@@ -237,7 +237,7 @@ func TestSaveProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Reset globals
 		projectConfigPath = ""
@@ -267,7 +267,7 @@ func TestSaveProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Create existing config
 		existingContent := `default_space: OldSpace
@@ -309,7 +309,7 @@ output: table`
 
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(testDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Remove current directory
 		require.NoError(t, os.Remove(testDir))
@@ -328,7 +328,7 @@ func TestInitProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Reset globals
 		projectConfigPath = ""
@@ -357,7 +357,7 @@ func TestInitProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Create existing config
 		configPath := filepath.Join(tmpDir, ProjectConfigFileName)
@@ -376,7 +376,7 @@ func TestInitProjectConfig(t *testing.T) {
 
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(testDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Remove current directory
 		require.NoError(t, os.Remove(testDir))
@@ -390,7 +390,7 @@ func TestInitProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Try to override ProjectConfigFileName to create file outside directory
 		oldFileName := ProjectConfigFileName
@@ -410,11 +410,11 @@ func TestInitProjectConfig(t *testing.T) {
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Make directory read-only
 		require.NoError(t, os.Chmod(tmpDir, 0500))
-		defer os.Chmod(tmpDir, 0750)
+		defer func() { _ = os.Chmod(tmpDir, 0750) }()
 
 		err := InitProjectConfig()
 		assert.Error(t, err)

@@ -425,7 +425,7 @@ func TestCacheConcurrency(t *testing.T) {
 			go func(id int) {
 				for j := 0; j < 10; j++ {
 					key := string(rune('a'+id)) + string(rune('0'+j))
-					c.Set(key, id*10+j)
+					_ = c.Set(key, id*10+j)
 				}
 				done <- true
 			}(i)
@@ -437,7 +437,7 @@ func TestCacheConcurrency(t *testing.T) {
 				for j := 0; j < 10; j++ {
 					key := string(rune('a'+id)) + string(rune('0'+j))
 					var val int
-					c.Get(key, &val)
+					_ = c.Get(key, &val)
 				}
 				done <- true
 			}(i)
@@ -485,7 +485,7 @@ func TestCacheErrorPaths(t *testing.T) {
 		// Change permissions to make directory read-only
 		err = os.Chmod(tmpDir, 0500)
 		require.NoError(t, err)
-		defer os.Chmod(tmpDir, 0750)
+		defer func() { _ = os.Chmod(tmpDir, 0750) }()
 
 		// Clear should fail due to permissions
 		err = c.Clear()
@@ -563,7 +563,7 @@ func TestCacheErrorPaths(t *testing.T) {
 		}
 
 		// Clean up
-		os.Chmod(filename, 0600)
+		_ = os.Chmod(filename, 0600)
 	})
 }
 

@@ -350,7 +350,7 @@ func TestKeyringMock(t *testing.T) {
 
 	t.Run("Reset", func(t *testing.T) {
 		k := NewKeyringMock()
-		k.Set("service", "account", "secret")
+		_ = k.Set("service", "account", "secret")
 		k.SetError(errors.New("error"))
 
 		k.Reset()

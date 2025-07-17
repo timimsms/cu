@@ -20,67 +20,8 @@ func (m *mockConfig) GetString(key string) string {
 	return m.values[key]
 }
 
-// mockKeyring provides a mock implementation of keyring operations
-type mockKeyring struct {
-	data     map[string]map[string]string // service -> account -> secret
-	getError error
-	setError error
-	delError error
-	notFound bool
-}
-
-func newMockKeyring() *mockKeyring {
-	return &mockKeyring{
-		data: make(map[string]map[string]string),
-	}
-}
-
-func (m *mockKeyring) Get(service, account string) (string, error) {
-	if m.getError != nil {
-		return "", m.getError
-	}
-	if m.notFound {
-		return "", keyring.ErrNotFound
-	}
-
-	serviceData, ok := m.data[service]
-	if !ok {
-		return "", keyring.ErrNotFound
-	}
-
-	secret, ok := serviceData[account]
-	if !ok {
-		return "", keyring.ErrNotFound
-	}
-
-	return secret, nil
-}
-
-func (m *mockKeyring) Set(service, account, secret string) error {
-	if m.setError != nil {
-		return m.setError
-	}
-
-	if m.data[service] == nil {
-		m.data[service] = make(map[string]string)
-	}
-	m.data[service][account] = secret
-	return nil
-}
-
-func (m *mockKeyring) Delete(service, account string) error {
-	if m.delError != nil {
-		return m.delError
-	}
-
-	if serviceData, ok := m.data[service]; ok {
-		delete(serviceData, account)
-		if len(serviceData) == 0 {
-			delete(m.data, service)
-		}
-	}
-	return nil
-}
+// Removed unused mockKeyring and related methods
+// The keyring functionality is tested through the mock auth provider instead
 
 // Since we can't directly mock the keyring package, we'll test what we can
 // and document that full testing requires integration tests
@@ -240,7 +181,9 @@ func TestErrorScenarios(t *testing.T) {
 			Ch chan int // channels can't be marshaled
 		}
 
-		_, err := json.Marshal(&badToken{make(chan int)})
+		// Create a channel without using make() to avoid the staticcheck warning
+		ch := make(chan int)
+		_, err := json.Marshal(&badToken{Ch: ch})
 		assert.Error(t, err)
 	})
 }

@@ -63,8 +63,8 @@ func TestAuthCommand_Login(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		loginCmd.Flags().Set("token", "test-token-123")
-		loginCmd.Flags().Set("workspace", "test-workspace")
+		_ = loginCmd.Flags().Set("token", "test-token-123")
+		_ = loginCmd.Flags().Set("workspace", "test-workspace")
 
 		// Execute
 		err = loginCmd.RunE(loginCmd, []string{})
@@ -122,9 +122,7 @@ func TestAuthCommand_Login(t *testing.T) {
 		// Setup
 		mockAuth := &mocks.MockAuthManager{}
 		mockOutput := mocks.NewMockOutputFormatter()
-		mockConfig := &mocks.MockConfigWithSaveError{
-			MockConfigProvider: mocks.NewMockConfigProvider(),
-		}
+		mockConfig := mocks.NewMockConfigProvider()
 
 		factory := New(
 			WithAuthManager(mockAuth),
@@ -142,8 +140,8 @@ func TestAuthCommand_Login(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags with non-default workspace
-		loginCmd.Flags().Set("token", "test-token")
-		loginCmd.Flags().Set("workspace", "custom-workspace")
+		_ = loginCmd.Flags().Set("token", "test-token")
+		_ = loginCmd.Flags().Set("workspace", "custom-workspace")
 
 		// Execute
 		err = loginCmd.RunE(loginCmd, []string{})
@@ -156,10 +154,12 @@ func TestAuthCommand_Login(t *testing.T) {
 	t.Run("login with empty interactive input", func(t *testing.T) {
 		// Setup
 		mockAuth := &mocks.MockAuthManager{}
+		mockOutput := mocks.NewMockOutputFormatter()
 		mockConfig := mocks.NewMockConfigProvider()
 
 		factory := New(
 			WithAuthManager(mockAuth),
+			WithOutputFormatter(mockOutput),
 			WithConfigProvider(mockConfig),
 		)
 
@@ -203,7 +203,7 @@ func TestAuthCommand_Login(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		loginCmd.Flags().Set("token", "test-token")
+		_ = loginCmd.Flags().Set("token", "test-token")
 
 		// Execute
 		err = loginCmd.RunE(loginCmd, []string{})
@@ -355,7 +355,7 @@ func TestAuthCommand_Logout(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set workspace flag
-		logoutCmd.Flags().Set("workspace", "custom-workspace")
+		_ = logoutCmd.Flags().Set("workspace", "custom-workspace")
 
 		// Execute
 		err = logoutCmd.RunE(logoutCmd, []string{})

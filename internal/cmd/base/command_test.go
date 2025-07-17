@@ -70,7 +70,7 @@ func TestCommand_Flags(t *testing.T) {
 		cmd.AddFlag("config", "c", "default.yml", "Config file")
 
 		// Set flag value
-		cmd.cmd.Flags().Set("config", "custom.yml")
+		_ = cmd.cmd.Flags().Set("config", "custom.yml")
 
 		value, err := cmd.GetFlag("config")
 		assert.NoError(t, err)
@@ -84,7 +84,7 @@ func TestCommand_Flags(t *testing.T) {
 		cmd.AddBoolFlag("verbose", "v", false, "Verbose output")
 
 		// Set flag value
-		cmd.cmd.Flags().Set("verbose", "true")
+		_ = cmd.cmd.Flags().Set("verbose", "true")
 
 		value, err := cmd.GetBoolFlag("verbose")
 		assert.NoError(t, err)

@@ -13,17 +13,7 @@ import (
 )
 
 // mockClient for testing UserLookup
-type mockClient struct {
-	users []clickup.TeamUser
-	err   error
-}
-
-func (m *mockClient) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([]clickup.TeamUser, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return m.users, nil
-}
+// Removed unused mockClient - functionality is tested through integration with main mock client
 
 func TestNewUserLookup(t *testing.T) {
 	client := &Client{}

@@ -54,7 +54,7 @@ func (f *FormatterWrapper) PrintTo(w io.Writer, data interface{}) error {
 	// Restore stdout and copy the output
 	w2.Close()
 	os.Stdout = oldStdout
-	io.Copy(w, r)
+	_, _ = io.Copy(w, r)
 
 	return err
 }

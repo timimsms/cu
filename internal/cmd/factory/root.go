@@ -104,10 +104,8 @@ func (c *RootCommand) GetCobraCommand() *cobra.Command {
 		Long:  c.Long,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Initialize configuration if needed
-			if c.Config != nil {
-				// Config is already injected, no need to initialize from file
-				// This allows for better testing
-			}
+			// Config is already injected through dependency injection
+			// This allows for better testing and flexibility
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {

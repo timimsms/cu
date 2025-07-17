@@ -8,6 +8,14 @@ import (
 	"github.com/tim/cu/internal/interfaces"
 )
 
+// ContextKey is a custom type for context keys to avoid collisions
+type ContextKey string
+
+const (
+	// CommandContextKey is the key for storing the command in context
+	CommandContextKey ContextKey = "command"
+)
+
 // Command provides base functionality for all commands
 type Command struct {
 	// Dependencies
@@ -36,7 +44,7 @@ func (c *Command) Setup() {
 		Long:  c.Long,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Create context with command
-			ctx := context.WithValue(cmd.Context(), "command", cmd)
+			ctx := context.WithValue(cmd.Context(), CommandContextKey, cmd)
 
 			// Check authentication if needed
 			if c.requiresAuth() && !c.isAuthenticated() {

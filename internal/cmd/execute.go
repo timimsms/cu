@@ -23,9 +23,7 @@ func ExecuteWithFactory() error {
 	authManager := auth.NewManager(cfg)
 	apiClient := api.NewClient(authManager)
 	// Initialize API connection
-	if err := apiClient.Connect(); err != nil {
-		// It's okay if not authenticated yet, commands will handle it
-	}
+	_ = apiClient.Connect() // It's okay if not authenticated yet, commands will handle it
 	outputFormatter := output.NewFormatter(cfg)
 
 	// Create factory with dependencies
