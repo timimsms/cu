@@ -53,7 +53,7 @@ func (f *Factory) createAuthCommand() interfaces.Command {
 	cmd.subcommands["logout"] = cmd.runLogout
 
 	// Set the execution function
-	cmd.Command.RunFunc = cmd.run
+	cmd.RunFunc = cmd.run
 
 	return cmd
 }
@@ -103,7 +103,7 @@ func (c *AuthCommand) runLogin(ctx context.Context, args []string) error {
 	fmt.Fprintln(c.stdout)
 
 	reader := bufio.NewReader(c.stdin)
-	fmt.Fprint(c.stdout, "Enter your ClickUp API token: ")
+	_, _ = fmt.Fprint(c.stdout, "Enter your ClickUp API token: ")
 	tokenInput, err := reader.ReadString('\n')
 	if err != nil {
 		return fmt.Errorf("failed to read token: %w", err)

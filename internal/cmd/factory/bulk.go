@@ -57,7 +57,7 @@ func (f *Factory) createBulkCommand() interfaces.Command {
 	cmd.subcommands["delete"] = cmd.runDelete
 
 	// Set the execution function
-	cmd.Command.RunFunc = cmd.run
+	cmd.RunFunc = cmd.run
 
 	return cmd
 }
@@ -107,7 +107,7 @@ func (c *BulkCommand) runUpdate(ctx context.Context, args []string) error {
 
 	// Check if any updates were specified
 	if !c.hasUpdates(updateOpts) {
-		return fmt.Errorf("no updates specified. Use flags like --status, --priority, etc.")
+		return fmt.Errorf("no updates specified: use flags like --status, --priority, etc")
 	}
 
 	// Show what will be updated
@@ -257,7 +257,7 @@ func (c *BulkCommand) runDelete(ctx context.Context, args []string) error {
 	// Strong confirmation for delete
 	if !c.yes {
 		c.Output.PrintWarning(fmt.Sprintf("WARNING: This will permanently delete %d task(s).", len(taskIDs)))
-		fmt.Fprint(c.stdout, "Are you absolutely sure? Type 'delete' to confirm: ")
+		_, _ = fmt.Fprint(c.stdout, "Are you absolutely sure? Type 'delete' to confirm: ")
 
 		reader := bufio.NewReader(c.stdin)
 		response, err := reader.ReadString('\n')

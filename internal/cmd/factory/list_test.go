@@ -53,7 +53,7 @@ func TestListCommand(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("space", "space123")
 
 		// Execute without subcommand (should default to list)
 		err = listCmd.RunE(listCmd, []string{})
@@ -124,7 +124,7 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("space", "space123")
 
 		// Execute list subcommand
 		err = listCmd.RunE(listCmd, []string{})
@@ -171,7 +171,7 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("folder", "folder123")
+		_ = listCmd.Flags().Set("folder", "folder123")
 
 		// Execute list subcommand
 		err = listCmd.RunE(listCmd, []string{})
@@ -226,8 +226,8 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags to include archived
-		listCmd.Flags().Set("space", "space123")
-		listCmd.Flags().Set("archived", "true")
+		_ = listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("archived", "true")
 
 		// Execute list subcommand
 		err = listCmd.RunE(listCmd, []string{})
@@ -298,7 +298,7 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("space", "space123")
 
 		// Execute list subcommand
 		err = listCmd.RunE(listCmd, []string{})
@@ -353,7 +353,7 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("space", "space123")
 
 		// Execute
 		err = listCmd.RunE(listCmd, []string{})
@@ -399,7 +399,7 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("space", "space123")
 
 		// Execute - should succeed despite folder error
 		err = listCmd.RunE(listCmd, []string{})
@@ -449,7 +449,7 @@ func TestListCommand_List(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		listCmd.Flags().Set("space", "space123")
+		_ = listCmd.Flags().Set("space", "space123")
 
 		// Execute list subcommand
 		err = listCmd.RunE(listCmd, []string{})
@@ -516,7 +516,7 @@ func TestListCommand_Default(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set project flag
-		defaultCmd.Flags().Set("project", "true")
+		_ = defaultCmd.Flags().Set("project", "true")
 
 		// Execute
 		err = defaultCmd.RunE(defaultCmd, []string{"list456"})

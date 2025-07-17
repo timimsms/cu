@@ -52,7 +52,7 @@ func (f *FormatterWrapper) PrintTo(w io.Writer, data interface{}) error {
 	err := Format(format, data)
 
 	// Restore stdout and copy the output
-	w2.Close()
+	_ = w2.Close()
 	os.Stdout = oldStdout
 	_, _ = io.Copy(w, r)
 
@@ -66,9 +66,9 @@ func (f *FormatterWrapper) PrintInfo(msg string) {
 	}
 
 	if f.colorOutput {
-		fmt.Fprintln(os.Stdout, msg)
+		_, _ = fmt.Fprintln(os.Stdout, msg)
 	} else {
-		fmt.Fprintln(os.Stdout, msg)
+		_, _ = fmt.Fprintln(os.Stdout, msg)
 	}
 }
 
@@ -81,7 +81,7 @@ func (f *FormatterWrapper) PrintSuccess(msg string) {
 	if f.colorOutput {
 		color.Green("✓ %s", msg)
 	} else {
-		fmt.Fprintf(os.Stdout, "✓ %s\n", msg)
+		_, _ = fmt.Fprintf(os.Stdout, "✓ %s\n", msg)
 	}
 }
 

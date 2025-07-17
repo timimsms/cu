@@ -116,7 +116,7 @@ func (c *ExportCommand) runExportTasks(ctx context.Context, args []string) error
 		}
 		output = file
 		outputCloser = file
-		defer outputCloser.Close()
+		defer func() { _ = outputCloser.Close() }()
 	} else {
 		output = c.outputWriter
 	}

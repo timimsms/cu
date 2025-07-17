@@ -46,7 +46,7 @@ func TestClientMethods(t *testing.T) {
 		switch r.URL.Path {
 		case "/api/v2/team":
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{"teams":[{"id":"123","name":"Test Workspace"}]}`)
+			_, _ = fmt.Fprintln(w, `{"teams":[{"id":"123","name":"Test Workspace"}]}`)
 		case "/api/v2/team/123/space":
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintln(w, `{"spaces":[{"id":"456","name":"Test Space"}]}`)

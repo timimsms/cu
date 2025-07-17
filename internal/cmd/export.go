@@ -159,7 +159,7 @@ Examples:
 				fmt.Fprintf(os.Stderr, "Failed to create output file: %v\n", err)
 				os.Exit(1)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 			output = file
 		} else {
 			output = os.Stdout
@@ -276,8 +276,8 @@ func exportTasksToMarkdown(output *os.File, tasks []clickup.Task) error {
 	}
 
 	// Write markdown
-	fmt.Fprintf(output, "# Task Report\n\n")
-	fmt.Fprintf(output, "Generated: %s\n", time.Now().Format(time.RFC3339))
+	_, _ = fmt.Fprintf(output, "# Task Report\n\n")
+	_, _ = fmt.Fprintf(output, "Generated: %s\n", time.Now().Format(time.RFC3339))
 	fmt.Fprintf(output, "Total tasks: %d\n\n", len(tasks))
 
 	// Write summary

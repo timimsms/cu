@@ -112,8 +112,8 @@ func runTaskInteractive() {
 
 	searcher := func(input string, index int) bool {
 		task := tasks[index]
-		name := strings.Replace(strings.ToLower(task.Name), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+		name := strings.ReplaceAll(strings.ToLower(task.Name), " ", "")
+		input = strings.ReplaceAll(strings.ToLower(input), " ", "")
 		return strings.Contains(name, input)
 	}
 

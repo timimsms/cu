@@ -175,13 +175,12 @@ func TestTokenFormatHandling(t *testing.T) {
 // TestErrorScenarios tests various error conditions
 func TestErrorScenarios(t *testing.T) {
 	t.Run("marshal error handling", func(t *testing.T) {
-		// Test that we handle marshal errors properly using function fields
-		type badToken struct {
-			Fn func() // functions can't be marshaled
-		}
-
-		// Create a badToken with a function field to test marshal error handling
-		_, err := json.Marshal(&badToken{Fn: func() {}})
+		// Test that we handle marshal errors properly using invalid UTF-8
+		invalidUTF8 := "\xff\xfe\xfd"
+		
+		// Create a map with invalid UTF-8 to test marshal error handling
+		data := map[string]string{invalidUTF8: "value"}
+		_, err := json.Marshal(data)
 		assert.Error(t, err)
 	})
 }
