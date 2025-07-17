@@ -257,9 +257,9 @@ func TestExportCommand_Tasks(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		tasksCmd.Flags().Set("list", "list123")
-		tasksCmd.Flags().Set("status", "open")
-		tasksCmd.Flags().Set("format", "json")
+		_ = tasksCmd.Flags().Set("list", "list123")
+		_ = tasksCmd.Flags().Set("status", "open")
+		_ = tasksCmd.Flags().Set("format", "json")
 
 		// Set output to buffer
 		exportCmd := cmd.(*ExportCommand)
@@ -304,9 +304,9 @@ func TestExportCommand_Tasks(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		tasksCmd.Flags().Set("list", "list123")
-		tasksCmd.Flags().Set("priority", "high")
-		tasksCmd.Flags().Set("format", "csv")
+		_ = tasksCmd.Flags().Set("list", "list123")
+		_ = tasksCmd.Flags().Set("priority", "high")
+		_ = tasksCmd.Flags().Set("format", "csv")
 
 		// Set output to buffer
 		exportCmd := cmd.(*ExportCommand)
@@ -428,9 +428,9 @@ func TestExportCommand_Tasks(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags with output file
-		tasksCmd.Flags().Set("list", "list123")
-		tasksCmd.Flags().Set("format", "csv")
-		tasksCmd.Flags().Set("output", "test-export.csv")
+		_ = tasksCmd.Flags().Set("list", "list123")
+		_ = tasksCmd.Flags().Set("format", "csv")
+		_ = tasksCmd.Flags().Set("output", "test-export.csv")
 
 		// Execute
 		err = tasksCmd.RunE(tasksCmd, []string{})

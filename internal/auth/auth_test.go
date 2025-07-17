@@ -175,13 +175,13 @@ func TestTokenFormatHandling(t *testing.T) {
 // TestErrorScenarios tests various error conditions
 func TestErrorScenarios(t *testing.T) {
 	t.Run("marshal error handling", func(t *testing.T) {
-		// Test that we handle marshal errors properly
+		// Test that we handle marshal errors properly using function fields
 		type badToken struct {
-			Ch chan int // channels can't be marshaled
+			Fn func() // functions can't be marshaled
 		}
 
-		// Create a badToken with a channel field to test marshal error handling
-		_, err := json.Marshal(&badToken{Ch: make(chan int)})
+		// Create a badToken with a function field to test marshal error handling
+		_, err := json.Marshal(&badToken{Fn: func() {}})
 		assert.Error(t, err)
 	})
 }
