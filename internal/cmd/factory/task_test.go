@@ -244,9 +244,9 @@ func TestTaskCommand_Create(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		createCmd.Flags().Set("description", "Task description")
-		createCmd.Flags().Set("priority", "high")
-		createCmd.Flags().Set("tag", "important")
+		_ = createCmd.Flags().Set("description", "Task description")
+		_ = createCmd.Flags().Set("priority", "high")
+		_ = createCmd.Flags().Set("tag", "important")
 
 		// Execute
 		err = createCmd.RunE(createCmd, []string{"Task with options"})
@@ -346,7 +346,7 @@ func TestTaskCommand_Update(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set flags
-		updateCmd.Flags().Set("name", "Updated Task")
+		_ = updateCmd.Flags().Set("name", "Updated Task")
 
 		// Execute
 		err = updateCmd.RunE(updateCmd, []string{"task123"})

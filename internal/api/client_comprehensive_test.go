@@ -49,13 +49,13 @@ func TestClientMethods(t *testing.T) {
 			_, _ = fmt.Fprintln(w, `{"teams":[{"id":"123","name":"Test Workspace"}]}`)
 		case "/api/v2/team/123/space":
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{"spaces":[{"id":"456","name":"Test Space"}]}`)
+			_, _ = fmt.Fprintln(w, `{"spaces":[{"id":"456","name":"Test Space"}]}`)
 		case "/api/v2/space/456/folder":
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{"folders":[{"id":"789","name":"Test Folder"}]}`)
+			_, _ = fmt.Fprintln(w, `{"folders":[{"id":"789","name":"Test Folder"}]}`)
 		case "/api/v2/folder/789/list":
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintln(w, `{"lists":[{"id":"101","name":"Test List"}]}`)
+			_, _ = fmt.Fprintln(w, `{"lists":[{"id":"101","name":"Test List"}]}`)
 		case "/api/v2/task/task123":
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintln(w, `{"id":"task123","name":"Test Task","status":{"status":"open"}}`)

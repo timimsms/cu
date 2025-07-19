@@ -55,7 +55,7 @@ func (f *Factory) createExportCommand() interfaces.Command {
 	cmd.subcommands["tasks"] = cmd.runExportTasks
 
 	// Set the execution function
-	cmd.Command.RunFunc = cmd.run
+	cmd.RunFunc = cmd.run
 
 	return cmd
 }

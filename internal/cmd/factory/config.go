@@ -38,7 +38,7 @@ func (f *Factory) createConfigCommand() interfaces.Command {
 	cmd.subcommands["show"] = cmd.runShow
 
 	// Set the execution function
-	cmd.Command.RunFunc = cmd.run
+	cmd.RunFunc = cmd.run
 
 	return cmd
 }

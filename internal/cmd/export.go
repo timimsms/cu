@@ -278,12 +278,12 @@ func exportTasksToMarkdown(output *os.File, tasks []clickup.Task) error {
 	// Write markdown
 	_, _ = fmt.Fprintf(output, "# Task Report\n\n")
 	_, _ = fmt.Fprintf(output, "Generated: %s\n", time.Now().Format(time.RFC3339))
-	fmt.Fprintf(output, "Total tasks: %d\n\n", len(tasks))
+	_, _ = fmt.Fprintf(output, "Total tasks: %d\n\n", len(tasks))
 
 	// Write summary
-	fmt.Fprintf(output, "## Summary by Status\n\n")
+	_, _ = fmt.Fprintf(output, "## Summary by Status\n\n")
 	for status, statusTasks := range tasksByStatus {
-		fmt.Fprintf(output, "- **%s**: %d tasks\n", status, len(statusTasks))
+		_, _ = fmt.Fprintf(output, "- **%s**: %d tasks\n", status, len(statusTasks))
 	}
 	fmt.Fprintln(output)
 

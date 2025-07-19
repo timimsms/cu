@@ -8,11 +8,8 @@ import (
 func TestAPICommand(t *testing.T) {
 	// Just verify the command exists and can be created
 	cmd := apiCmd
-	if cmd == nil {
-		t.Fatal("apiCmd should not be nil")
-	}
 
-	// Check command metadata
+	// Check command metadata - cmd is a global variable that should always be initialized
 	if cmd.Use != "api <endpoint>" {
 		t.Errorf("Expected Use 'api <endpoint>', got %s", cmd.Use)
 	}

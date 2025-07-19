@@ -40,7 +40,7 @@ func (f *Factory) createInteractiveCommand() interfaces.Command {
 	cmd.confirmPrompt = defaultConfirmPrompt
 
 	// Set the execution function
-	cmd.Command.RunFunc = cmd.run
+	cmd.RunFunc = cmd.run
 
 	return cmd
 }
