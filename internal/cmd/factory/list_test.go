@@ -499,7 +499,10 @@ func TestListCommand_Default(t *testing.T) {
 	t.Run("set default list with project flag", func(t *testing.T) {
 		// Setup
 		mockOutput := mocks.NewMockOutputFormatter()
-		mockConfig := mocks.NewMockConfigProvider()
+		mockConfig := &mocks.MockConfigWithProject{
+			MockConfigProvider:  mocks.NewMockConfigProvider(),
+			HasProjectConfigVal: false, // Will be created
+		}
 
 		factory := New(
 			WithOutputFormatter(mockOutput),

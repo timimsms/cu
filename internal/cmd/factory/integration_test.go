@@ -2,6 +2,7 @@ package factory
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,13 @@ func TestFactoryIntegration(t *testing.T) {
 				// Verify command has cobra command
 				cobraCmd := cmd.GetCobraCommand()
 				assert.NotNil(t, cobraCmd, "%s should have cobra command", cmdName)
-				assert.Equal(t, cmdName, cobraCmd.Use, "%s should have correct use string", cmdName)
+				// For cobra commands, Use field might include arguments
+				// Extract just the command name
+				useCmd := cobraCmd.Use
+				if idx := strings.Index(useCmd, " "); idx > 0 {
+					useCmd = useCmd[:idx]
+				}
+				assert.Equal(t, cmdName, useCmd, "%s should have correct use string", cmdName)
 			})
 		}
 	})
@@ -336,7 +343,11 @@ func TestFactoryCompatibility(t *testing.T) {
 	})
 
 	t.Run("commands work with existing cobra integration", func(t *testing.T) {
-		factory := New()
+		// Create factory with minimal required dependencies
+		factory := New(
+			WithConfigProvider(mocks.NewMockConfigProvider()),
+			WithOutputFormatter(mocks.NewMockOutputFormatter()),
+		)
 
 		// Create a command and verify it integrates with cobra
 		cmd, err := factory.CreateCommand("version")
@@ -349,8 +360,10 @@ func TestFactoryCompatibility(t *testing.T) {
 		assert.Equal(t, "version", cobraCmd.Use, "Command should have correct Use")
 
 		// Should be executable through cobra
+		// Set up context for the command
+		cobraCmd.SetContext(context.Background())
 		err = cobraCmd.RunE(cobraCmd, []string{})
-		// May error, but should not panic
-		assert.NotContains(t, err.Error(), "panic", "Should not panic on execution")
+		// Should not error for version command
+		assert.NoError(t, err, "Version command should execute without error")
 	})
 }

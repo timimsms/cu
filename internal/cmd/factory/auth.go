@@ -93,6 +93,17 @@ func (c *AuthCommand) runLogin(ctx context.Context, args []string) error {
 			return fmt.Errorf("failed to save token: %w", err)
 		}
 
+		// Save workspace as default if it's the first one
+		if c.workspace != "" && c.workspace != auth.DefaultWorkspace {
+			c.Config.Set("default_workspace", c.workspace)
+			if saver, ok := c.Config.(interface{ Save() error }); ok {
+				if err := saver.Save(); err != nil {
+					// Log warning but don't fail - the auth is already saved
+					c.Output.PrintWarning(fmt.Sprintf("failed to save default workspace: %v", err))
+				}
+			}
+		}
+
 		c.Output.PrintSuccess("Successfully authenticated!")
 		return nil
 	}

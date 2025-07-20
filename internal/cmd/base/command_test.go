@@ -186,10 +186,12 @@ func TestCommand_Context(t *testing.T) {
 		Use: "test",
 		RunFunc: func(ctx context.Context, args []string) error {
 			// Verify context has command
-			val := ctx.Value("command")
+			val := ctx.Value(CommandContextKey)
 			assert.NotNil(t, val)
 			return nil
 		},
+		Auth:   &mocks.MockAuthManager{IsAuthenticatedResult: true}, // Provide auth to pass the check
+		Config: mocks.NewMockConfigProvider(),                       // Provide config to avoid nil pointer
 	}
 	cmd.Setup()
 

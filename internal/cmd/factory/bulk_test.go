@@ -230,6 +230,11 @@ func TestBulkCommand_Update(t *testing.T) {
 			WithConfigProvider(mockConfig),
 		)
 
+		// Mock successful update
+		mockAPI.UpdateTaskFunc = func(ctx context.Context, taskID string, opts *interfaces.TaskUpdateOptions) (*clickup.Task, error) {
+			return nil, nil
+		}
+
 		// Create command and cast to BulkCommand
 		cmd, err := factory.CreateCommand("bulk")
 		require.NoError(t, err)
@@ -418,8 +423,10 @@ func TestBulkCommand_Update(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to update 1 task(s)")
 
 		// Verify summary shows correct counts
-		assert.Contains(t, mockOutput.InfoMsg, "Success: 2")
-		assert.Contains(t, mockOutput.InfoMsg, "Failed:  1")
+		// InfoMsg is a slice, need to check all messages
+		allInfo := strings.Join(mockOutput.InfoMsg, " ")
+		assert.Contains(t, allInfo, "Success: 2")
+		assert.Contains(t, allInfo, "Failed:  1")
 	})
 
 	t.Run("update with no API client", func(t *testing.T) {
@@ -749,8 +756,10 @@ func TestBulkCommand_Delete(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to delete 1 task(s)")
 
 		// Verify summary
-		assert.Contains(t, mockOutput.InfoMsg, "Deleted: 2")
-		assert.Contains(t, mockOutput.InfoMsg, "Failed:  1")
+		// InfoMsg is a slice, need to check all messages
+		allInfo := strings.Join(mockOutput.InfoMsg, " ")
+		assert.Contains(t, allInfo, "Deleted: 2")
+		assert.Contains(t, allInfo, "Failed:  1")
 	})
 }
 

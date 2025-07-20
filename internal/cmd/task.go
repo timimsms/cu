@@ -719,9 +719,21 @@ func getTaskAssignee(task clickup.Task) string {
 func getTaskPriority(task clickup.Task) string {
 	// Priority is a struct, check if it has a value
 	if task.Priority.Priority != "" {
-		return task.Priority.Priority
+		// Convert numeric priority to string
+		switch task.Priority.Priority {
+		case "1":
+			return "urgent"
+		case "2":
+			return "high"
+		case "3":
+			return "normal"
+		case "4":
+			return "low"
+		default:
+			return task.Priority.Priority
+		}
 	}
-	return "Normal"
+	return "normal"
 }
 
 func getTaskDueDate(task clickup.Task) string {

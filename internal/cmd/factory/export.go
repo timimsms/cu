@@ -277,8 +277,20 @@ func (c *ExportCommand) getTaskPriority(task clickup.Task) string {
 		return ""
 	}
 
-	// The Priority field contains text like "urgent", "high", etc.
-	return strings.ToLower(task.Priority.Priority)
+	// Convert numeric priority to string
+	switch task.Priority.Priority {
+	case "1":
+		return "urgent"
+	case "2":
+		return "high"
+	case "3":
+		return "normal"
+	case "4":
+		return "low"
+	default:
+		// The Priority field might contain text like "urgent", "high", etc.
+		return strings.ToLower(task.Priority.Priority)
+	}
 }
 
 // getTaskDueDate returns the task due date as a string
