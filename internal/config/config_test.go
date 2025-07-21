@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -168,7 +169,15 @@ output: json
 
 	t.Run("directory creation failure", func(t *testing.T) {
 		oldConfigDir := DefaultConfigDir
-		DefaultConfigDir = "/root/no-permission/config"
+		
+		// Use a path that's invalid on both Windows and Unix
+		if runtime.GOOS == "windows" {
+			// On Windows, use a path with invalid characters
+			DefaultConfigDir = "C:\\<>:|?*\\config"
+		} else {
+			// On Unix, use a path without permissions
+			DefaultConfigDir = "/root/no-permission/config"
+		}
 		defer func() { DefaultConfigDir = oldConfigDir }()
 
 		err := Init("")
