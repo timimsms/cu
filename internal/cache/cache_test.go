@@ -410,7 +410,15 @@ func TestInitCaches(t *testing.T) {
 	t.Run("initialization failure", func(t *testing.T) {
 		// Use a path that will fail
 		origDir := config.DefaultConfigDir
-		config.DefaultConfigDir = "/root/no-permission"
+		
+		// Use a path that's invalid on both Windows and Unix
+		if runtime.GOOS == "windows" {
+			// On Windows, use a path with invalid characters
+			config.DefaultConfigDir = "C:\\<>:|?*"
+		} else {
+			// On Unix, use a path without permissions
+			config.DefaultConfigDir = "/root/no-permission"
+		}
 		defer func() { config.DefaultConfigDir = origDir }()
 
 		err := InitCaches()

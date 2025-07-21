@@ -307,10 +307,16 @@ output: table`
 		// Viper returns different error when path has no extension
 		assert.True(t, err != nil &&
 			(strings.Contains(err.Error(), "invalid config path") ||
-				strings.Contains(err.Error(), "config type could not be determined")))
+				strings.Contains(err.Error(), "config type could not be determined") ||
+				strings.Contains(err.Error(), "must be absolute path")))
 	})
 
 	t.Run("getcwd error", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			// Windows doesn't allow removing the current directory
+			t.Skip("Skipping directory removal test on Windows")
+		}
+		
 		// Change to a directory then remove it
 		tmpDir := t.TempDir()
 		testDir := filepath.Join(tmpDir, "test")
@@ -378,6 +384,11 @@ func TestInitProjectConfig(t *testing.T) {
 	})
 
 	t.Run("getcwd error", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			// Windows doesn't allow removing the current directory
+			t.Skip("Skipping directory removal test on Windows")
+		}
+		
 		// Create and change to a directory, then remove it
 		tmpDir := t.TempDir()
 		testDir := filepath.Join(tmpDir, "test")
@@ -412,6 +423,9 @@ func TestInitProjectConfig(t *testing.T) {
 	})
 
 	t.Run("write permission error", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skipping permission test on Windows")
+		}
 		if os.Getuid() == 0 {
 			t.Skip("Running as root, skipping permission test")
 		}
