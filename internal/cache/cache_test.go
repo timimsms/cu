@@ -413,8 +413,8 @@ func TestInitCaches(t *testing.T) {
 		
 		// Use a path that's invalid on both Windows and Unix
 		if runtime.GOOS == "windows" {
-			// On Windows, use a path with invalid characters
-			config.DefaultConfigDir = "C:\\<>:|?*"
+			// On Windows, use an invalid path like NUL device
+			config.DefaultConfigDir = "NUL\\invalid"
 		} else {
 			// On Unix, use a path without permissions
 			config.DefaultConfigDir = "/root/no-permission"

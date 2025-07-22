@@ -1,0 +1,43 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "go-test",
+      "pattern": [
+        {
+          "regexp": "^\\s*(.+\\.go):(\\d+):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "message": 3
+        }
+      ]
+    },
+    {
+      "owner": "go-panic",
+      "pattern": [
+        {
+          "regexp": "^panic: (.+)$",
+          "message": 1
+        },
+        {
+          "regexp": "^\\s+(.+\\.go):(\\d+)",
+          "file": 1,
+          "line": 2
+        }
+      ]
+    },
+    {
+      "owner": "go-test-fail",
+      "pattern": [
+        {
+          "regexp": "^\\s+([^:]+_test\\.go):(\\d+):",
+          "file": 1,
+          "line": 2
+        },
+        {
+          "regexp": "^\\s+Error:\\s+(.+)$",
+          "message": 1
+        }
+      ]
+    }
+  ]
+}

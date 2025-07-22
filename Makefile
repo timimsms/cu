@@ -73,6 +73,28 @@ coverage:
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
+## test-json: Run tests with JSON output for CI
+test-json:
+	@echo "Running tests with JSON output..."
+	@go test -v -race -json ./... > test-results.json || true
+	@echo "Test results saved to test-results.json"
+
+## test-summary: Run tests and generate summary
+test-summary: test-json
+	@echo "Generating test summary..."
+	@bash .github/scripts/test-summary.sh test-results.json test-summary.md
+	@cat test-summary.md
+
+## test-watch: Run tests in watch mode
+test-watch:
+	@if command -v gotestsum > /dev/null; then \
+		gotestsum --watch -- -v ./...; \
+	else \
+		echo "Installing gotestsum..."; \
+		go install gotest.tools/gotestsum@latest; \
+		gotestsum --watch -- -v ./...; \
+	fi
+
 ## ci: Run CI checks locally (mirrors GitHub Actions)
 ci:
 	@echo "Running CI checks..."

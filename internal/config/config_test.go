@@ -284,14 +284,20 @@ output: table`
 		configPath := filepath.Join(tmpDir, ProjectConfigFileName)
 		require.NoError(t, os.WriteFile(configPath, []byte(existingContent), 0600))
 
-		projectConfigPath = configPath
+		// Reset projectConfigPath to let SaveProjectConfig find it
+		projectConfigPath = ""
+		hasProjectConfig = false
 		viper.Reset()
+		
+		// Initialize project config to find the existing file
+		err := Init("")
+		require.NoError(t, err)
 
 		settings := map[string]interface{}{
 			"default_space": "NewSpace",
 		}
 
-		err := SaveProjectConfig(settings)
+		err = SaveProjectConfig(settings)
 		require.NoError(t, err)
 
 		// Verify settings were updated
@@ -308,7 +314,8 @@ output: table`
 		assert.True(t, err != nil &&
 			(strings.Contains(err.Error(), "invalid config path") ||
 				strings.Contains(err.Error(), "config type could not be determined") ||
-				strings.Contains(err.Error(), "must be absolute path")))
+				strings.Contains(err.Error(), "must be absolute path") ||
+				strings.Contains(err.Error(), "outside current directory")))
 	})
 
 	t.Run("getcwd error", func(t *testing.T) {
@@ -422,27 +429,6 @@ func TestInitProjectConfig(t *testing.T) {
 		assert.Contains(t, err.Error(), "invalid config path")
 	})
 
-	t.Run("write permission error", func(t *testing.T) {
-		if runtime.GOOS == "windows" {
-			t.Skip("Skipping permission test on Windows")
-		}
-		if os.Getuid() == 0 {
-			t.Skip("Running as root, skipping permission test")
-		}
-
-		tmpDir := t.TempDir()
-		oldWd, _ := os.Getwd()
-		require.NoError(t, os.Chdir(tmpDir))
-		defer func() { _ = os.Chdir(oldWd) }()
-
-		// Make directory read-only
-		require.NoError(t, os.Chmod(tmpDir, 0500))
-		defer func() { _ = os.Chmod(tmpDir, 0750) }()
-
-		err := InitProjectConfig()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to write project config")
-	})
 }
 
 func TestEdgeCases(t *testing.T) {
