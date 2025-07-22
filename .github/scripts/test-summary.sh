@@ -4,6 +4,12 @@
 
 set -euo pipefail
 
+# Check if jq is available
+if ! command -v jq &> /dev/null; then
+    echo "jq is not available, installing..."
+    sudo apt-get update && sudo apt-get install -y jq || true
+fi
+
 JSON_FILE="${1:-test-results.json}"
 OUTPUT_FILE="${2:-$GITHUB_STEP_SUMMARY}"
 
@@ -17,37 +23,42 @@ skipped_tests=0
 declare -a failures
 
 # Parse JSON test results
-while IFS= read -r line; do
-    # Extract test information
-    action=$(echo "$line" | jq -r '.Action // empty')
-    package=$(echo "$line" | jq -r '.Package // empty')
-    test=$(echo "$line" | jq -r '.Test // empty')
-    output=$(echo "$line" | jq -r '.Output // empty')
-    
-    case "$action" in
-        "pass")
-            ((passed_tests++))
-            ((total_tests++))
-            ;;
-        "fail")
-            if [[ -n "$test" ]]; then
-                ((failed_tests++))
+if [[ -f "$JSON_FILE" ]]; then
+    while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
+        
+        # Extract test information
+        action=$(echo "$line" | jq -r '.Action // empty' 2>/dev/null || echo "")
+        package=$(echo "$line" | jq -r '.Package // empty' 2>/dev/null || echo "")
+        test=$(echo "$line" | jq -r '.Test // empty' 2>/dev/null || echo "")
+        output=$(echo "$line" | jq -r '.Output // empty' 2>/dev/null || echo "")
+        
+        case "$action" in
+            "pass")
+                ((passed_tests++))
                 ((total_tests++))
-                failures+=("$package - $test")
-            fi
-            ;;
-        "skip")
-            ((skipped_tests++))
-            ((total_tests++))
-            ;;
-        "output")
-            # Capture panic or error output
-            if [[ "$output" =~ "panic:" ]] || [[ "$output" =~ "Error:" ]]; then
-                failures+=("  └─ $output")
-            fi
-            ;;
-    esac
-done < <(jq -c '.' "$JSON_FILE" 2>/dev/null || echo '{}')
+                ;;
+            "fail")
+                if [[ -n "$test" ]]; then
+                    ((failed_tests++))
+                    ((total_tests++))
+                    failures+=("$package - $test")
+                fi
+                ;;
+            "skip")
+                ((skipped_tests++))
+                ((total_tests++))
+                ;;
+            "output")
+                # Capture panic or error output
+                if [[ "$output" =~ "panic:" ]] || [[ "$output" =~ "Error:" ]]; then
+                    failures+=("  └─ $output")
+                fi
+                ;;
+        esac
+    done < "$JSON_FILE"
+fi
 
 # Generate summary
 {
