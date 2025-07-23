@@ -1,0 +1,12 @@
+# Coverage Exclusions
+# This file documents intentional coverage exclusions
+
+# Main entry point - trivial bootstrap code
+cmd/cu/main.go
+
+# Generated files
+*.pb.go
+*_generated.go
+
+# Test files themselves
+*_test.go

@@ -36,7 +36,11 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/go-test.json"
     
     - name: Run tests with JSON output
-      run: go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json || true
+      run: |
+        # Run tests excluding main.go from coverage
+        go test -v -race -coverprofile coverage.txt -covermode atomic -json \
+          -coverpkg=$(go list ./... | grep -v "/cmd/cu$" | tr '\n' ',') \
+          ./... > test-results.json || true
     
     - name: Generate coverage report
       if: matrix.os != 'windows-latest'
