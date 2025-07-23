@@ -39,6 +39,14 @@ jobs:
       run: |
         go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json || true
         
+        # Generate coverage report in HTML format
+        go tool cover -html=coverage.txt -o coverage.html || true
+        
+        # Calculate coverage percentage
+        COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
+        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+        echo "Coverage: ${COVERAGE}%"
+        
     - name: Generate test report
       if: always()
       run: |
@@ -50,6 +58,38 @@ jobs:
       run: |
         # Run the custom test summary script
         bash .github/scripts/test-summary.sh test-results.json || true
+        
+        # Add coverage information to summary
+        if [[ -n "${COVERAGE}" ]]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Code Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Coverage: ${COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Generate coverage badge color
+          if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+            COLOR="yellow"
+          elif (( $(echo "$COVERAGE >= 40" | bc -l) )); then
+            COLOR="orange"
+          else
+            COLOR="red"
+          fi
+          
+          echo "![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Show top uncovered packages
+          echo "<details>" >> $GITHUB_STEP_SUMMARY
+          echo "<summary>Coverage by Package</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.txt | head -20 >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+        fi
         
         # Also run gotestsum for additional output
         go install gotest.tools/gotestsum@latest
@@ -63,6 +103,8 @@ jobs:
         path: |
           test-results.json
           test-results.xml
+          coverage.txt
+          coverage.html
     
     - name: Publish test results
       if: always()
@@ -228,6 +270,107 @@ jobs:
       run: |
         echo "Security scan failed. Please review the issues above."
         exit 1
+
+  coverage-summary:
+    name: Coverage Summary
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Download all coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        pattern: test-results-*
+        merge-multiple: true
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+    
+    - name: Merge coverage files
+      run: |
+        # Install gocovmerge to combine coverage files
+        go install github.com/wadey/gocovmerge@latest
+        
+        # Find all coverage files
+        echo "Found coverage files:"
+        ls -la coverage*.txt || echo "No coverage files found"
+        
+        # If we have the main coverage file, use it
+        if [[ -f coverage.txt ]]; then
+          echo "Using coverage.txt"
+          cp coverage.txt merged-coverage.txt
+        else
+          echo "No coverage file found"
+          echo "mode: atomic" > merged-coverage.txt
+        fi
+    
+    - name: Generate final coverage report
+      run: |
+        if [[ -f merged-coverage.txt ]] && [[ -s merged-coverage.txt ]]; then
+          # Calculate total coverage
+          TOTAL_COVERAGE=$(go tool cover -func=merged-coverage.txt | grep total | awk '{print $3}' | sed 's/%//' || echo "0")
+          
+          echo "## 📊 Overall Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Total Project Coverage: **${TOTAL_COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Coverage badge
+          if (( $(echo "$TOTAL_COVERAGE >= 80" | bc -l) )); then
+            COLOR="brightgreen"
+            EMOJI="🎉"
+          elif (( $(echo "$TOTAL_COVERAGE >= 60" | bc -l) )); then
+            COLOR="yellow"
+            EMOJI="👍"
+          elif (( $(echo "$TOTAL_COVERAGE >= 40" | bc -l) )); then
+            COLOR="orange"
+            EMOJI="⚠️"
+          else
+            COLOR="red"
+            EMOJI="❌"
+          fi
+          
+          echo "![Coverage](https://img.shields.io/badge/coverage-${TOTAL_COVERAGE}%25-${COLOR}) ${EMOJI}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Package breakdown
+          echo "### Package Coverage Breakdown" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          go tool cover -func=merged-coverage.txt | grep -v "total:" | sort -k3 -nr | head -20 | while read line; do
+            PKG=$(echo "$line" | awk '{print $1}')
+            COV=$(echo "$line" | awk '{print $3}')
+            echo "| ${PKG} | ${COV} |" >> $GITHUB_STEP_SUMMARY
+          done || true
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Show packages with low coverage
+          echo "### ⚠️ Packages with Low Coverage (<50%)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=merged-coverage.txt | grep -v "total:" | awk '$3 ~ /%/ {gsub(/%/,"",$3); if ($3 < 50) print $1 " - " $3"%"}' | sort -k3 -n >> $GITHUB_STEP_SUMMARY || echo "No packages with low coverage"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          # Generate HTML report
+          go tool cover -html=merged-coverage.txt -o final-coverage.html || true
+        else
+          echo "## ❌ No Coverage Data Available" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Upload final coverage report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          merged-coverage.txt
+          final-coverage.html
 
   docs-test:
     name: Test Documentation Build
