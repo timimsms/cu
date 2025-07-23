@@ -36,18 +36,18 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/go-test.json"
     
     - name: Run tests with JSON output
+      run: go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json || true
+    
+    - name: Generate coverage report
+      if: matrix.os != 'windows-latest'
       run: |
-        go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json || true
+        # Generate coverage report in HTML format
+        go tool cover -html=coverage.txt -o coverage.html || true
         
-        # Generate coverage report in HTML format (skip on Windows)
-        if [[ "${{ matrix.os }}" != "windows-latest" ]]; then
-          go tool cover -html=coverage.txt -o coverage.html || true
-          
-          # Calculate coverage percentage
-          COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
-          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-          echo "Coverage: ${COVERAGE}%"
-        fi
+        # Calculate coverage percentage
+        COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
+        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+        echo "Coverage: ${COVERAGE}%"
         
     - name: Generate test report
       if: always()
@@ -61,45 +61,45 @@ jobs:
         # Run the custom test summary script
         bash .github/scripts/test-summary.sh test-results.json || true
         
-        # Add coverage information to summary (skip on Windows)
-        if [[ "${{ matrix.os }}" != "windows-latest" ]] && [[ -n "${COVERAGE}" ]]; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 Code Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total Coverage: ${COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Generate coverage badge color (cross-platform)
-          if [[ -n "$COVERAGE" ]] && [[ "$COVERAGE" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-            if (( ${COVERAGE%.*} >= 80 )); then
-              COLOR="brightgreen"
-            elif (( ${COVERAGE%.*} >= 60 )); then
-              COLOR="yellow"
-            elif (( ${COVERAGE%.*} >= 40 )); then
-              COLOR="orange"
-            else
-              COLOR="red"
-            fi
-          else
-            COLOR="lightgrey"
-          fi
-          
-          echo "![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Show top uncovered packages
-          echo "<details>" >> $GITHUB_STEP_SUMMARY
-          echo "<summary>Coverage by Package</summary>" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          go tool cover -func=coverage.txt | head -20 >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "</details>" >> $GITHUB_STEP_SUMMARY
-        fi
-        
         # Also run gotestsum for additional output
         go install gotest.tools/gotestsum@latest
         gotestsum --jsonfile test-results.json --format dots-v2 || true
+    
+    - name: Add coverage to summary
+      if: always() && matrix.os != 'windows-latest' && env.COVERAGE != ''
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Code Coverage" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Total Coverage: ${COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Generate coverage badge color
+        if [[ -n "$COVERAGE" ]] && [[ "$COVERAGE" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+          if (( ${COVERAGE%.*} >= 80 )); then
+            COLOR="brightgreen"
+          elif (( ${COVERAGE%.*} >= 60 )); then
+            COLOR="yellow"
+          elif (( ${COVERAGE%.*} >= 40 )); then
+            COLOR="orange"
+          else
+            COLOR="red"
+          fi
+        else
+          COLOR="lightgrey"
+        fi
+        
+        echo "![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Show top uncovered packages
+        echo "<details>" >> $GITHUB_STEP_SUMMARY
+        echo "<summary>Coverage by Package</summary>" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        go tool cover -func=coverage.txt | head -20 >> $GITHUB_STEP_SUMMARY || true
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "</details>" >> $GITHUB_STEP_SUMMARY
     
     - name: Upload test results
       if: always()
