@@ -165,16 +165,69 @@ jobs:
       with:
         go-version: '1.24'
     
-    - name: Run gosec
+    - name: Run Security Scan
+      id: gosec
       timeout-minutes: 5
       run: |
+        # Install gosec
         go install github.com/securego/gosec/v2/cmd/gosec@latest
-        gosec -fmt sarif -out gosec-results.sarif ./...
+        
+        # Run gosec with text output for immediate visibility
+        # Using -severity medium to catch medium and high severity issues
+        echo "::group::GoSec Security Scan Results"
+        if $(go env GOPATH)/bin/gosec -fmt text -severity medium ./... 2>&1 | tee gosec-output.txt; then
+          echo "✅ No security issues found"
+          echo "GOSEC_PASSED=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Security issues detected"
+          echo "GOSEC_PASSED=false" >> $GITHUB_OUTPUT
+          # Don't fail here, we'll fail after generating reports
+        fi
+        echo "::endgroup::"
+    
+    - name: Generate SARIF Report
+      if: always()
+      run: |
+        $(go env GOPATH)/bin/gosec -fmt sarif -out gosec-results.sarif ./... || true
     
     - name: Upload SARIF file
+      if: always()
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: gosec-results.sarif
+    
+    - name: Create Security Summary
+      if: always()
+      run: |
+        echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ steps.gosec.outputs.GOSEC_PASSED }}" == "true" ]]; then
+          echo "### ✅ All security checks passed!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Security issues found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Issues detected:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          # Extract issues from gosec output
+          grep -E "^\[.*\] - G[0-9]+" gosec-output.txt || echo "Unable to extract specific issues"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 View detailed results in the [Security tab](../security/code-scanning)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Add scan statistics
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "#### Scan Statistics:" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        tail -n 6 gosec-output.txt | grep -E "(Gosec|Files|Lines|Issues|Nosec)" || echo "No statistics available"
+        echo '```' >> $GITHUB_STEP_SUMMARY
+    
+    - name: Fail if security issues found
+      if: steps.gosec.outputs.GOSEC_PASSED == 'false'
+      run: |
+        echo "Security scan failed. Please review the issues above."
+        exit 1
 
   docs-test:
     name: Test Documentation Build
