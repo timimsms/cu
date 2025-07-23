@@ -320,21 +320,21 @@ func TestClient_MethodExistence(t *testing.T) {
 		}()
 		
 		// These calls validate method signatures exist
-		client.GetWorkspaces(ctx)
-		client.GetSpaces(ctx, "123")
-		client.GetSpace(ctx, "456")
-		client.GetFolders(ctx, "456")
-		client.GetFolder(ctx, "789")
-		client.GetLists(ctx, "789")
-		client.GetList(ctx, "101")
-		client.GetTask(ctx, "task123")
-		client.GetTasks(ctx, "list123", &interfaces.TaskQueryOptions{})
-		client.CreateTask(ctx, "list123", &interfaces.TaskCreateOptions{})
-		client.UpdateTask(ctx, "task123", &interfaces.TaskUpdateOptions{})
-		client.DeleteTask(ctx, "task123")
-		client.GetCurrentUser(ctx)
-		client.GetAuthorizedUser(ctx)
-		client.GetWorkspaceMembers(ctx, "123")
+		_, _ = client.GetWorkspaces(ctx)
+		_, _ = client.GetSpaces(ctx, "123")
+		_, _ = client.GetSpace(ctx, "456")
+		_, _ = client.GetFolders(ctx, "456")
+		_, _ = client.GetFolder(ctx, "789")
+		_, _ = client.GetLists(ctx, "789")
+		_, _ = client.GetList(ctx, "101")
+		_, _ = client.GetTask(ctx, "task123")
+		_, _ = client.GetTasks(ctx, "list123", &interfaces.TaskQueryOptions{})
+		_, _ = client.CreateTask(ctx, "list123", &interfaces.TaskCreateOptions{})
+		_, _ = client.UpdateTask(ctx, "task123", &interfaces.TaskUpdateOptions{})
+		_ = client.DeleteTask(ctx, "task123")
+		_, _ = client.GetCurrentUser(ctx)
+		_, _ = client.GetAuthorizedUser(ctx)
+		_, _ = client.GetWorkspaceMembers(ctx, "123")
 	})
 }
 
@@ -356,6 +356,6 @@ func TestClient_ErrorScenarios(t *testing.T) {
 			}
 		}()
 		
-		client.GetWorkspaces(ctx)
+		_, _ = client.GetWorkspaces(ctx)
 	})
 }
