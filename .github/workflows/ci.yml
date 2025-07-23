@@ -39,13 +39,15 @@ jobs:
       run: |
         go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json || true
         
-        # Generate coverage report in HTML format
-        go tool cover -html=coverage.txt -o coverage.html || true
-        
-        # Calculate coverage percentage
-        COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
-        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-        echo "Coverage: ${COVERAGE}%"
+        # Generate coverage report in HTML format (skip on Windows)
+        if [[ "${{ matrix.os }}" != "windows-latest" ]]; then
+          go tool cover -html=coverage.txt -o coverage.html || true
+          
+          # Calculate coverage percentage
+          COVERAGE=$(go tool cover -func=coverage.txt | grep total | awk '{print $3}' | sed 's/%//')
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          echo "Coverage: ${COVERAGE}%"
+        fi
         
     - name: Generate test report
       if: always()
@@ -59,8 +61,8 @@ jobs:
         # Run the custom test summary script
         bash .github/scripts/test-summary.sh test-results.json || true
         
-        # Add coverage information to summary
-        if [[ -n "${COVERAGE}" ]]; then
+        # Add coverage information to summary (skip on Windows)
+        if [[ "${{ matrix.os }}" != "windows-latest" ]] && [[ -n "${COVERAGE}" ]]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📊 Code Coverage" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
