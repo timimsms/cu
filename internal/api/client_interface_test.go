@@ -10,20 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockClickUpClient is a mock implementation of the ClickUp client methods we need
-type mockClickUpClient struct {
-	// Space operations
-	updateSpaceFunc func(ctx context.Context, spaceID int, request *clickup.SpaceRequest) (*clickup.Space, *clickup.Response, error)
-	deleteSpaceFunc func(ctx context.Context, spaceID int) (*clickup.Response, error)
-
-	// Folder operations
-	createFolderFunc func(ctx context.Context, spaceID int, request *clickup.FolderRequest) (*clickup.Folder, *clickup.Response, error)
-	updateFolderFunc func(ctx context.Context, folderID int, request *clickup.FolderRequest) (*clickup.Folder, *clickup.Response, error)
-	deleteFolderFunc func(ctx context.Context, folderID int) (*clickup.Response, error)
-
-	// List operations
-	createFolderlessListFunc func(ctx context.Context, spaceID int, request *clickup.ListRequest) (clickup.List, *clickup.Response, error)
-}
 
 // TestClient_UpdateSpace_Success tests successful space update
 func TestClient_UpdateSpace_Success(t *testing.T) {
@@ -46,7 +32,7 @@ func TestClient_UpdateSpace_Success(t *testing.T) {
 			}
 		}()
 
-		client.UpdateSpace(ctx, "123", request)
+		_, _ = client.UpdateSpace(ctx, "123", request)
 	})
 
 	t.Run("invalid space ID", func(t *testing.T) {
@@ -84,7 +70,7 @@ func TestClient_DeleteSpace_Success(t *testing.T) {
 			}
 		}()
 
-		client.DeleteSpace(ctx, "456")
+		_ = client.DeleteSpace(ctx, "456")
 	})
 
 	t.Run("invalid space ID", func(t *testing.T) {
@@ -121,7 +107,7 @@ func TestClient_CreateFolder_Success(t *testing.T) {
 			}
 		}()
 
-		client.CreateFolder(ctx, "789", request)
+		_, _ = client.CreateFolder(ctx, "789", request)
 	})
 
 	t.Run("invalid space ID", func(t *testing.T) {
@@ -162,7 +148,7 @@ func TestClient_UpdateFolder_Success(t *testing.T) {
 			}
 		}()
 
-		client.UpdateFolder(ctx, "234", request)
+		_, _ = client.UpdateFolder(ctx, "234", request)
 	})
 
 	t.Run("invalid folder ID", func(t *testing.T) {
@@ -200,7 +186,7 @@ func TestClient_DeleteFolder_Success(t *testing.T) {
 			}
 		}()
 
-		client.DeleteFolder(ctx, "567")
+		_ = client.DeleteFolder(ctx, "567")
 	})
 
 	t.Run("invalid folder ID", func(t *testing.T) {
@@ -237,7 +223,7 @@ func TestClient_CreateFolderlessList_Success(t *testing.T) {
 			}
 		}()
 
-		client.CreateFolderlessList(ctx, "890", request)
+		_, _ = client.CreateFolderlessList(ctx, "890", request)
 	})
 
 	t.Run("invalid space ID", func(t *testing.T) {
