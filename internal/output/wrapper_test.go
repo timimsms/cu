@@ -53,11 +53,11 @@ func TestFormatterWrapper_Print(t *testing.T) {
 		
 		err := formatter.Print(testData)
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		assert.NoError(t, err)
 		assert.NotEmpty(t, buf.String())
@@ -74,11 +74,11 @@ func TestFormatterWrapper_Print(t *testing.T) {
 		
 		err := formatter.Print(testData)
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		assert.NoError(t, err)
 		assert.Contains(t, buf.String(), "key")
@@ -124,11 +124,11 @@ func TestFormatterWrapper_PrintInfo(t *testing.T) {
 		
 		formatter.PrintInfo("test info")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		assert.Contains(t, buf.String(), "test info")
 	})
@@ -144,11 +144,11 @@ func TestFormatterWrapper_PrintInfo(t *testing.T) {
 		
 		formatter.PrintInfo("test info")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		assert.Empty(t, buf.String())
 	})
@@ -165,11 +165,11 @@ func TestFormatterWrapper_PrintSuccess(t *testing.T) {
 		
 		formatter.PrintSuccess("test success")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "✓")
@@ -187,11 +187,11 @@ func TestFormatterWrapper_PrintSuccess(t *testing.T) {
 		
 		formatter.PrintSuccess("test success")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		assert.Empty(t, buf.String())
 	})
@@ -207,11 +207,11 @@ func TestFormatterWrapper_PrintSuccess(t *testing.T) {
 		
 		formatter.PrintSuccess("test success")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "✓")
@@ -231,11 +231,11 @@ func TestFormatterWrapper_PrintError(t *testing.T) {
 		
 		formatter.PrintError(testErr)
 		
-		w.Close()
+		_ = w.Close()
 		os.Stderr = oldStderr
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "✗")
@@ -254,11 +254,11 @@ func TestFormatterWrapper_PrintError(t *testing.T) {
 		
 		formatter.PrintError(testErr)
 		
-		w.Close()
+		_ = w.Close()
 		os.Stderr = oldStderr
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "✗")
@@ -277,11 +277,11 @@ func TestFormatterWrapper_PrintError(t *testing.T) {
 		
 		formatter.PrintError(testErr)
 		
-		w.Close()
+		_ = w.Close()
 		os.Stderr = oldStderr
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "✗")
@@ -300,11 +300,11 @@ func TestFormatterWrapper_PrintWarning(t *testing.T) {
 		
 		formatter.PrintWarning("test warning")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stderr = oldStderr
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "⚠")
@@ -322,11 +322,11 @@ func TestFormatterWrapper_PrintWarning(t *testing.T) {
 		
 		formatter.PrintWarning("test warning")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stderr = oldStderr
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		assert.Empty(t, buf.String())
 	})
@@ -342,11 +342,11 @@ func TestFormatterWrapper_PrintWarning(t *testing.T) {
 		
 		formatter.PrintWarning("test warning")
 		
-		w.Close()
+		_ = w.Close()
 		os.Stderr = oldStderr
 		
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		output := buf.String()
 		assert.Contains(t, output, "⚠")

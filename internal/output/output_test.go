@@ -60,7 +60,7 @@ func TestFormat(t *testing.T) {
 
 		err := Format("json", testData)
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 
 		var buf bytes.Buffer
@@ -79,7 +79,7 @@ func TestFormat(t *testing.T) {
 
 		err := Format("yaml", testData)
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 
 		var buf bytes.Buffer
@@ -98,7 +98,7 @@ func TestFormat(t *testing.T) {
 
 		err := Format("yml", testData)
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 
 		var buf bytes.Buffer
@@ -123,7 +123,7 @@ func TestFormat(t *testing.T) {
 
 		err := Format("csv", csvData)
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 
 		var buf bytes.Buffer
@@ -144,7 +144,7 @@ func TestFormat(t *testing.T) {
 
 		err := Format("table", testData)
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 
 		var buf bytes.Buffer
@@ -168,7 +168,7 @@ func TestFormat(t *testing.T) {
 
 		err := Format("JSON", testData)
 
-		w.Close()
+		_ = w.Close()
 		os.Stdout = oldStdout
 
 		var buf bytes.Buffer
