@@ -23,8 +23,8 @@ func TestInitProjectConfig_Unix(t *testing.T) {
 		defer func() { _ = os.Chdir(oldWd) }()
 
 		// Make directory read-only
-		require.NoError(t, os.Chmod(tmpDir, 0500))
-		defer func() { _ = os.Chmod(tmpDir, 0750) }()
+		require.NoError(t, os.Chmod(tmpDir, 0500)) // #nosec G302 - Test code intentionally testing permissions
+		defer func() { _ = os.Chmod(tmpDir, 0750) }() // #nosec G302 - Restoring permissions after test
 
 		err := InitProjectConfig()
 		assert.Error(t, err)
