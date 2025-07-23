@@ -37,8 +37,8 @@ func TestInitializeConfig(t *testing.T) {
 		viper.Reset()
 		
 		// Set environment variable
-		os.Setenv("CU_OUTPUT", "json")
-		defer os.Unsetenv("CU_OUTPUT")
+		_ = os.Setenv("CU_OUTPUT", "json")
+		defer func() { _ = os.Unsetenv("CU_OUTPUT") }()
 		
 		cfg, err := initializeConfig()
 		assert.NoError(t, err)

@@ -293,7 +293,7 @@ func TestFormatRelativeTime(t *testing.T) {
 					assert.Equal(t, test.contains, result)
 				} else if test.name == "tomorrow or hours" {
 					// Could be "tomorrow" or "in X hours" depending on exact timing
-					assert.True(t, result == "tomorrow" || regexp.MustCompile("in \\d+ hours").MatchString(result))
+					assert.True(t, result == "tomorrow" || regexp.MustCompile(`in \d+ hours`).MatchString(result))
 				} else if test.contains != "" {
 					assert.Contains(t, result, test.contains)
 				}

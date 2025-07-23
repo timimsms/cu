@@ -61,7 +61,7 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 		docsDir := filepath.Join(tmpDir, "new-docs")
 		
 		cmd := genMarkdownCmd
-		cmd.Flags().Set("dir", docsDir)
+		_ = cmd.Flags().Set("dir", docsDir)
 		
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
@@ -76,12 +76,12 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 		// Create a temporary working directory
 		tmpDir := t.TempDir()
 		oldWd, _ := os.Getwd()
-		defer os.Chdir(oldWd)
-		os.Chdir(tmpDir)
+		defer func() { _ = os.Chdir(oldWd) }()
+		_ = os.Chdir(tmpDir)
 		
 		cmd := genMarkdownCmd
 		// Reset flag to default
-		cmd.Flags().Set("dir", "")
+		_ = cmd.Flags().Set("dir", "")
 		
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 		tmpDir := t.TempDir()
 		
 		cmd := genMarkdownCmd
-		cmd.Flags().Set("dir", tmpDir)
+		_ = cmd.Flags().Set("dir", tmpDir)
 		
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
@@ -127,7 +127,7 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 		assert.NoError(t, err)
 		
 		cmd := genMarkdownCmd
-		cmd.Flags().Set("dir", filepath.Join(readOnlyDir, "docs"))
+		_ = cmd.Flags().Set("dir", filepath.Join(readOnlyDir, "docs"))
 		
 		err = cmd.RunE(cmd, []string{})
 		assert.Error(t, err)
@@ -171,7 +171,7 @@ func TestDocsCmd_Output(t *testing.T) {
 		os.Stdout = w
 		
 		cmd := genMarkdownCmd
-		cmd.Flags().Set("dir", tmpDir)
+		_ = cmd.Flags().Set("dir", tmpDir)
 		
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)

@@ -326,7 +326,7 @@ func TestShowCacheInfo_Function(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// The function might error due to cache initialization issues, but shouldn't panic
 		// In CI/test environments, cache may not be properly initialized
@@ -366,7 +366,7 @@ func TestClearCache_Function(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// The function might error due to cache initialization issues, but shouldn't panic
 		if err != nil {
@@ -405,7 +405,7 @@ func TestCleanCache_Function(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// The function might error due to cache initialization issues, but shouldn't panic
 		if err != nil {
@@ -437,7 +437,7 @@ func TestCacheCommands_RunEExecution(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// May fail due to cache initialization in test env, but should not panic
 		if err != nil {
@@ -465,7 +465,7 @@ func TestCacheCommands_RunEExecution(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// May fail due to cache initialization in test env, but should not panic
 		if err != nil {
@@ -493,7 +493,7 @@ func TestCacheCommands_RunEExecution(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// May fail due to cache initialization in test env, but should not panic
 		if err != nil {

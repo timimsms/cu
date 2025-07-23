@@ -99,9 +99,9 @@ func TestCommentCmd_FlagBehavior(t *testing.T) {
 		notifyAll = false
 
 		cmd := commentCmd
-		cmd.Flags().Set("message", "test message")
-		cmd.Flags().Set("assignee", "testuser")
-		cmd.Flags().Set("notify-all", "true")
+		_ = cmd.Flags().Set("message", "test message")
+		_ = cmd.Flags().Set("assignee", "testuser")
+		_ = cmd.Flags().Set("notify-all", "true")
 
 		message, _ := cmd.Flags().GetString("message")
 		assignee, _ := cmd.Flags().GetString("assignee")
@@ -251,12 +251,12 @@ func TestCommentInput_Mock(t *testing.T) {
 		// Write test input
 		go func() {
 			defer w.Close()
-			w.Write([]byte("test comment\n\n"))
+			_, _ = w.Write([]byte("test comment\n\n"))
 		}()
 
 		// Read the input (simulating what addComment would do)
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		
 		// Verify we can read the mocked input
 		content := buf.String()
@@ -409,7 +409,7 @@ func TestAddComment_Function(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// If we get here without panicking, check for error
 		if err != nil {
@@ -453,7 +453,7 @@ func TestListTaskComments_Function(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// If we get here without panicking, check for error
 		if err != nil {
@@ -504,7 +504,7 @@ func TestDeleteTaskComment_Function(t *testing.T) {
 		
 		// Read and discard output
 		buf := make([]byte, 1024)
-		r.Read(buf)
+		_, _ = r.Read(buf)
 		
 		// Function may error due to API client initialization, but shouldn't panic
 		if err != nil {
