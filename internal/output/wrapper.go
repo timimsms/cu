@@ -79,7 +79,8 @@ func (f *FormatterWrapper) PrintSuccess(msg string) {
 	}
 
 	if f.colorOutput {
-		color.Green("✓ %s", msg)
+		green := color.New(color.FgGreen)
+		_, _ = green.Fprintf(os.Stdout, "✓ %s\n", msg)
 	} else {
 		_, _ = fmt.Fprintf(os.Stdout, "✓ %s\n", msg)
 	}
@@ -89,9 +90,10 @@ func (f *FormatterWrapper) PrintSuccess(msg string) {
 func (f *FormatterWrapper) PrintError(err error) {
 	msg := err.Error()
 	if f.colorOutput {
-		color.Red("✗ %s", msg)
+		red := color.New(color.FgRed)
+		_, _ = red.Fprintf(os.Stderr, "✗ %s\n", msg)
 	} else {
-		fmt.Fprintf(os.Stderr, "✗ %s\n", msg)
+		_, _ = fmt.Fprintf(os.Stderr, "✗ %s\n", msg)
 	}
 }
 
@@ -102,9 +104,10 @@ func (f *FormatterWrapper) PrintWarning(msg string) {
 	}
 
 	if f.colorOutput {
-		color.Yellow("⚠ %s", msg)
+		yellow := color.New(color.FgYellow)
+		_, _ = yellow.Fprintf(os.Stderr, "⚠ %s\n", msg)
 	} else {
-		fmt.Fprintf(os.Stderr, "⚠ %s\n", msg)
+		_, _ = fmt.Fprintf(os.Stderr, "⚠ %s\n", msg)
 	}
 }
 
