@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tim/cu/internal/auth"
@@ -19,6 +20,10 @@ func TestClient_GetWorkspaces_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -38,6 +43,10 @@ func TestClient_GetSpaces_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -57,6 +66,10 @@ func TestClient_GetSpace_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -75,6 +88,10 @@ func TestClient_CreateSpace_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -92,6 +109,8 @@ func TestClient_CreateSpace_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Use normal rate limiter for ID validation tests
+		client.rateLimiter = NewRateLimiter(100, time.Minute)
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -110,6 +129,8 @@ func TestClient_UpdateSpace_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Use normal rate limiter for ID validation tests
+		client.rateLimiter = NewRateLimiter(100, time.Minute)
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -128,6 +149,8 @@ func TestClient_DeleteSpace_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Use normal rate limiter for ID validation tests
+		client.rateLimiter = NewRateLimiter(100, time.Minute)
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -146,6 +169,10 @@ func TestClient_GetTask_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -164,6 +191,10 @@ func TestClient_GetTasks_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -188,6 +219,10 @@ func TestClient_CreateTask_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -211,6 +246,10 @@ func TestClient_UpdateTask_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -233,6 +272,10 @@ func TestClient_DeleteTask_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -251,6 +294,10 @@ func TestClient_GetCurrentUser_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -269,6 +316,10 @@ func TestClient_GetAuthorizedUser_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -287,6 +338,10 @@ func TestClient_GetWorkspaceMembers_Logic(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Create rate limiter with 1 token that refills very slowly
+		client.rateLimiter = NewRateLimiter(1, 24*time.Hour)
+		// Exhaust the token with a background context
+		_ = client.rateLimiter.Wait(context.Background())
 		err := client.Connect()
 		assert.NoError(t, err)
 		
@@ -306,10 +361,13 @@ func TestClient_MethodExistence(t *testing.T) {
 			token: &auth.Token{Value: "test-token"},
 		}
 		client := NewClient(authManager)
+		// Use cancelled context to stop at rate limiter 
+		client.rateLimiter = NewRateLimiter(100, time.Minute)
 		err := client.Connect()
 		assert.NoError(t, err)
 		
-		ctx := context.Background()
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
 		
 		// Test that all methods exist (will panic with nil client internals but validates signatures)
 		defer func() { 
