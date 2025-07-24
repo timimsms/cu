@@ -83,7 +83,7 @@ jobs:
         echo "Coverage: ${COVERAGE}%"
         
     - name: Generate test report (Windows)
-      if: always() && matrix.os == 'windows-latest'
+      if: always() && matrix.os == 'windows-latest' && steps.test-windows.outcome != 'skipped'
       shell: powershell
       run: |
         go install github.com/jstemmer/go-junit-report/v2@latest
@@ -94,13 +94,13 @@ jobs:
         }
     
     - name: Generate test report (Unix)
-      if: always() && matrix.os != 'windows-latest'
+      if: always() && matrix.os != 'windows-latest' && steps.test-unix.outcome != 'skipped'
       run: |
         go install github.com/jstemmer/go-junit-report/v2@latest
         if [ -f test-results.json ]; then
           cat test-results.json | go-junit-report -parser gojson > test-results.xml
         else
-          echo "No test results found" > test-results.xml
+          echo "<testsuites><testsuite name='No tests' tests='0' failures='0' errors='0' skipped='0'></testsuite></testsuites>" > test-results.xml
         fi
     
     - name: Create test summary
@@ -150,7 +150,7 @@ jobs:
         echo "</details>" >> $GITHUB_STEP_SUMMARY
     
     - name: Upload test results
-      if: always()
+      if: always() && (steps.test-windows.outcome != 'skipped' || steps.test-unix.outcome != 'skipped')
       uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.os }}-go${{ matrix.go }}
@@ -161,7 +161,7 @@ jobs:
           coverage.html
     
     - name: Publish test results
-      if: always()
+      if: always() && (steps.test-windows.outcome != 'skipped' || steps.test-unix.outcome != 'skipped')
       uses: dorny/test-reporter@v1
       with:
         name: Test Results (${{ matrix.os }} - Go ${{ matrix.go }})
