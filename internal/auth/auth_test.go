@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tim/cu/internal/errors"
+	"github.com/tim/cu/internal/testutil"
 )
 
 // mockConfig provides a mock implementation of config operations
@@ -184,42 +185,10 @@ func TestErrorScenarios(t *testing.T) {
 		// including invalid UTF-8. To test error handling in SaveToken,
 		// we would need to mock the keyring, which is not feasible
 		// with the current architecture. This test is skipped.
-		t.Skip("Cannot cause marshal error without mocking keyring")
+		testutil.SkipIfCI(t, "Cannot cause marshal error without mocking keyring")
 	})
 }
 
-// Integration test example (would require real keyring)
-func TestIntegration(t *testing.T) {
-	t.Skip("Integration tests require access to system keyring")
-
-	config := &mockConfig{values: make(map[string]string)}
-	m := NewManager(config)
-	workspace := "test-workspace"
-
-	// Clean up before test
-	_ = m.DeleteToken(workspace)
-
-	// Test save and retrieve
-	token := &Token{
-		Value:     "integration-test-token",
-		Workspace: workspace,
-		Email:     "test@example.com",
-	}
-
-	err := m.SaveToken(workspace, token)
-	require.NoError(t, err)
-
-	retrieved, err := m.GetToken(workspace)
-	require.NoError(t, err)
-	assert.Equal(t, token.Value, retrieved.Value)
-
-	// Test delete
-	err = m.DeleteToken(workspace)
-	require.NoError(t, err)
-
-	_, err = m.GetToken(workspace)
-	assert.ErrorIs(t, err, errors.ErrNotAuthenticated)
-}
 
 // TestManagerMethods provides coverage for Manager methods
 func TestManagerMethods(t *testing.T) {

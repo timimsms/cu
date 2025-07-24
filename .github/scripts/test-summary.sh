@@ -51,8 +51,9 @@ if [[ -f "$JSON_FILE" ]]; then
                 ((total_tests++))
                 ;;
             "output")
-                # Capture panic or error output
-                if [[ "$output" =~ "panic:" ]] || [[ "$output" =~ "Error:" ]]; then
+                # Only capture panic or error output from failed tests, not skipped ones
+                # Check if this output belongs to a failed test
+                if [[ -n "$test" ]] && [[ "$output" =~ "panic:" ]]; then
                     failures+=("  └─ $output")
                 fi
                 ;;

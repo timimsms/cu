@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tim/cu/internal/mocks"
+	"github.com/tim/cu/internal/testutil"
 )
 
 func TestInteractiveCommand_Simple(t *testing.T) {
@@ -91,7 +92,7 @@ func TestInteractiveCommand_Simple(t *testing.T) {
 
 	// Skip interrupt handling test as it requires API mock
 	t.Run("interrupt handling", func(t *testing.T) {
-		t.Skip("Requires API mock implementation")
+		testutil.SkipIfCI(t, "Requires API mock implementation")
 	})
 
 	t.Run("display task details", func(t *testing.T) {

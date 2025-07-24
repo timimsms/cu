@@ -9,6 +9,7 @@ import (
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tim/cu/internal/testutil"
 )
 
 // mockClient for testing UserLookup
@@ -60,7 +61,7 @@ func TestUserLookupLoadWorkspaceUsers(t *testing.T) {
 
 	t.Run("handles API error", func(t *testing.T) {
 		// This would require proper mocking of the client
-		t.Skip("Requires client mocking")
+		testutil.SkipIfCI(t, "Requires client mocking")
 	})
 }
 

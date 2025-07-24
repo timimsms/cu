@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tim/cu/internal/testutil"
 )
 
 // MockWriterOutput implements both OutputFormatter and io.Writer for testing
@@ -187,7 +188,7 @@ func TestCompletionCommand(t *testing.T) {
 	// Skip this test as it's testing an edge case that won't happen in practice
 	// The completion command will always have access to the root command
 	t.Run("no root command available", func(t *testing.T) {
-		t.Skip("Edge case - completion command always has access to root in practice")
+		testutil.SkipIfCI(t, "Edge case - completion command always has access to root in practice")
 	})
 
 	t.Run("cobra command integration", func(t *testing.T) {
