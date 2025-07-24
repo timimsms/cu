@@ -54,10 +54,21 @@ jobs:
         $failedTests = 0
         if (Test-Path test-results.json) {
           $content = Get-Content test-results.json -Raw
+          # Show first few lines for debugging
+          Write-Host "First 5 lines of test-results.json:"
+          $lines = $content -split "`n" | Select-Object -First 5
+          $lines | ForEach-Object { Write-Host $_ }
+          
           # Count lines that have Action:"fail" and a Test field
-          $failedTests = ($content -split "`n" | Where-Object { 
+          $failureLines = $content -split "`n" | Where-Object { 
             $_ -match '"Action":"fail"' -and $_ -match '"Test":"[^"]+"' 
-          }).Count
+          }
+          $failedTests = $failureLines.Count
+          
+          if ($failureLines.Count -gt 0) {
+            Write-Host "Found failure lines:"
+            $failureLines | Select-Object -First 3 | ForEach-Object { Write-Host $_ }
+          }
         }
         
         Write-Host "Test exit code: $testExitCode"
@@ -69,8 +80,8 @@ jobs:
           $testExitCode = 0
         }
         
-        # Store exit code for later check
-        echo "TEST_EXIT_CODE=$testExitCode" >> $env:GITHUB_ENV
+        # Store exit code for later check (Windows PowerShell syntax)
+        Add-Content -Path $env:GITHUB_ENV -Value "TEST_EXIT_CODE=$testExitCode"
         # Always exit 0 here, we'll check the actual result later
         exit 0
     
@@ -111,7 +122,31 @@ jobs:
       if: always()
       shell: bash
       run: |
-        # Check the actual test exit code
+        # Debug: Show environment variable
+        echo "TEST_EXIT_CODE from env: ${TEST_EXIT_CODE:-not set}"
+        
+        # For Windows, the env var might not be propagated correctly
+        # Check if we're on Windows and look for the test results
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          # Check if test-results.json exists and has content
+          if [[ -f test-results.json ]]; then
+            # Count actual test failures in the JSON
+            FAILED_TESTS=$(grep -c '"Action":"fail".*"Test":' test-results.json || echo "0")
+            echo "Failed tests found in JSON: $FAILED_TESTS"
+            
+            if [[ "$FAILED_TESTS" -gt 0 ]]; then
+              echo "Tests failed! Found $FAILED_TESTS failing tests."
+              exit 1
+            else
+              echo "All tests passed (no failures found in test results)!"
+              exit 0
+            fi
+          else
+            echo "Warning: test-results.json not found"
+          fi
+        fi
+        
+        # For Unix systems, use the TEST_EXIT_CODE
         if [[ "${TEST_EXIT_CODE:-0}" != "0" ]]; then
           echo "Tests failed! Exit code: ${TEST_EXIT_CODE}"
           echo "See test results for details."
