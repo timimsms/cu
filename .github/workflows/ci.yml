@@ -51,6 +51,12 @@ jobs:
           -coverpkg=$(go list ./... | grep -v "/cmd/cu$" | tr '\n' ',') \
           ./... > test-results.json
     
+    - name: Check test status
+      if: failure()
+      run: |
+        echo "Tests failed! See test results for details."
+        exit 1
+    
     - name: Generate coverage report
       if: matrix.os != 'windows-latest'
       run: |
@@ -132,7 +138,8 @@ jobs:
         name: Test Results (${{ matrix.os }} - Go ${{ matrix.go }})
         path: test-results.xml
         reporter: java-junit
-        fail-on-error: false
+        fail-on-error: true
+        fail-on-empty: true
         
     - name: Comment PR with test results
       if: always() && github.event_name == 'pull_request' && failure()
