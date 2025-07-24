@@ -146,6 +146,17 @@ func (f *CSVFormatter) Format(data interface{}) error {
 		// Try to convert to slice of maps using reflection
 		rv := reflect.ValueOf(data)
 		if rv.Kind() == reflect.Slice {
+			// Handle slice of structs with headers
+			if rv.Len() > 0 {
+				firstItem := rv.Index(0).Interface()
+				headers, err := structToHeaders(firstItem)
+				if err == nil {
+					// Write headers
+					if err := writer.Write(headers); err != nil {
+						return err
+					}
+				}
+			}
 			var rows [][]string
 			for i := 0; i < rv.Len(); i++ {
 				item := rv.Index(i).Interface()
@@ -157,7 +168,24 @@ func (f *CSVFormatter) Format(data interface{}) error {
 			}
 			return writer.WriteAll(rows)
 		}
-		return fmt.Errorf("unsupported data type for CSV output")
+		
+		// Handle single struct
+		if rv.Kind() == reflect.Struct || (rv.Kind() == reflect.Ptr && rv.Elem().Kind() == reflect.Struct) {
+			headers, err := structToHeaders(data)
+			if err != nil {
+				return err
+			}
+			values, err := structToSlice(data)
+			if err != nil {
+				return err
+			}
+			if err := writer.Write(headers); err != nil {
+				return err
+			}
+			return writer.Write(values)
+		}
+		
+		return fmt.Errorf("unsupported CSV data type")
 	}
 }
 
@@ -179,6 +207,35 @@ func structToSlice(v interface{}) ([]string, error) {
 		}
 	default:
 		result = append(result, fmt.Sprint(v))
+	}
+	return result, nil
+}
+
+func structToHeaders(v interface{}) ([]string, error) {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	var result []string
+	switch rv.Kind() {
+	case reflect.Struct:
+		rt := rv.Type()
+		for i := 0; i < rv.NumField(); i++ {
+			field := rt.Field(i)
+			// Use json tag as header name, fallback to field name
+			if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
+				result = append(result, strings.Split(tag, ",")[0])
+			} else {
+				result = append(result, strings.ToLower(field.Name))
+			}
+		}
+	case reflect.Map:
+		for _, key := range rv.MapKeys() {
+			result = append(result, fmt.Sprint(key.Interface()))
+		}
+	default:
+		return nil, fmt.Errorf("unsupported type for headers")
 	}
 	return result, nil
 }
