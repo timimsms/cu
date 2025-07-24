@@ -160,15 +160,8 @@ jobs:
           coverage.txt
           coverage.html
     
-    - name: Publish test results
-      if: always() && (steps.test-windows.outcome != 'skipped' || steps.test-unix.outcome != 'skipped')
-      uses: dorny/test-reporter@v1
-      with:
-        name: Test Results (${{ matrix.os }} - Go ${{ matrix.go }})
-        path: test-results.xml
-        reporter: java-junit
-        fail-on-error: true
-        fail-on-empty: true
+    # Note: Removed dorny/test-reporter as it creates separate check runs
+    # even when tests don't run, causing false positives
         
     - name: Comment PR with test results
       if: always() && github.event_name == 'pull_request' && failure()
