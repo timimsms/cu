@@ -38,12 +38,15 @@ jobs:
     - name: Run tests with JSON output (Windows)
       if: matrix.os == 'windows-latest'
       id: test-windows
+      continue-on-error: true
+      shell: cmd
       run: |
-        go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json
+        go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json 2>&1
     
     - name: Run tests with JSON output (Unix)
       if: matrix.os != 'windows-latest'
       id: test-unix
+      continue-on-error: true
       shell: bash
       run: |
         # Run tests excluding main.go from coverage
@@ -52,10 +55,12 @@ jobs:
           ./... > test-results.json
     
     - name: Check test status
-      if: failure()
+      if: always()
       run: |
-        echo "Tests failed! See test results for details."
-        exit 1
+        if [ "${{ steps.test-windows.outcome }}" = "failure" ] || [ "${{ steps.test-unix.outcome }}" = "failure" ]; then
+          echo "Tests failed! See test results for details."
+          exit 1
+        fi
     
     - name: Generate coverage report
       if: matrix.os != 'windows-latest'
@@ -68,11 +73,26 @@ jobs:
         echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
         echo "Coverage: ${COVERAGE}%"
         
-    - name: Generate test report
-      if: always()
+    - name: Generate test report (Windows)
+      if: always() && matrix.os == 'windows-latest'
+      shell: cmd
       run: |
         go install github.com/jstemmer/go-junit-report/v2@latest
-        cat test-results.json | go-junit-report -parser gojson > test-results.xml
+        if exist test-results.json (
+          type test-results.json | go-junit-report -parser gojson > test-results.xml
+        ) else (
+          echo No test results found > test-results.xml
+        )
+    
+    - name: Generate test report (Unix)
+      if: always() && matrix.os != 'windows-latest'
+      run: |
+        go install github.com/jstemmer/go-junit-report/v2@latest
+        if [ -f test-results.json ]; then
+          cat test-results.json | go-junit-report -parser gojson > test-results.xml
+        else
+          echo "No test results found" > test-results.xml
+        fi
     
     - name: Create test summary
       if: always()
