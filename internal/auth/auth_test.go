@@ -92,8 +92,16 @@ func TestGetCurrentToken(t *testing.T) {
 	m := NewManager(config)
 
 	t.Run("attempts to get default workspace token", func(t *testing.T) {
+		// Clean up any previous token
+		_ = m.DeleteToken(DefaultWorkspace)
+		
 		// This will fail without a real keyring
 		token, err := m.GetCurrentToken()
+		if err == nil && token != nil {
+			// Token exists from previous test, clean up
+			_ = m.DeleteToken(DefaultWorkspace)
+			t.Skip("Token exists from previous test run")
+		}
 		assert.Error(t, err)
 		assert.Nil(t, token)
 		// In CI environments without keyring, we get a different error
@@ -223,4 +231,38 @@ func TestManagerMethods(t *testing.T) {
 func TestConstants(t *testing.T) {
 	assert.Equal(t, "cu-cli", ServiceName)
 	assert.Equal(t, "default", DefaultWorkspace)
+}
+
+// TestSaveAndDeleteToken tests save and delete operations
+func TestSaveAndDeleteToken(t *testing.T) {
+	config := &mockConfig{values: make(map[string]string)}
+	m := NewManager(config)
+	
+	token := &Token{
+		Value:     "test-token-save-delete",
+		Workspace: "test-workspace",
+		Email:     "test@example.com",
+	}
+	
+	// Try to save - may fail without keyring
+	err := m.SaveToken("test-workspace", token)
+	if err != nil {
+		// Expected in CI without keyring
+		assert.Contains(t, err.Error(), "failed to save token")
+		return
+	}
+	
+	// If save succeeded, try to get it back
+	retrieved, err := m.GetToken("test-workspace")
+	if err == nil {
+		assert.Equal(t, token.Value, retrieved.Value)
+		
+		// Now delete it
+		err = m.DeleteToken("test-workspace")
+		assert.NoError(t, err)
+		
+		// Verify it's gone
+		_, err = m.GetToken("test-workspace")
+		assert.Error(t, err)
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/raksul/go-clickup/clickup"
 	"github.com/stretchr/testify/assert"
 	"github.com/tim/cu/internal/auth"
 	"github.com/tim/cu/internal/interfaces"
@@ -77,6 +78,7 @@ func TestClient_MethodCoverage(t *testing.T) {
 
 	// Test methods that reach rate limiter
 	methods := []func() error{
+		// Get methods
 		func() error { _, err := client.GetWorkspaces(ctx); return err },
 		func() error { _, err := client.GetSpaces(ctx, "123"); return err },
 		func() error { _, err := client.GetSpace(ctx, "456"); return err },
@@ -93,10 +95,29 @@ func TestClient_MethodCoverage(t *testing.T) {
 		func() error { _, err := client.GetViews(ctx, "101"); return err },
 		func() error { _, err := client.GetView(ctx, "view1"); return err },
 		func() error { _, err := client.GetTaskComments(ctx, "task123"); return err },
+		func() error { _, err := client.CreateTaskComment(ctx, "task123", "body", "assignee", false); return err },
 		func() error { _, err := client.GetCustomFields(ctx, "101"); return err },
 		func() error { _, _, err := client.GetGoals(ctx, "123", false); return err },
 		func() error { _, err := client.GetGoal(ctx, "goal1"); return err },
+		func() error { _, err := client.UpdateGoal(ctx, "goal1", &clickup.UpdateGoalRequest{Name: "Updated"}); return err },
 		func() error { _, err := client.GetWebhooks(ctx, "123"); return err },
+		func() error { _, err := client.UpdateWebhook(ctx, "webhook1", &clickup.WebhookRequest{Events: []string{"task.created"}}); return err },
+		
+		// Create methods
+		func() error { _, err := client.CreateSpace(ctx, "123", &clickup.SpaceRequest{Name: "Test"}); return err },
+		func() error { _, err := client.CreateFolder(ctx, "456", &clickup.FolderRequest{Name: "Test"}); return err },
+		func() error { _, err := client.CreateList(ctx, "789", &clickup.ListRequest{Name: "Test"}); return err },
+		func() error { _, err := client.CreateFolderlessList(ctx, "456", &clickup.ListRequest{Name: "Test"}); return err },
+		
+		// Update methods
+		func() error { _, err := client.UpdateSpace(ctx, "456", &clickup.SpaceRequest{Name: "Updated"}); return err },
+		func() error { _, err := client.UpdateFolder(ctx, "789", &clickup.FolderRequest{Name: "Updated"}); return err },
+		func() error { _, err := client.UpdateList(ctx, "101", &clickup.ListRequest{Name: "Updated"}); return err },
+		
+		// Delete methods
+		func() error { return client.DeleteSpace(ctx, "456") },
+		func() error { return client.DeleteFolder(ctx, "789") },
+		func() error { return client.DeleteList(ctx, "101") },
 		func() error { return client.DeleteTask(ctx, "task123") },
 		func() error { return client.UpdateTaskComment(ctx, "comment1", "text", false) },
 		func() error { return client.DeleteTaskComment(ctx, "comment1") },
