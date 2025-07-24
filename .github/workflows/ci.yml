@@ -37,16 +37,19 @@ jobs:
     
     - name: Run tests with JSON output (Windows)
       if: matrix.os == 'windows-latest'
-      run: go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json || true
+      id: test-windows
+      run: |
+        go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json
     
     - name: Run tests with JSON output (Unix)
       if: matrix.os != 'windows-latest'
+      id: test-unix
       shell: bash
       run: |
         # Run tests excluding main.go from coverage
         go test -v -race -coverprofile coverage.txt -covermode atomic -json \
           -coverpkg=$(go list ./... | grep -v "/cmd/cu$" | tr '\n' ',') \
-          ./... > test-results.json || true
+          ./... > test-results.json
     
     - name: Generate coverage report
       if: matrix.os != 'windows-latest'
