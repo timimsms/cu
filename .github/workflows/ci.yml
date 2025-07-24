@@ -39,9 +39,18 @@ jobs:
       if: matrix.os == 'windows-latest'
       id: test-windows
       continue-on-error: true
-      shell: cmd
+      shell: powershell
       run: |
-        go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... > test-results.json 2>&1
+        $ErrorActionPreference = 'Continue'
+        # Run tests and capture exit code
+        go test -v -race -coverprofile coverage.txt -covermode atomic -json ./... 2>&1 | Tee-Object -FilePath test-results.json
+        $testExitCode = $LASTEXITCODE
+        # Ensure file exists even if empty
+        if (-not (Test-Path test-results.json)) {
+          New-Item -Path test-results.json -ItemType File -Force
+        }
+        # Exit with the test exit code
+        exit $testExitCode
     
     - name: Run tests with JSON output (Unix)
       if: matrix.os != 'windows-latest'
@@ -75,14 +84,14 @@ jobs:
         
     - name: Generate test report (Windows)
       if: always() && matrix.os == 'windows-latest'
-      shell: cmd
+      shell: powershell
       run: |
         go install github.com/jstemmer/go-junit-report/v2@latest
-        if exist test-results.json (
-          type test-results.json | go-junit-report -parser gojson > test-results.xml
-        ) else (
-          echo No test results found > test-results.xml
-        )
+        if (Test-Path test-results.json) {
+          Get-Content test-results.json | go-junit-report -parser gojson | Out-File -FilePath test-results.xml -Encoding UTF8
+        } else {
+          "<testsuites><testsuite name='No tests' tests='0' failures='0' errors='0' skipped='0'></testsuite></testsuites>" | Out-File -FilePath test-results.xml -Encoding UTF8
+        }
     
     - name: Generate test report (Unix)
       if: always() && matrix.os != 'windows-latest'
