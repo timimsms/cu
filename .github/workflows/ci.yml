@@ -38,7 +38,6 @@ jobs:
     - name: Run tests with JSON output (Windows)
       if: matrix.os == 'windows-latest'
       id: test-windows
-      continue-on-error: true
       shell: powershell
       run: |
         $ErrorActionPreference = 'Continue'
@@ -49,26 +48,37 @@ jobs:
         if (-not (Test-Path test-results.json)) {
           New-Item -Path test-results.json -ItemType File -Force
         }
-        # Exit with the test exit code
-        exit $testExitCode
+        # Store exit code for later check
+        echo "TEST_EXIT_CODE=$testExitCode" >> $env:GITHUB_ENV
+        # Always exit 0 here, we'll check the actual result later
+        exit 0
     
     - name: Run tests with JSON output (Unix)
       if: matrix.os != 'windows-latest'
       id: test-unix
-      continue-on-error: true
       shell: bash
       run: |
         # Run tests excluding main.go from coverage
+        set +e  # Don't exit on error
         go test -v -race -coverprofile coverage.txt -covermode atomic -json \
           -coverpkg=$(go list ./... | grep -v "/cmd/cu$" | tr '\n' ',') \
           ./... > test-results.json
+        TEST_EXIT_CODE=$?
+        echo "TEST_EXIT_CODE=$TEST_EXIT_CODE" >> $GITHUB_ENV
+        # Always exit 0 here, we'll check the actual result later
+        exit 0
     
     - name: Check test status
       if: always()
+      shell: bash
       run: |
-        if [ "${{ steps.test-windows.outcome }}" = "failure" ] || [ "${{ steps.test-unix.outcome }}" = "failure" ]; then
-          echo "Tests failed! See test results for details."
+        # Check the actual test exit code
+        if [[ "${TEST_EXIT_CODE:-0}" != "0" ]]; then
+          echo "Tests failed! Exit code: ${TEST_EXIT_CODE}"
+          echo "See test results for details."
           exit 1
+        else
+          echo "All tests passed!"
         fi
     
     - name: Generate coverage report
@@ -83,7 +93,7 @@ jobs:
         echo "Coverage: ${COVERAGE}%"
         
     - name: Generate test report (Windows)
-      if: always() && matrix.os == 'windows-latest' && steps.test-windows.outcome != 'skipped'
+      if: always() && matrix.os == 'windows-latest'
       shell: powershell
       run: |
         go install github.com/jstemmer/go-junit-report/v2@latest
@@ -94,7 +104,7 @@ jobs:
         }
     
     - name: Generate test report (Unix)
-      if: always() && matrix.os != 'windows-latest' && steps.test-unix.outcome != 'skipped'
+      if: always() && matrix.os != 'windows-latest'
       run: |
         go install github.com/jstemmer/go-junit-report/v2@latest
         if [ -f test-results.json ]; then
@@ -150,7 +160,7 @@ jobs:
         echo "</details>" >> $GITHUB_STEP_SUMMARY
     
     - name: Upload test results
-      if: always() && (steps.test-windows.outcome != 'skipped' || steps.test-unix.outcome != 'skipped')
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.os }}-go${{ matrix.go }}
