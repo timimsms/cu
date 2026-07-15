@@ -2,7 +2,7 @@ site_name: cu - ClickUp CLI
 site_url: https://timimsms.github.io/cu
 repo_url: https://github.com/timimsms/cu
 repo_name: timimsms/cu
-edit_uri: edit/main/docs/
+edit_uri: edit/main/docs/site/
 
 theme:
   name: material
@@ -31,6 +31,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Authentication & Security: authentication.md
   - Commands:
     - cu: commands/cu.md
     - Authentication:
