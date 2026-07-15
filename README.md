@@ -3,6 +3,8 @@
 [![CI](https://github.com/timimsms/cu/actions/workflows/ci.yml/badge.svg)](https://github.com/timimsms/cu/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-timimsms.github.io%2Fcu-blue)](https://timimsms.github.io/cu/)
 
+> **Note**: `cu` is an unofficial, community-maintained project and is not affiliated with or endorsed by ClickUp.
+
 A GitHub CLI-inspired command-line interface for ClickUp.
 
 ## Overview
@@ -24,17 +26,20 @@ A GitHub CLI-inspired command-line interface for ClickUp.
 
 ## Installation
 
-### Homebrew (macOS/Linux)
+### Homebrew (macOS)
 ```bash
-# Coming soon
-brew install clickup-cli
+brew install timimsms/cu/cu
+```
+
+Installs from the [timimsms/homebrew-cu](https://github.com/timimsms/homebrew-cu) tap. Available with the first tagged release.
+
+### Go
+```bash
+go install github.com/timimsms/cu/cmd/cu@latest
 ```
 
 ### npm
-```bash
-# Coming soon
-npm install -g @clickup/cli
-```
+Planned as `@timimsms/cu` (not yet published).
 
 ### Direct Download
 Download the latest release from the [releases page](https://github.com/timimsms/cu/releases).

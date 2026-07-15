@@ -14,13 +14,13 @@ import (
 var authCmd = &cobra.Command{
 	Use:   "auth",
 	Short: "Manage authentication with ClickUp",
-	Long:  `Authenticate cu with ClickUp API using personal tokens or OAuth.`,
+	Long:  `Authenticate cu with the ClickUp API using a personal API token.`,
 }
 
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate with ClickUp",
-	Long:  `Authenticate with ClickUp using a personal API token or OAuth device flow.`,
+	Long:  `Authenticate with ClickUp using a personal API token. The token is stored securely in your operating system's credential store.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		token, _ := cmd.Flags().GetString("token")
 		workspace, _ := cmd.Flags().GetString("workspace")
