@@ -1,0 +1,116 @@
+version: 2
+
+project_name: cu
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cu
+    main: ./cmd/cu
+    binary: cu
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/timimsms/cu/internal/version.Version={{.Version}}
+      - -X github.com/timimsms/cu/internal/version.Commit={{.Commit}}
+      - -X github.com/timimsms/cu/internal/version.Date={{.Date}}
+      - -X github.com/timimsms/cu/internal/version.BuiltBy=goreleaser
+
+archives:
+  - id: cu-archive
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    ids:
+      - cu
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - README.md
+      - LICENSE*
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+  groups:
+    - title: 'New Features'
+      regexp: '^feat'
+    - title: 'Bug Fixes'
+      regexp: '^fix'
+    - title: 'Performance'
+      regexp: '^perf'
+
+homebrew_casks:
+  - name: cu
+    ids:
+      - cu-archive
+    repository:
+      owner: timimsms
+      name: homebrew-cu
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    homepage: "https://github.com/timimsms/cu"
+    description: "A CLI for ClickUp — like gh is for GitHub"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/cu"]
+          end
+
+release:
+  github:
+    owner: timimsms
+    name: cu
+  draft: false
+  prerelease: auto
+  name_template: "cu v{{.Version}}"
+  header: |
+    ## ClickUp CLI v{{.Version}}
+  footer: |
+    ## Installation
+
+    ### Homebrew (macOS)
+    ```bash
+    brew install timimsms/cu/cu
+    ```
+
+    ### Go
+    ```bash
+    go install github.com/timimsms/cu/cmd/cu@v{{.Version}}
+    ```
+
+    ### Direct Download
+    Download the appropriate archive from the assets below, extract, and add to your PATH.

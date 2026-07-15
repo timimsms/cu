@@ -12,7 +12,7 @@ import (
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/api"
+	"github.com/timimsms/cu/internal/api"
 )
 
 var exportCmd = &cobra.Command{

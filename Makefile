@@ -7,10 +7,10 @@ MAIN_PATH=./cmd/cu
 VERSION=$(shell git describe --tags --always --dirty)
 COMMIT=$(shell git rev-parse --short HEAD)
 DATE=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
-LDFLAGS=-ldflags "-X github.com/tim/cu/internal/version.Version=$(VERSION) \
-	-X github.com/tim/cu/internal/version.Commit=$(COMMIT) \
-	-X github.com/tim/cu/internal/version.Date=$(DATE) \
-	-X github.com/tim/cu/internal/version.BuiltBy=make"
+LDFLAGS=-ldflags "-X github.com/timimsms/cu/internal/version.Version=$(VERSION) \
+	-X github.com/timimsms/cu/internal/version.Commit=$(COMMIT) \
+	-X github.com/timimsms/cu/internal/version.Date=$(DATE) \
+	-X github.com/timimsms/cu/internal/version.BuiltBy=make"
 
 # Default target
 all: build

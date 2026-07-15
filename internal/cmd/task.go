@@ -10,9 +10,9 @@ import (
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/api"
-	"github.com/tim/cu/internal/config"
-	"github.com/tim/cu/internal/output"
+	"github.com/timimsms/cu/internal/api"
+	"github.com/timimsms/cu/internal/config"
+	"github.com/timimsms/cu/internal/output"
 )
 
 var taskCmd = &cobra.Command{

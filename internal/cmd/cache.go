@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/cache"
-	"github.com/tim/cu/internal/output"
+	"github.com/timimsms/cu/internal/cache"
+	"github.com/timimsms/cu/internal/output"
 )
 
 var cacheCmd = &cobra.Command{
@@ -102,7 +102,7 @@ func showCacheInfo(cmd *cobra.Command, args []string) error {
 		}
 
 		allCacheInfo = append(allCacheInfo, info)
-		
+
 		totalSize += stats.TotalSize
 		totalEntries += stats.TotalEntries
 		totalValid += stats.ValidEntries
@@ -112,10 +112,10 @@ func showCacheInfo(cmd *cobra.Command, args []string) error {
 	// Output based on format
 	if outputFormat == "json" || outputFormat == "yaml" {
 		result := map[string]interface{}{
-			"caches":         allCacheInfo,
-			"total_size":     totalSize,
-			"total_entries":  totalEntries,
-			"valid_entries":  totalValid,
+			"caches":          allCacheInfo,
+			"total_size":      totalSize,
+			"total_entries":   totalEntries,
+			"valid_entries":   totalValid,
 			"expired_entries": totalExpired,
 		}
 		return output.Format(outputFormat, result)
@@ -253,12 +253,12 @@ func formatCacheTime(t time.Time) string {
 	if t.IsZero() {
 		return "never"
 	}
-	
+
 	duration := time.Since(t)
 	if duration < 0 {
 		return t.Format("2006-01-02 15:04:05")
 	}
-	
+
 	switch {
 	case duration < time.Minute:
 		return "just now"

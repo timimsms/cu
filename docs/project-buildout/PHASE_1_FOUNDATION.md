@@ -12,7 +12,7 @@ Establish the core project structure, development environment, and foundational 
 ## Task Checklist
 
 ### 1. Project Initialization
-- [x] Initialize Go module: `go mod init github.com/tim/cu`
+- [x] Initialize Go module: `go mod init github.com/timimsms/cu`
 - [x] Create standard Go project structure:
   ```
   ├── cmd/

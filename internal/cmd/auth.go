@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/auth"
-	"github.com/tim/cu/internal/config"
+	"github.com/timimsms/cu/internal/auth"
+	"github.com/timimsms/cu/internal/config"
 )
 
 var authCmd = &cobra.Command{

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tim/cu/internal/errors"
+	"github.com/timimsms/cu/internal/errors"
 )
 
 // retryTransport implements automatic retry with exponential backoff

@@ -37,6 +37,13 @@ func (f *TableFormatter) Format(data interface{}) error {
 		return f.formatMap(w, rv)
 	case reflect.Struct:
 		return f.formatStruct(w, rv)
+	case reflect.Ptr:
+		if rv.Elem().Kind() == reflect.Struct {
+			return f.formatStruct(w, rv)
+		}
+		// For simple types, just print the value
+		_, _ = fmt.Fprintln(w, data)
+		return nil
 	default:
 		// For simple types, just print the value
 		_, _ = fmt.Fprintln(w, data)
@@ -116,10 +123,14 @@ func (f *TableFormatter) formatStruct(w io.Writer, rv reflect.Value) error {
 			continue
 		}
 
-		// Use json tag if available
+		// Handle json tags
 		name := field.Name
-		if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
+		if tag := field.Tag.Get("json"); tag != "" {
 			parts := strings.Split(tag, ",")
+			// Skip fields with json:"-"
+			if parts[0] == "-" {
+				continue
+			}
 			if parts[0] != "" {
 				name = parts[0]
 			}
@@ -156,10 +167,14 @@ func (f *TableFormatter) getHeaders(item interface{}) ([]string, error) {
 			if field.PkgPath != "" {
 				continue
 			}
-			// Use json tag if available
+			// Handle json tags
 			name := field.Name
-			if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
+			if tag := field.Tag.Get("json"); tag != "" {
 				parts := strings.Split(tag, ",")
+				// Skip fields with json:"-"
+				if parts[0] == "-" {
+					continue
+				}
 				if parts[0] != "" {
 					name = parts[0]
 				}
@@ -199,6 +214,13 @@ func (f *TableFormatter) getRow(item interface{}, headers []string) ([]string, e
 			if field.PkgPath != "" {
 				continue
 			}
+			// Skip fields with json:"-"
+			if tag := field.Tag.Get("json"); tag != "" {
+				parts := strings.Split(tag, ",")
+				if parts[0] == "-" {
+					continue
+				}
+			}
 			value := rv.Field(i)
 			row = append(row, f.formatValue(value.Interface()))
 		}
@@ -211,7 +233,7 @@ func (f *TableFormatter) getRow(item interface{}, headers []string) ([]string, e
 
 func (f *TableFormatter) formatValue(v interface{}) string {
 	if v == nil {
-		return ""
+		return "<nil>"
 	}
 
 	switch val := v.(type) {
@@ -232,13 +254,13 @@ func (f *TableFormatter) formatValue(v interface{}) string {
 		}
 		return f.formatValue(*val)
 	case []string:
-		return strings.Join(val, ", ")
+		return fmt.Sprintf("[%s]", strings.Join(val, " "))
 	case []interface{}:
 		var items []string
 		for _, item := range val {
 			items = append(items, fmt.Sprint(item))
 		}
-		return strings.Join(items, ", ")
+		return fmt.Sprintf("[%s]", strings.Join(items, " "))
 	default:
 		s := fmt.Sprint(v)
 		// Truncate long strings

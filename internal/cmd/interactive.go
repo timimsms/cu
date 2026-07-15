@@ -9,8 +9,8 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/api"
-	"github.com/tim/cu/internal/config"
+	"github.com/timimsms/cu/internal/api"
+	"github.com/timimsms/cu/internal/config"
 )
 
 var interactiveCmd = &cobra.Command{
