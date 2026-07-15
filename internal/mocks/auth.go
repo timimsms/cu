@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/tim/cu/internal/auth"
+	"github.com/timimsms/cu/internal/auth"
 )
 
 // MockAuthManager is a mock implementation of AuthManager for testing

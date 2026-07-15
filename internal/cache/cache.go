@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tim/cu/internal/config"
+	"github.com/timimsms/cu/internal/config"
 )
 
 // Cache represents a simple file-based cache

@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/tim/cu/internal/auth"
+import "github.com/timimsms/cu/internal/auth"
 
 // AuthManager defines the interface for authentication operations
 type AuthManager interface {

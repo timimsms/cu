@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/raksul/go-clickup/clickup"
-	"github.com/tim/cu/internal/auth"
-	"github.com/tim/cu/internal/errors"
+	"github.com/timimsms/cu/internal/auth"
+	"github.com/timimsms/cu/internal/errors"
 )
 
 // Client wraps the ClickUp API client

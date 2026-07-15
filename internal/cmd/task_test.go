@@ -123,7 +123,7 @@ func TestTruncate(t *testing.T) {
 						assert.Contains(t, fmt.Sprintf("%v", r), "slice bounds out of range")
 					}
 				}()
-				
+
 				result := truncate(test.input, test.maxLen)
 				// If we reach here, check that result length doesn't exceed maxLen
 				assert.True(t, len(result) <= test.maxLen)
@@ -250,7 +250,7 @@ func TestFormatRelativeTime(t *testing.T) {
 
 	t.Run("formats past times correctly", func(t *testing.T) {
 		now := time.Now()
-		
+
 		tests := []struct {
 			name     string
 			time     time.Time
@@ -259,7 +259,7 @@ func TestFormatRelativeTime(t *testing.T) {
 			{"5 minutes ago", now.Add(-5 * time.Minute), "5 minutes ago"},
 			{"2 hours ago", now.Add(-2 * time.Hour), "2 hours ago"},
 			{"3 days ago", now.Add(-72 * time.Hour), "3 days ago"},
-			{"old date", now.Add(-30 * 24 * time.Hour), now.Add(-30*24*time.Hour).Format("Jan 2, 2006")},
+			{"old date", now.Add(-30 * 24 * time.Hour), now.Add(-30 * 24 * time.Hour).Format("Jan 2, 2006")},
 		}
 
 		for _, test := range tests {
@@ -272,17 +272,17 @@ func TestFormatRelativeTime(t *testing.T) {
 
 	t.Run("formats future times correctly", func(t *testing.T) {
 		now := time.Now()
-		
+
 		tests := []struct {
-			name        string
-			time        time.Time
-			contains    string // Check if result contains expected text
+			name     string
+			time     time.Time
+			contains string // Check if result contains expected text
 		}{
 			{"in minutes", now.Add(5 * time.Minute), "minutes"},
 			{"in hours", now.Add(2 * time.Hour), "hour"},
 			{"tomorrow or hours", now.Add(25 * time.Hour), ""}, // Special case
 			{"in days", now.Add(50 * time.Hour), "days"},
-			{"future date", now.Add(30 * 24 * time.Hour), now.Add(30*24*time.Hour).Format("Jan 2, 2006")},
+			{"future date", now.Add(30 * 24 * time.Hour), now.Add(30 * 24 * time.Hour).Format("Jan 2, 2006")},
 		}
 
 		for _, test := range tests {
@@ -339,7 +339,7 @@ func TestIsToday(t *testing.T) {
 
 	t.Run("identifies today correctly", func(t *testing.T) {
 		now := time.Now()
-		
+
 		tests := []struct {
 			name     string
 			time     time.Time
@@ -370,7 +370,7 @@ func TestIsTomorrow(t *testing.T) {
 	t.Run("identifies tomorrow correctly", func(t *testing.T) {
 		now := time.Now()
 		tomorrow := now.Add(24 * time.Hour)
-		
+
 		tests := []struct {
 			name     string
 			time     time.Time
@@ -400,7 +400,7 @@ func TestIsThisWeek(t *testing.T) {
 
 	t.Run("identifies this week correctly", func(t *testing.T) {
 		now := time.Now()
-		
+
 		tests := []struct {
 			name     string
 			time     time.Time

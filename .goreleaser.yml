@@ -24,10 +24,10 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/tim/cu/internal/version.Version={{.Version}}
-      - -X github.com/tim/cu/internal/version.Commit={{.Commit}}
-      - -X github.com/tim/cu/internal/version.Date={{.Date}}
-      - -X github.com/tim/cu/internal/version.BuiltBy=goreleaser
+      - -X github.com/timimsms/cu/internal/version.Version={{.Version}}
+      - -X github.com/timimsms/cu/internal/version.Commit={{.Commit}}
+      - -X github.com/timimsms/cu/internal/version.Date={{.Date}}
+      - -X github.com/timimsms/cu/internal/version.BuiltBy=goreleaser
 
 archives:
   - id: cu-archive
@@ -83,6 +83,12 @@ homebrew_casks:
     directory: Casks
     homepage: "https://github.com/timimsms/cu"
     description: "A CLI for ClickUp — like gh is for GitHub"
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/cu"]
+          end
 
 release:
   github:
@@ -96,14 +102,14 @@ release:
   footer: |
     ## Installation
 
-    ### Homebrew (macOS/Linux)
+    ### Homebrew (macOS)
     ```bash
     brew install timimsms/cu/cu
     ```
 
     ### Go
     ```bash
-    go install github.com/tim/cu/cmd/cu@v{{.Version}}
+    go install github.com/timimsms/cu/cmd/cu@v{{.Version}}
     ```
 
     ### Direct Download

@@ -27,7 +27,7 @@ func TestCommentCmd_Structure(t *testing.T) {
 
 	t.Run("comment command has expected flags", func(t *testing.T) {
 		cmd := commentCmd
-		
+
 		// Check message flag
 		messageFlag := cmd.Flags().Lookup("message")
 		assert.NotNil(t, messageFlag)
@@ -116,7 +116,7 @@ func TestCommentCmd_FlagBehavior(t *testing.T) {
 func TestCommentCmd_ArgsValidation(t *testing.T) {
 	t.Run("requires exactly one argument", func(t *testing.T) {
 		cmd := commentCmd
-		
+
 		// Test no arguments
 		err := cmd.Args(cmd, []string{})
 		assert.Error(t, err)
@@ -181,7 +181,7 @@ func TestCommentCmd_GlobalVariables(t *testing.T) {
 		originalMessage := commentMessage
 		originalAssignee := commentAssignee
 		originalNotifyAll := notifyAll
-		
+
 		// Modify variables
 		commentMessage = "modified message"
 		commentAssignee = "modified assignee"
@@ -204,7 +204,7 @@ func TestCommentCmd_Integration(t *testing.T) {
 		// This test ensures the command structure is sound
 		// We don't execute it fully due to API dependencies
 		cmd := commentCmd
-		
+
 		// Test that we can create a copy of the command
 		testCmd := &cobra.Command{
 			Use:   cmd.Use,
@@ -212,7 +212,7 @@ func TestCommentCmd_Integration(t *testing.T) {
 			Long:  cmd.Long,
 			Args:  cmd.Args,
 		}
-		
+
 		assert.NotNil(t, testCmd)
 		assert.Equal(t, cmd.Use, testCmd.Use)
 		assert.Equal(t, cmd.Short, testCmd.Short)
@@ -225,7 +225,7 @@ func TestCommentHelpers(t *testing.T) {
 	t.Run("comment command initialization", func(t *testing.T) {
 		// Test that init() was called and flags are set up
 		cmd := commentCmd
-		
+
 		// Verify flags were added during init()
 		assert.NotNil(t, cmd.Flags().Lookup("message"))
 		assert.NotNil(t, cmd.Flags().Lookup("assignee"))
@@ -240,7 +240,7 @@ func TestCommentInput_Mock(t *testing.T) {
 	t.Run("can mock stdin for testing", func(t *testing.T) {
 		// This demonstrates how we could mock stdin for testing interactive input
 		// though the actual function has complex API dependencies
-		
+
 		originalStdin := os.Stdin
 		defer func() { os.Stdin = originalStdin }()
 
@@ -257,7 +257,7 @@ func TestCommentInput_Mock(t *testing.T) {
 		// Read the input (simulating what addComment would do)
 		var buf bytes.Buffer
 		_, _ = io.Copy(&buf, r)
-		
+
 		// Verify we can read the mocked input
 		content := buf.String()
 		assert.Contains(t, content, "test comment")
@@ -271,7 +271,7 @@ func TestCommentFormat_Mock(t *testing.T) {
 		// we test similar logic that would be used
 		comment := "This is a test comment"
 		formatted := strings.TrimSpace(comment)
-		
+
 		assert.Equal(t, "This is a test comment", formatted)
 		assert.NotContains(t, formatted, "\n")
 	})
@@ -279,7 +279,7 @@ func TestCommentFormat_Mock(t *testing.T) {
 	t.Run("handles multiline comments", func(t *testing.T) {
 		comment := "Line 1\nLine 2\nLine 3"
 		lines := strings.Split(comment, "\n")
-		
+
 		assert.Len(t, lines, 3)
 		assert.Equal(t, "Line 1", lines[0])
 		assert.Equal(t, "Line 2", lines[1])
@@ -333,7 +333,7 @@ func TestFormatCommentDate(t *testing.T) {
 		}{
 			{"empty string", "", ""},
 			{"RFC3339 format", "2022-01-01T15:04:05Z", "just now"}, // Will be formatted as relative time
-			{"unix timestamp ms", "1640995200000", "2021-12-31"}, // 2022-01-01 UTC timestamp
+			{"unix timestamp ms", "1640995200000", "2021-12-31"},   // 2022-01-01 UTC timestamp
 			{"invalid format", "invalid-date", "invalid-date"},
 		}
 
@@ -366,7 +366,7 @@ func TestAddComment_Function(t *testing.T) {
 		// This test verifies the function exists and has the right signature
 		// The actual execution will likely panic due to uninitialized API client
 		// but we still get coverage of the function entry point
-		
+
 		// Reset global state
 		origMessage := commentMessage
 		origList := listComments
@@ -376,22 +376,22 @@ func TestAddComment_Function(t *testing.T) {
 			listComments = origList
 			deleteComment = origDelete
 		}()
-		
+
 		cmd := &cobra.Command{}
 		args := []string{"test-task-id"}
-		
+
 		// Set a message to avoid interactive prompt
 		commentMessage = "Test comment"
 		listComments = false
 		deleteComment = ""
-		
+
 		// Capture output to prevent console noise during testing
 		oldStdout := os.Stdout
 		oldStderr := os.Stderr
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 		os.Stderr = w
-		
+
 		// We expect this to panic due to nil API client, but we still get some coverage
 		defer func() {
 			if r := recover(); r != nil {
@@ -399,18 +399,18 @@ func TestAddComment_Function(t *testing.T) {
 				assert.Contains(t, fmt.Sprintf("%v", r), "nil pointer dereference")
 			}
 		}()
-		
+
 		err := addComment(cmd, args)
-		
+
 		// Restore output
 		w.Close()
 		os.Stdout = oldStdout
 		os.Stderr = oldStderr
-		
+
 		// Read and discard output
 		buf := make([]byte, 1024)
 		_, _ = r.Read(buf)
-		
+
 		// If we get here without panicking, check for error
 		if err != nil {
 			assert.Error(t, err)
@@ -428,14 +428,14 @@ func TestListTaskComments_Function(t *testing.T) {
 	t.Run("function can be called (may panic due to API dependencies)", func(t *testing.T) {
 		cmd := &cobra.Command{}
 		args := []string{"test-task-id"}
-		
+
 		// Capture output to prevent console noise during testing
 		oldStdout := os.Stdout
 		oldStderr := os.Stderr
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 		os.Stderr = w
-		
+
 		// We expect this to panic due to nil API client, but we still get some coverage
 		defer func() {
 			if r := recover(); r != nil {
@@ -443,18 +443,18 @@ func TestListTaskComments_Function(t *testing.T) {
 				assert.Contains(t, fmt.Sprintf("%v", r), "nil pointer dereference")
 			}
 		}()
-		
+
 		err := listTaskComments(cmd, args)
-		
+
 		// Restore output
 		w.Close()
 		os.Stdout = oldStdout
 		os.Stderr = oldStderr
-		
+
 		// Read and discard output
 		buf := make([]byte, 1024)
 		_, _ = r.Read(buf)
-		
+
 		// If we get here without panicking, check for error
 		if err != nil {
 			assert.Error(t, err)
@@ -473,20 +473,20 @@ func TestDeleteTaskComment_Function(t *testing.T) {
 		// Reset global state
 		origYes := yesFlag
 		defer func() { yesFlag = origYes }()
-		
+
 		cmd := &cobra.Command{}
 		args := []string{"test-comment-id"}
-		
+
 		// Set yes flag to avoid interactive confirmation
 		yesFlag = true
-		
+
 		// Capture output to prevent console noise during testing
 		oldStdout := os.Stdout
 		oldStderr := os.Stderr
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 		os.Stderr = w
-		
+
 		// We expect this to panic due to nil API client, but we still get some coverage
 		defer func() {
 			if r := recover(); r != nil {
@@ -494,18 +494,18 @@ func TestDeleteTaskComment_Function(t *testing.T) {
 				assert.Contains(t, fmt.Sprintf("%v", r), "nil pointer dereference")
 			}
 		}()
-		
+
 		err := deleteTaskComment(cmd, args)
-		
+
 		// Restore output
 		w.Close()
 		os.Stdout = oldStdout
 		os.Stderr = oldStderr
-		
+
 		// Read and discard output
 		buf := make([]byte, 1024)
 		_, _ = r.Read(buf)
-		
+
 		// Function may error due to API client initialization, but shouldn't panic
 		if err != nil {
 			assert.Error(t, err)

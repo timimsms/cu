@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/raksul/go-clickup/clickup"
-	"github.com/tim/cu/internal/cache"
+	"github.com/timimsms/cu/internal/cache"
 )
 
 // UserLookup provides user ID lookup functionality

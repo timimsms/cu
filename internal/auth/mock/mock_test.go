@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tim/cu/internal/auth"
-	cuerrors "github.com/tim/cu/internal/errors"
+	"github.com/timimsms/cu/internal/auth"
+	cuerrors "github.com/timimsms/cu/internal/errors"
 )
 
 func TestNewAuthProvider(t *testing.T) {

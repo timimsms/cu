@@ -67,7 +67,7 @@ func TestEndpointNormalization(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {  
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// This tests the logic that should add leading slash
 			result := tt.input
@@ -83,11 +83,11 @@ func TestEndpointNormalization(t *testing.T) {
 
 func TestHeaderParsing(t *testing.T) {
 	tests := []struct {
-		name           string
-		headers        []string
-		expectedKey    string
-		expectedValue  string
-		shouldParse    bool
+		name          string
+		headers       []string
+		expectedKey   string
+		expectedValue string
+		shouldParse   bool
 	}{
 		{
 			name:          "valid header",

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tim/cu/internal/auth"
-	cuerrors "github.com/tim/cu/internal/errors"
+	"github.com/timimsms/cu/internal/auth"
+	cuerrors "github.com/timimsms/cu/internal/errors"
 )
 
 // AuthProvider is a mock implementation of auth.Manager for testing

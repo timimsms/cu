@@ -1,4 +1,4 @@
-module github.com/tim/cu
+module github.com/timimsms/cu
 
 go 1.24.4
 

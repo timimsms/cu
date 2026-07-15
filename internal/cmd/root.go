@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tim/cu/internal/config"
-	"github.com/tim/cu/internal/version"
+	"github.com/timimsms/cu/internal/config"
+	"github.com/timimsms/cu/internal/version"
 )
 
 var (

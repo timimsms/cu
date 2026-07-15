@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/api"
-	"github.com/tim/cu/internal/output"
+	"github.com/timimsms/cu/internal/api"
+	"github.com/timimsms/cu/internal/output"
 )
 
 var bulkCmd = &cobra.Command{

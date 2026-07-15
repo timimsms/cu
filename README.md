@@ -37,7 +37,7 @@ npm install -g @clickup/cli
 ```
 
 ### Direct Download
-Download the latest release from the [releases page](https://github.com/tim/cu/releases).
+Download the latest release from the [releases page](https://github.com/timimsms/cu/releases).
 
 ## Quick Start
 

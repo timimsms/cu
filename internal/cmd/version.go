@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/tim/cu/internal/version"
+	"github.com/timimsms/cu/internal/version"
 )
 
 var versionCmd = &cobra.Command{
