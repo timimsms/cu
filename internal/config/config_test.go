@@ -169,7 +169,7 @@ output: json
 
 	t.Run("directory creation failure", func(t *testing.T) {
 		oldConfigDir := DefaultConfigDir
-		
+
 		// Use a path that's invalid on both Windows and Unix
 		if runtime.GOOS == "windows" {
 			// On Windows, use a path with invalid characters
@@ -229,7 +229,11 @@ func TestFindProjectConfig(t *testing.T) {
 		require.NoError(t, os.WriteFile(targetFile, []byte("test"), 0600))
 
 		symlinkPath := filepath.Join(tmpDir, ProjectConfigFileName)
-		require.NoError(t, os.Symlink(targetFile, symlinkPath))
+		err := os.Symlink(targetFile, symlinkPath)
+		if err != nil && runtime.GOOS == "windows" {
+			t.Skip("symlink creation requires elevation on Windows")
+		}
+		require.NoError(t, err)
 
 		oldWd, _ := os.Getwd()
 		require.NoError(t, os.Chdir(tmpDir))
@@ -288,7 +292,7 @@ output: table`
 		projectConfigPath = ""
 		hasProjectConfig = false
 		viper.Reset()
-		
+
 		// Initialize project config to find the existing file
 		err := Init("")
 		require.NoError(t, err)
@@ -323,7 +327,7 @@ output: table`
 			// Windows doesn't allow removing the current directory
 			t.Skip("Skipping directory removal test on Windows")
 		}
-		
+
 		// Change to a directory then remove it
 		tmpDir := t.TempDir()
 		testDir := filepath.Join(tmpDir, "test")
@@ -395,7 +399,7 @@ func TestInitProjectConfig(t *testing.T) {
 			// Windows doesn't allow removing the current directory
 			t.Skip("Skipping directory removal test on Windows")
 		}
-		
+
 		// Create and change to a directory, then remove it
 		tmpDir := t.TempDir()
 		testDir := filepath.Join(tmpDir, "test")

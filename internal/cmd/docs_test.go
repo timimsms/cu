@@ -3,9 +3,11 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDocsCmd_Structure(t *testing.T) {
@@ -22,7 +24,7 @@ func TestDocsCmd_Structure(t *testing.T) {
 		cmd := docsCmd
 		subcommands := cmd.Commands()
 		assert.NotEmpty(t, subcommands, "docs command should have subcommands")
-		
+
 		// Check for markdown subcommand
 		var hasMarkdown bool
 		for _, subcmd := range subcommands {
@@ -59,13 +61,13 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 	t.Run("creates directory if it doesn't exist", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		docsDir := filepath.Join(tmpDir, "new-docs")
-		
+
 		cmd := genMarkdownCmd
 		_ = cmd.Flags().Set("dir", docsDir)
-		
+
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Check directory was created
 		info, err := os.Stat(docsDir)
 		assert.NoError(t, err)
@@ -78,14 +80,14 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 		oldWd, _ := os.Getwd()
 		defer func() { _ = os.Chdir(oldWd) }()
 		_ = os.Chdir(tmpDir)
-		
+
 		cmd := genMarkdownCmd
 		// Reset flag to default
 		_ = cmd.Flags().Set("dir", "")
-		
+
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Check default ./docs directory was created
 		info, err := os.Stat("./docs")
 		assert.NoError(t, err)
@@ -94,17 +96,17 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 
 	t.Run("generates documentation files", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		
+
 		cmd := genMarkdownCmd
 		_ = cmd.Flags().Set("dir", tmpDir)
-		
+
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Check that at least one markdown file was created
 		files, err := os.ReadDir(tmpDir)
 		assert.NoError(t, err)
-		
+
 		var hasMarkdownFile bool
 		for _, file := range files {
 			if filepath.Ext(file.Name()) == ".md" {
@@ -116,21 +118,24 @@ func TestGenMarkdownCmd_Execution(t *testing.T) {
 	})
 
 	t.Run("handles permission errors", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("permission bits are not enforced on Windows")
+		}
 		if os.Getuid() == 0 {
 			t.Skip("Cannot test permission errors as root")
 		}
-		
+
 		// Create a directory with no write permissions
 		tmpDir := t.TempDir()
 		readOnlyDir := filepath.Join(tmpDir, "readonly")
 		err := os.Mkdir(readOnlyDir, 0555)
 		assert.NoError(t, err)
-		
+
 		cmd := genMarkdownCmd
 		_ = cmd.Flags().Set("dir", filepath.Join(readOnlyDir, "docs"))
-		
+
 		err = cmd.RunE(cmd, []string{})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create directory")
 	})
 }
@@ -164,26 +169,26 @@ func TestDocsCmd_Integration(t *testing.T) {
 func TestDocsCmd_Output(t *testing.T) {
 	t.Run("prints success message", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		
+
 		// Capture stdout
 		oldStdout := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
-		
+
 		cmd := genMarkdownCmd
 		_ = cmd.Flags().Set("dir", tmpDir)
-		
+
 		err := cmd.RunE(cmd, []string{})
 		assert.NoError(t, err)
-		
+
 		// Restore stdout and read output
 		w.Close()
 		os.Stdout = oldStdout
-		
+
 		buf := make([]byte, 1024)
 		n, _ := r.Read(buf)
 		output := string(buf[:n])
-		
+
 		assert.Contains(t, output, "Documentation generated")
 		assert.Contains(t, output, tmpDir)
 	})
