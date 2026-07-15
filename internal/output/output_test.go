@@ -183,7 +183,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("formats [][]string data", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		data := [][]string{
 			{"id", "name"},
 			{"1", "test"},
@@ -192,7 +192,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id,name")
 		assert.Contains(t, output, "1,test")
@@ -202,7 +202,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("formats []map[string]interface{} data", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		data := []map[string]interface{}{
 			{"id": 1, "name": "test", "active": true},
 			{"id": 2, "name": "test2", "active": false},
@@ -210,7 +210,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		// Headers should be present
 		assert.Contains(t, output, "id")
@@ -225,7 +225,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("handles empty []map[string]interface{}", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		data := []map[string]interface{}{}
 
 		err := formatter.Format(data)
@@ -236,7 +236,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("formats []map[string]string data", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		data := []map[string]string{
 			{"id": "1", "name": "test"},
 			{"id": "2", "name": "test2"},
@@ -244,7 +244,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -255,7 +255,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("handles empty []map[string]string", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		data := []map[string]string{}
 
 		err := formatter.Format(data)
@@ -266,18 +266,18 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("formats struct data", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`
 		}
-		
+
 		// Single struct should be converted to slice
 		data := TestStruct{ID: 1, Name: "test"}
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -288,12 +288,12 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("formats slice of structs", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`
 		}
-		
+
 		data := []TestStruct{
 			{ID: 1, Name: "test1"},
 			{ID: 2, Name: "test2"},
@@ -301,7 +301,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -314,7 +314,7 @@ func TestCSVFormatter_Format(t *testing.T) {
 	t.Run("handles unsupported data type", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &CSVFormatter{Writer: &buf}
-		
+
 		// Unsupported type
 		data := 123
 

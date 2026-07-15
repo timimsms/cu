@@ -168,7 +168,7 @@ func (f *CSVFormatter) Format(data interface{}) error {
 			}
 			return writer.WriteAll(rows)
 		}
-		
+
 		// Handle single struct
 		if rv.Kind() == reflect.Struct || (rv.Kind() == reflect.Ptr && rv.Elem().Kind() == reflect.Struct) {
 			headers, err := structToHeaders(data)
@@ -184,7 +184,7 @@ func (f *CSVFormatter) Format(data interface{}) error {
 			}
 			return writer.Write(values)
 		}
-		
+
 		return fmt.Errorf("unsupported CSV data type")
 	}
 }

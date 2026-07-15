@@ -17,7 +17,7 @@ The mock package includes:
 ```go
 import (
     "testing"
-    "github.com/tim/cu/internal/auth/mock"
+    "github.com/timimsms/cu/internal/auth/mock"
 )
 
 func TestMyCommand(t *testing.T) {

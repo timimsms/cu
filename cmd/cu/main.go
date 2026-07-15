@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/tim/cu/internal/cmd"
+	"github.com/timimsms/cu/internal/cmd"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tim/cu/internal/errors"
+	"github.com/timimsms/cu/internal/errors"
 	"github.com/zalando/go-keyring"
 )
 

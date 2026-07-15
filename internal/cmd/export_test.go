@@ -29,23 +29,23 @@ func TestExportCmd_Structure(t *testing.T) {
 
 	t.Run("export tasks has required flags", func(t *testing.T) {
 		cmd := exportTasksCmd
-		
+
 		// Check for expected flags
 		listFlag := cmd.Flags().Lookup("list")
 		assert.NotNil(t, listFlag)
-		
+
 		formatFlag := cmd.Flags().Lookup("format")
 		assert.NotNil(t, formatFlag)
-		
+
 		outputFlag := cmd.Flags().Lookup("output")
 		assert.NotNil(t, outputFlag)
-		
+
 		statusFlag := cmd.Flags().Lookup("status")
 		assert.NotNil(t, statusFlag)
-		
+
 		priorityFlag := cmd.Flags().Lookup("priority")
 		assert.NotNil(t, priorityFlag)
-		
+
 		assigneeFlag := cmd.Flags().Lookup("assignee")
 		assert.NotNil(t, assigneeFlag)
 	})
@@ -61,7 +61,7 @@ func TestExportTasksCmd_Logic(t *testing.T) {
 			isValid := lower == "csv" || lower == "json" || lower == "markdown" || lower == "md"
 			assert.True(t, isValid, "Format %s should be valid", format)
 		}
-		
+
 		invalidFormats := []string{"xml", "yaml", "txt", ""}
 		for _, format := range invalidFormats {
 			lower := strings.ToLower(format)
@@ -85,7 +85,7 @@ func TestExportTasksCmd_Logic(t *testing.T) {
 			"normal": 3,
 			"low":    4,
 		}
-		
+
 		for name, expectedID := range priorities {
 			var p int
 			switch name {
@@ -103,7 +103,7 @@ func TestExportTasksCmd_Logic(t *testing.T) {
 	})
 }
 
-// Note: The actual exportTasksToCSV, exportTasksToJSON, exportTasksToMarkdown 
+// Note: The actual exportTasksToCSV, exportTasksToJSON, exportTasksToMarkdown
 // functions are complex and depend on the clickup package structure.
 // These tests focus on command structure and logic validation.
 
@@ -116,9 +116,9 @@ func TestExportCmd_FunctionExistence(t *testing.T) {
 		var mdFunc func(*os.File, []clickup.Task) error = exportTasksToMarkdown
 		var filterFunc func([]clickup.Task, string, string, string) []clickup.Task = filterTasksForExport
 		var formatFunc func(string) string = formatTimestamp
-		
+
 		assert.NotNil(t, csvFunc)
-		assert.NotNil(t, jsonFunc) 
+		assert.NotNil(t, jsonFunc)
 		assert.NotNil(t, mdFunc)
 		assert.NotNil(t, filterFunc)
 		assert.NotNil(t, formatFunc)
@@ -128,16 +128,16 @@ func TestExportCmd_FunctionExistence(t *testing.T) {
 func TestExportCmd_CommandFlags(t *testing.T) {
 	t.Run("flags have correct properties", func(t *testing.T) {
 		cmd := exportTasksCmd
-		
+
 		// Test flag defaults and properties
 		listFlag := cmd.Flags().Lookup("list")
 		assert.NotNil(t, listFlag)
 		assert.Equal(t, "", listFlag.DefValue)
-		
-		formatFlag := cmd.Flags().Lookup("format") 
+
+		formatFlag := cmd.Flags().Lookup("format")
 		assert.NotNil(t, formatFlag)
 		assert.Equal(t, "csv", formatFlag.DefValue)
-		
+
 		outputFlag := cmd.Flags().Lookup("output")
 		assert.NotNil(t, outputFlag)
 		assert.Equal(t, "", outputFlag.DefValue)

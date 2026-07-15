@@ -9,7 +9,7 @@ import (
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tim/cu/internal/testutil"
+	"github.com/timimsms/cu/internal/testutil"
 )
 
 // mockClient for testing UserLookup

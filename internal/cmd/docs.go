@@ -9,9 +9,9 @@ import (
 )
 
 var docsCmd = &cobra.Command{
-	Use:   "docs",
-	Short: "Generate documentation for cu",
-	Long:  `Generate documentation for cu in various formats including Markdown, Man pages, and RST.`,
+	Use:    "docs",
+	Short:  "Generate documentation for cu",
+	Long:   `Generate documentation for cu in various formats including Markdown, Man pages, and RST.`,
 	Hidden: true, // Hide from regular help output
 }
 
@@ -43,6 +43,6 @@ var genMarkdownCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(docsCmd)
 	docsCmd.AddCommand(genMarkdownCmd)
-	
+
 	genMarkdownCmd.Flags().StringP("dir", "d", "./docs", "Directory to write documentation files")
 }

@@ -173,15 +173,15 @@ func SaveProjectConfig(settings map[string]interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
-	
+
 	// Convert to absolute for comparison
 	absCwd, _ := filepath.Abs(cwd)
-	
+
 	// The config should be within the current directory tree
 	if !strings.HasPrefix(absPath, absCwd) {
 		return fmt.Errorf("invalid config path: outside current directory")
 	}
-	
+
 	// Check for absolute path based on OS
 	if runtime.GOOS == "windows" {
 		// On Windows, absolute paths start with drive letter (e.g., C:\)

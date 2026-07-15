@@ -13,7 +13,7 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats slice of maps", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		data := []map[string]string{
 			{"id": "1", "name": "John", "email": "john@example.com"},
 			{"id": "2", "name": "Jane", "email": "jane@example.com"},
@@ -21,7 +21,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -38,12 +38,12 @@ func TestTableFormatter_Format(t *testing.T) {
 			Writer:    &buf,
 			ShowEmpty: true,
 		}
-		
+
 		data := []map[string]string{}
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "No items found")
 	})
@@ -54,7 +54,7 @@ func TestTableFormatter_Format(t *testing.T) {
 			Writer:    &buf,
 			ShowEmpty: false,
 		}
-		
+
 		data := []map[string]string{}
 
 		err := formatter.Format(data)
@@ -68,7 +68,7 @@ func TestTableFormatter_Format(t *testing.T) {
 			Writer:   &buf,
 			NoHeader: true,
 		}
-		
+
 		data := []map[string]string{
 			{"id": "1", "name": "John"},
 			{"id": "2", "name": "Jane"},
@@ -76,7 +76,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		// Should not have headers
 		assert.NotContains(t, output, "id\tname")
@@ -88,7 +88,7 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats map data", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		data := map[string]interface{}{
 			"id":     123,
 			"name":   "Test User",
@@ -97,7 +97,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "KEY")
 		assert.Contains(t, output, "VALUE")
@@ -115,7 +115,7 @@ func TestTableFormatter_Format(t *testing.T) {
 			Writer:   &buf,
 			NoHeader: true,
 		}
-		
+
 		data := map[string]string{
 			"key1": "value1",
 			"key2": "value2",
@@ -123,7 +123,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		// Should not have headers
 		assert.NotContains(t, output, "KEY\tVALUE")
@@ -135,7 +135,7 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats struct data", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID     int       `json:"id"`
 			Name   string    `json:"name"`
@@ -143,7 +143,7 @@ func TestTableFormatter_Format(t *testing.T) {
 			Tags   []string  `json:"tags"`
 			Time   time.Time `json:"time"`
 		}
-		
+
 		data := TestStruct{
 			ID:     1,
 			Name:   "Test",
@@ -154,7 +154,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "FIELD")
 		assert.Contains(t, output, "VALUE")
@@ -171,12 +171,12 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats pointer to struct", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`
 		}
-		
+
 		data := &TestStruct{
 			ID:   1,
 			Name: "Test",
@@ -184,7 +184,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "1")
@@ -195,18 +195,18 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats simple types", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		// String
 		err := formatter.Format("simple string")
 		assert.NoError(t, err)
 		assert.Contains(t, buf.String(), "simple string")
-		
+
 		// Number
 		buf.Reset()
 		err = formatter.Format(42)
 		assert.NoError(t, err)
 		assert.Contains(t, buf.String(), "42")
-		
+
 		// Boolean
 		buf.Reset()
 		err = formatter.Format(true)
@@ -217,13 +217,13 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats slice of structs", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type Person struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`
 			Age  int    `json:"age"`
 		}
-		
+
 		data := []Person{
 			{ID: 1, Name: "Alice", Age: 30},
 			{ID: 2, Name: "Bob", Age: 25},
@@ -231,7 +231,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -245,13 +245,13 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats struct with unexported fields", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID       int    `json:"id"`
 			Name     string `json:"name"`
 			internal string // unexported, should be skipped
 		}
-		
+
 		data := TestStruct{
 			ID:       1,
 			Name:     "Test",
@@ -260,7 +260,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -270,7 +270,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 	t.Run("uses default writer when nil", func(t *testing.T) {
 		formatter := &TableFormatter{Writer: nil}
-		
+
 		// Should not panic
 		err := formatter.Format("test")
 		assert.NoError(t, err)
@@ -279,12 +279,12 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats struct with no json tags", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID   int
 			Name string
 		}
-		
+
 		data := TestStruct{
 			ID:   1,
 			Name: "Test",
@@ -292,7 +292,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "ID")
 		assert.Contains(t, output, "1")
@@ -303,14 +303,14 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats struct with json tag options", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			ID       int    `json:"id,omitempty"`
 			Name     string `json:"name"`
 			Internal string `json:"-"` // Should be skipped
 			Renamed  string `json:"custom_name"`
 		}
-		
+
 		data := TestStruct{
 			ID:       1,
 			Name:     "Test",
@@ -320,7 +320,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "id")
 		assert.Contains(t, output, "name")
@@ -333,11 +333,11 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats time values", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type TestStruct struct {
 			Created time.Time `json:"created"`
 		}
-		
+
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		data := TestStruct{
 			Created: testTime,
@@ -345,7 +345,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "created")
 		// Time should be formatted
@@ -355,17 +355,17 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats nested structs", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type Address struct {
 			Street string `json:"street"`
 			City   string `json:"city"`
 		}
-		
+
 		type Person struct {
 			Name    string  `json:"name"`
 			Address Address `json:"address"`
 		}
-		
+
 		data := Person{
 			Name: "John",
 			Address: Address{
@@ -376,7 +376,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "name")
 		assert.Contains(t, output, "John")
@@ -388,7 +388,7 @@ func TestTableFormatter_Format(t *testing.T) {
 	t.Run("formats relative time", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		// Test data with recent time
 		now := time.Now()
 		data := []map[string]interface{}{
@@ -397,7 +397,7 @@ func TestTableFormatter_Format(t *testing.T) {
 				"created": now.Add(-5 * time.Minute),
 			},
 			{
-				"id":      "2", 
+				"id":      "2",
 				"created": now.Add(-2 * time.Hour),
 			},
 			{
@@ -408,7 +408,7 @@ func TestTableFormatter_Format(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		// Should format times relatively
 		assert.Contains(t, output, "ago")
@@ -419,7 +419,7 @@ func TestTableFormatter_EdgeCases(t *testing.T) {
 	t.Run("handles nil values in map", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		data := map[string]interface{}{
 			"key1": "value1",
 			"key2": nil,
@@ -428,7 +428,7 @@ func TestTableFormatter_EdgeCases(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "key1")
 		assert.Contains(t, output, "value1")
@@ -439,13 +439,13 @@ func TestTableFormatter_EdgeCases(t *testing.T) {
 	t.Run("handles empty struct", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type EmptyStruct struct{}
 		data := EmptyStruct{}
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		// Should have headers but no data rows
 		output := buf.String()
 		lines := strings.Split(strings.TrimSpace(output), "\n")
@@ -455,12 +455,12 @@ func TestTableFormatter_EdgeCases(t *testing.T) {
 	t.Run("handles struct with all unexported fields", func(t *testing.T) {
 		var buf bytes.Buffer
 		formatter := &TableFormatter{Writer: &buf}
-		
+
 		type PrivateStruct struct {
 			internal1 string
 			internal2 int
 		}
-		
+
 		data := PrivateStruct{
 			internal1: "hidden",
 			internal2: 42,
@@ -468,7 +468,7 @@ func TestTableFormatter_EdgeCases(t *testing.T) {
 
 		err := formatter.Format(data)
 		assert.NoError(t, err)
-		
+
 		// Should not expose private fields
 		output := buf.String()
 		assert.NotContains(t, output, "hidden")
