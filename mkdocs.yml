@@ -33,6 +33,7 @@ theme:
 nav:
   - Home: index.md
   - Authentication & Security: authentication.md
+  - Changelog: changelog.md
   - Commands:
     - cu: commands/cu.md
     - Authentication:

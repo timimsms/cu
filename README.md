@@ -1,6 +1,7 @@
 # cu - ClickUp CLI
 
 [![CI](https://github.com/timimsms/cu/actions/workflows/ci.yml/badge.svg)](https://github.com/timimsms/cu/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/timimsms/cu)](https://github.com/timimsms/cu/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-timimsms.github.io%2Fcu-blue)](https://timimsms.github.io/cu/)
 
 > **Note**: `cu` is an unofficial, community-maintained project and is not affiliated with or endorsed by ClickUp.

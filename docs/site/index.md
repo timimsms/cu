@@ -1,5 +1,7 @@
 # cu - ClickUp CLI
 
+[![Release](https://img.shields.io/github/v/release/timimsms/cu)](https://github.com/timimsms/cu/releases/latest)
+
 > **Note**: `cu` is an unofficial, community-maintained project and is not affiliated with or endorsed by ClickUp.
 
 A GitHub CLI-inspired command-line interface for ClickUp.
@@ -64,6 +66,7 @@ cu task create
 
 ## Next Steps
 
+- [Changelog](changelog.md) - What's new in each release
 - [Authentication & Security](authentication.md) - Create a token and connect `cu` to ClickUp
 - [Command Reference](commands/cu.md) - Explore all available commands
 - [Task Management](commands/cu_task.md) - Learn how to manage tasks
