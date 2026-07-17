@@ -31,15 +31,17 @@ A GitHub CLI-inspired command-line interface for ClickUp.
 brew install timimsms/cu/cu
 ```
 
-Installs from the [timimsms/homebrew-cu](https://github.com/timimsms/homebrew-cu) tap. Available with the first tagged release.
+Installs the latest tagged release from the [timimsms/homebrew-cu](https://github.com/timimsms/homebrew-cu) tap.
 
 ### Go
 ```bash
 go install github.com/timimsms/cu/cmd/cu@latest
 ```
 
+Note: binaries installed via `go install` currently report `dev` from `cu version` ([#36](https://github.com/timimsms/cu/issues/36)); Homebrew and release downloads embed the real version.
+
 ### npm
-Planned as `@timimsms/cu` (not yet published).
+The package name `@timimsms/cu` is reserved on npm as a placeholder only — a functional package is not yet published. Use Homebrew, `go install`, or a release download instead.
 
 ### Direct Download
 Download the latest release from the [releases page](https://github.com/timimsms/cu/releases).

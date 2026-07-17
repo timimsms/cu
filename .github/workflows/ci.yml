@@ -130,7 +130,7 @@ jobs:
         
     - name: Install MkDocs and theme
       run: |
-        pip install mkdocs-material
+        pip install 'mkdocs-material==9.*'
         
     - name: Test documentation build
       run: mkdocs build --strict --site-dir _test_site

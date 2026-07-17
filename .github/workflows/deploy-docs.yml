@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'docs/**'
+      - 'docs/site/**'
       - 'mkdocs.yml'
       - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
           
       - name: Install MkDocs and theme
         run: |
-          pip install mkdocs-material
+          pip install 'mkdocs-material==9.*'
           
       - name: Build documentation
         run: mkdocs build --strict --site-dir _site

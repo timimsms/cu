@@ -36,7 +36,7 @@ Tokens are never written to disk in plaintext by `cu` — there is no plaintext 
 
 ## Headless Linux Caveat
 
-On headless Linux (servers, containers, CI), `cu` requires a running Secret Service implementation to store and read the token. There is currently no environment-variable fallback, so authentication will fail without one. A common workaround is to run a keyring daemon such as `gnome-keyring-daemon` with a D-Bus session.
+On headless Linux (servers, containers, CI), `cu` requires a running Secret Service implementation to store and read the token. There is currently no environment-variable fallback, so authentication will fail without one. A common workaround is to run a keyring daemon such as `gnome-keyring-daemon` with a D-Bus session. An environment-variable token fallback is planned — see [issue #26](https://github.com/timimsms/cu/issues/26).
 
 ## Revoking Access
 

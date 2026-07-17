@@ -28,6 +28,7 @@ theme:
     - search.highlight
     - content.tabs.link
     - content.code.copy
+    - content.action.edit
 
 nav:
   - Home: index.md
