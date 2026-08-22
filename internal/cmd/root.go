@@ -26,9 +26,13 @@ functionality for managing tasks, lists, spaces, and other ClickUp resources.
 It allows developers and teams to interact with ClickUp directly from the terminal,
 enabling efficient task management and seamless integration with development workflows.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// Initialize configuration
+		// Initialize configuration. Everything — global file, project .cu.yml
+		// overlay, env, flags — is layered here, in one place and one order.
 		if err := config.Init(cfgFile); err != nil {
 			return fmt.Errorf("failed to initialize config: %w", err)
+		}
+		if debug && viper.ConfigFileUsed() != "" {
+			fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 		}
 		return nil
 	},
@@ -40,8 +44,6 @@ func Execute() error {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/cu/config.yml)")
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug mode")
@@ -75,30 +77,4 @@ func init() {
 	rootCmd.AddCommand(interactiveCmd)
 	rootCmd.AddCommand(bulkCmd)
 	rootCmd.AddCommand(exportCmd)
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".cu" (without extension)
-		viper.AddConfigPath(home + "/.config/cu")
-		viper.AddConfigPath(".")
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("config")
-	}
-
-	// Read in environment variables that match
-	viper.SetEnvPrefix("CU")
-	viper.AutomaticEnv()
-
-	// If a config file is found, read it in
-	if err := viper.ReadInConfig(); err == nil && debug {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
 }

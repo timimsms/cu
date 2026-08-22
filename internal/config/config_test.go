@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -479,4 +480,105 @@ func TestConfigSafetyChecks(t *testing.T) {
 			}
 		}
 	})
+}
+
+// --- regression tests for the layering rework -------------------------------
+//
+// Two bugs are covered here, both reproducible before the fix:
+//   1. project .cu.yml merged via viper.Set landed in viper's override slot,
+//      so it beat environment variables and command-line flags.
+//   2. Save serialized the whole merged state into the global file, so running
+//      `cu config set` inside any project baked that project's values into
+//      ~/.config/cu/config.yaml.
+
+// newLayeredFixture writes a global config and a project .cu.yml, points
+// DefaultConfigDir at the former and chdirs into the latter.
+func newLayeredFixture(t *testing.T, global, project string) (cfgDir, projDir string) {
+	t.Helper()
+	viper.Reset()
+
+	tmp := t.TempDir()
+	cfgDir = filepath.Join(tmp, ".config", "cu")
+	require.NoError(t, os.MkdirAll(cfgDir, 0o750))
+	require.NoError(t, os.WriteFile(filepath.Join(cfgDir, ConfigFileName+"."+ConfigType), []byte(global), 0o600))
+
+	projDir = filepath.Join(tmp, "proj")
+	require.NoError(t, os.MkdirAll(projDir, 0o750))
+	require.NoError(t, os.WriteFile(filepath.Join(projDir, ProjectConfigFileName), []byte(project), 0o600))
+
+	old := DefaultConfigDir
+	DefaultConfigDir = cfgDir
+	t.Cleanup(func() { DefaultConfigDir = old; viper.Reset() })
+	t.Chdir(projDir)
+
+	return cfgDir, projDir
+}
+
+func TestProjectConfigPrecedence(t *testing.T) {
+	t.Run("project overrides global", func(t *testing.T) {
+		newLayeredFixture(t,
+			"output: table\ndefault_list: from-global\ndefault_space: global-space\n",
+			"output: yaml\ndefault_list: from-project\n")
+
+		require.NoError(t, Init(""))
+
+		assert.Equal(t, "from-project", GetString("default_list"), "project should override global")
+		assert.Equal(t, "yaml", GetString("output"))
+		assert.Equal(t, "global-space", GetString("default_space"), "keys absent from the project file keep the global value")
+	})
+
+	t.Run("environment outranks project", func(t *testing.T) {
+		newLayeredFixture(t,
+			"output: table\n",
+			"output: yaml\n")
+		t.Setenv("CU_OUTPUT", "csv")
+
+		require.NoError(t, Init(""))
+
+		assert.Equal(t, "csv", GetString("output"), "env must beat project config")
+	})
+
+	t.Run("flags outrank project", func(t *testing.T) {
+		newLayeredFixture(t,
+			"output: table\n",
+			"output: yaml\n")
+
+		fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+		fs.String("output", "table", "")
+		require.NoError(t, fs.Set("output", "json"))
+		require.NoError(t, viper.BindPFlag("output", fs.Lookup("output")))
+
+		require.NoError(t, Init(""))
+
+		assert.Equal(t, "json", GetString("output"), "an explicit flag must beat project config")
+	})
+
+	t.Run("credentials in a project file are ignored", func(t *testing.T) {
+		newLayeredFixture(t,
+			"api_token: global-token\n",
+			"api_token: project-token\ndefault_list: from-project\n")
+
+		require.NoError(t, Init(""))
+
+		assert.Equal(t, "global-token", GetString("api_token"), "a committed project file must not substitute the token")
+		assert.Equal(t, "from-project", GetString("default_list"), "non-credential keys still apply")
+	})
+}
+
+func TestSaveDoesNotLeakProjectConfig(t *testing.T) {
+	cfgDir, _ := newLayeredFixture(t,
+		"default_space: global-space\n",
+		"default_list: from-project\noutput: yaml\n")
+
+	require.NoError(t, Init(""))
+	Set("default_workspace", "ws-1")
+	require.NoError(t, Save())
+
+	written, err := os.ReadFile(filepath.Join(cfgDir, ConfigFileName+"."+ConfigType))
+	require.NoError(t, err)
+	got := string(written)
+
+	assert.NotContains(t, got, "from-project", "project values must not be written to the global config")
+	assert.Contains(t, got, "ws-1", "explicitly set values are persisted")
+	assert.Contains(t, got, "global-space", "pre-existing global values are preserved")
 }
