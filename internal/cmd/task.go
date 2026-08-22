@@ -399,11 +399,20 @@ var taskCloseCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Find a closed status in the same list
-		// For now, we'll use "complete" as the closed status
-		// TODO: Query the list's statuses to find the actual closed status
+		// Resolve the done status from the task's own list. Status sets are
+		// per-list, so a hardcoded "complete" fails on any list with a custom
+		// set. --status overrides when a list has several done statuses.
+		status, _ := cmd.Flags().GetString("status")
+		if status == "" {
+			status, err = api.NewStatusResolver(client).ClosedStatusForTask(ctx, taskID)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to close task: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
 		updateOpts := &api.TaskUpdateOptions{
-			Status: "complete",
+			Status: status,
 		}
 
 		// Update task
@@ -447,10 +456,15 @@ var taskReopenCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Get the status flag or use default
+		// Get the status flag, or resolve the list's own open status — "open"
+		// is only a valid status name on lists using the default set.
 		status, _ := cmd.Flags().GetString("status")
 		if status == "" {
-			status = "open" // Default to "open"
+			status, err = api.NewStatusResolver(client).OpenStatusForTask(ctx, taskID)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to reopen task: %v\n", err)
+				os.Exit(1)
+			}
 		}
 
 		// Update task
@@ -705,7 +719,8 @@ func init() {
 	taskUpdateCmd.Flags().StringSlice("remove-assignee", []string{}, "Remove assignees (username or ID)")
 
 	// Reopen command flags
-	taskReopenCmd.Flags().StringP("status", "s", "", "Status to set when reopening (default: open)")
+	taskCloseCmd.Flags().StringP("status", "s", "", "Status to set (default: the list's done status)")
+	taskReopenCmd.Flags().StringP("status", "s", "", "Status to set (default: the list's first open status)")
 
 	// Search command flags
 	taskSearchCmd.Flags().StringP("space", "s", "", "Limit search to specific space")
