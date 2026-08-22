@@ -75,6 +75,7 @@ func init() {
 	rootCmd.AddCommand(interactiveCmd)
 	rootCmd.AddCommand(bulkCmd)
 	rootCmd.AddCommand(exportCmd)
+	rootCmd.AddCommand(fieldCmd)
 }
 
 func initConfig() {

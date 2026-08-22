@@ -58,6 +58,12 @@ nav:
     - Spaces:
       - cu space: commands/cu_space.md
       - cu space list: commands/cu_space_list.md
+    - Custom fields:
+      - cu field: commands/cu_field.md
+      - cu field list: commands/cu_field_list.md
+      - cu field get: commands/cu_field_get.md
+      - cu field set: commands/cu_field_set.md
+      - cu field clear: commands/cu_field_clear.md
     - Comments:
       - cu comment: commands/cu_comment.md
       - cu comment list: commands/cu_comment_list.md

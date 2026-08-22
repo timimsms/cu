@@ -17,6 +17,7 @@ A GitHub CLI-inspired command-line interface for ClickUp.
 - **GitHub CLI-like Interface**: Familiar command structure for developers who use `gh`
 - **Task Management**: Create, view, update, and manage tasks from the command line
 - **Comment Management**: Add, list, and delete comments on tasks with user assignment
+- **Custom Fields**: Read and write ClickUp custom fields, resolving names to option ids
 - **Cache Management**: Optimize performance with intelligent caching and cache control commands
 - **Project Configuration**: Set project-specific defaults with `.cu.yml` configuration files
 - **API Passthrough**: Direct access to ClickUp API endpoints for advanced operations
@@ -91,6 +92,23 @@ cu comment list <task-id>
 
 # Add comment with assignee
 cu comment <task-id> -m "Please review" --assignee user@example.com
+```
+
+### Custom Fields
+```bash
+# List the custom fields available on a list
+cu field list --list abc123
+
+# Show the values set on a task
+cu field get <task-id>
+
+# Set values — names are resolved to option ids, dates to epoch millis
+cu field set <task-id> Repo https://github.com/owner/repo
+cu field set <task-id> "Last synced" today
+cu field set <task-id> Machine "Chilastra,Sunrunner"
+
+# Clear a value
+cu field clear <task-id> "Last synced"
 ```
 
 ### Cache Management
