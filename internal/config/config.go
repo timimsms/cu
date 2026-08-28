@@ -45,10 +45,27 @@ var (
 	staged = map[string]interface{}{}
 )
 
-// credentialKeys are never accepted from a project .cu.yml. That file is
-// committed and reviewed like code, so honouring a token there would let any
-// repository you clone substitute the credential used for API calls.
+// credentialKeys never reach a config file. They are refused from a project
+// .cu.yml — that file is committed and reviewed like code, so honouring a token
+// there would let any repository you clone substitute the credential used for
+// API calls — and they are never staged for the global config either, since
+// credentials belong in the OS keyring, not a plaintext YAML file.
 var credentialKeys = []string{"api_token"}
+
+// IsCredentialKey reports whether a config key holds a credential.
+func IsCredentialKey(key string) bool {
+	for _, k := range credentialKeys {
+		if strings.EqualFold(key, k) {
+			return true
+		}
+	}
+	return false
+}
+
+// RedactedValue is substituted for credential values in any bulk output. It
+// deliberately does not claim where the value lives: a key found here is a
+// plaintext leftover, not the keyring entry cu actually authenticates with.
+const RedactedValue = "<redacted — cu authenticates via the system keyring, not this file>"
 
 // globalPath returns the global config file to write. An explicit --config
 // always wins; otherwise a discovered file is used only while it still lives
@@ -172,8 +189,17 @@ func Get(key string) interface{} {
 
 // Set sets a configuration value for this process and stages it for the global
 // config file, so a following Save persists it there.
+//
+// Credential keys are applied in-process but never staged: writing them to
+// ~/.config/cu/config.yaml would put a secret on disk in plaintext, and nothing
+// reads it back — authentication goes through the OS keyring. Callers that take
+// a key from the user should refuse it outright via IsCredentialKey rather than
+// relying on this backstop, so the user gets told instead of silently ignored.
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
+	if IsCredentialKey(key) {
+		return
+	}
 	staged[key] = value
 }
 

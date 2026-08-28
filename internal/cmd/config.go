@@ -31,6 +31,14 @@ var configListCmd = &cobra.Command{
 		sort.Strings(keys)
 
 		for _, key := range keys {
+			// A token here predates the refusal in `config set`, or was added
+			// by hand. Never print it: `config list` output gets pasted into
+			// issues and terminals far more casually than an explicit
+			// `config get <key>` does.
+			if config.IsCredentialKey(key) {
+				fmt.Printf("%s=%s\n", key, config.RedactedValue)
+				continue
+			}
 			fmt.Printf("%s=%v\n", key, settings[key])
 		}
 	},
@@ -60,6 +68,14 @@ var configSetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		key := args[0]
 		value := args[1]
+
+		// Credentials do not belong in a plaintext config file, and cu would
+		// not read one back if they were — authentication uses the keyring.
+		if config.IsCredentialKey(key) {
+			fmt.Fprintf(os.Stderr, "Refusing to write %q to the config file — it would be stored in plaintext and never used.\n", key)
+			fmt.Fprintln(os.Stderr, "Authenticate with 'cu auth login' instead; the token is kept in your system keyring.")
+			os.Exit(1)
+		}
 
 		// Handle boolean values
 		if strings.ToLower(value) == "true" || strings.ToLower(value) == "false" {
