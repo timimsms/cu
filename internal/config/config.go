@@ -34,7 +34,36 @@ var (
 	// Track if we're in a project with config
 	hasProjectConfig  bool
 	projectConfigPath string
+
+	// globalConfigPath is the global config file discovered by Init, if any.
+	globalConfigPath string
+	// explicitConfigFile records a --config path, which always wins.
+	explicitConfigFile string
+	// staged holds values written through Set. Save applies these on top of
+	// whatever is already on disk, so project .cu.yml values, environment
+	// variables and flags can never be baked into ~/.config/cu/config.yaml.
+	staged = map[string]interface{}{}
 )
+
+// credentialKeys are never accepted from a project .cu.yml. That file is
+// committed and reviewed like code, so honouring a token there would let any
+// repository you clone substitute the credential used for API calls.
+var credentialKeys = []string{"api_token"}
+
+// globalPath returns the global config file to write. An explicit --config
+// always wins; otherwise a discovered file is used only while it still lives
+// under the configured directory, since DefaultConfigDir is a variable that
+// tests and tooling repoint.
+func globalPath() string {
+	if explicitConfigFile != "" {
+		return explicitConfigFile
+	}
+	fallback := filepath.Join(DefaultConfigDir, ConfigFileName+"."+ConfigType)
+	if globalConfigPath != "" && filepath.Dir(globalConfigPath) == filepath.Clean(DefaultConfigDir) {
+		return globalConfigPath
+	}
+	return fallback
+}
 
 // Init initializes the configuration
 func Init(cfgFile string) error {
@@ -47,6 +76,31 @@ func Init(cfgFile string) error {
 	viper.SetDefault("output", "table")
 	viper.SetDefault("debug", false)
 
+	// Environment variables outrank both config layers below.
+	viper.SetEnvPrefix("CU")
+	viper.AutomaticEnv()
+
+	// --- global config layer -------------------------------------------------
+	staged = map[string]interface{}{}
+	explicitConfigFile = cfgFile
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Only the configured directory. The working directory is deliberately
+		// not searched: a config.yaml sitting in a repo would be loaded as the
+		// *global* layer and so would bypass the credentialKeys filter below,
+		// which only guards the project overlay. Repo-local configuration has
+		// its own file, .cu.yml, and its own layer.
+		viper.AddConfigPath(DefaultConfigDir)
+		viper.SetConfigType(ConfigType)
+		viper.SetConfigName(ConfigFileName)
+	}
+	// A missing global config is normal on a fresh machine.
+	_ = viper.ReadInConfig()
+
+	globalConfigPath = viper.ConfigFileUsed()
+
+	// --- project overlay -----------------------------------------------------
 	// Look for project config file in current directory and parent directories
 	projectConfigPath = findProjectConfig()
 	if projectConfigPath != "" {
@@ -56,10 +110,22 @@ func Init(cfgFile string) error {
 
 		// Read project config
 		if err := projectViper.ReadInConfig(); err == nil {
-			// Merge project config with main config
-			// Project config takes precedence
-			for k, v := range projectViper.AllSettings() {
-				viper.Set(k, v)
+			settings := projectViper.AllSettings()
+			for _, k := range credentialKeys {
+				if _, present := settings[k]; present {
+					delete(settings, k)
+					fmt.Fprintf(os.Stderr,
+						"cu: ignoring %q in %s — credentials come from the keyring, environment, or your global config\n",
+						k, projectConfigPath)
+				}
+			}
+			// MergeConfigMap merges into viper's *config* layer, so project
+			// values override the global file while still losing to
+			// environment variables and command-line flags. Using viper.Set
+			// here would place them in the override slot, which outranks
+			// everything — the inversion this replaces.
+			if err := viper.MergeConfigMap(settings); err != nil {
+				return fmt.Errorf("failed to merge project config %s: %w", projectConfigPath, err)
 			}
 		}
 	}
@@ -76,10 +142,27 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
-// Save saves the current configuration to file
+// Save writes the global config file. Only values that came from that file or
+// were written through Set are persisted — project .cu.yml values, environment
+// variables and flags are deliberately excluded, so running `cu config set`
+// inside a project can no longer bake that project's settings into the global
+// config.
 func Save() error {
-	configPath := filepath.Join(DefaultConfigDir, ConfigFileName+"."+ConfigType)
-	return viper.WriteConfigAs(configPath)
+	path := globalPath()
+
+	// Start from what is already on disk so a write can never truncate
+	// settings this process did not load, then apply only explicit Sets.
+	gv := viper.New()
+	gv.SetConfigFile(path)
+	_ = gv.ReadInConfig()
+	for k, v := range staged {
+		gv.Set(k, v)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+	return gv.WriteConfigAs(path)
 }
 
 // Get returns a configuration value
@@ -87,9 +170,11 @@ func Get(key string) interface{} {
 	return viper.Get(key)
 }
 
-// Set sets a configuration value
+// Set sets a configuration value for this process and stages it for the global
+// config file, so a following Save persists it there.
 func Set(key string, value interface{}) {
 	viper.Set(key, value)
+	staged[key] = value
 }
 
 // GetString returns a string configuration value
@@ -209,8 +294,11 @@ func SaveProjectConfig(settings map[string]interface{}) error {
 	// Update with new settings
 	for k, v := range settings {
 		projectViper.Set(k, v)
-		// Also update main viper
-		viper.Set(k, v)
+	}
+	// Reflect them in the running process at project precedence — below env and
+	// flags, above the global file — matching how Init loads them.
+	if err := viper.MergeConfigMap(settings); err != nil {
+		return fmt.Errorf("failed to apply project config: %w", err)
 	}
 
 	// Write the file
