@@ -204,16 +204,28 @@ Examples:
 			os.Exit(1)
 		}
 
-		// Close tasks
-		updateOpts := &api.TaskUpdateOptions{
-			Status: "complete",
-		}
+		// Close tasks. The done status is resolved per task from its own list
+		// — a bulk close can span lists with different status sets — and the
+		// resolver caches per list so one list costs one lookup.
+		status, _ := cmd.Flags().GetString("status")
+		resolver := api.NewStatusResolver(client)
 
 		var successCount, errorCount int
 
 		fmt.Println("Closing tasks...")
 		for _, taskID := range taskIDs {
-			_, err := client.UpdateTask(ctx, taskID, updateOpts)
+			taskStatus := status
+			if taskStatus == "" {
+				resolved, err := resolver.ClosedStatusForTask(ctx, taskID)
+				if err != nil {
+					errorCount++
+					fmt.Printf("  ✗ %s: %v\n", taskID, err)
+					continue
+				}
+				taskStatus = resolved
+			}
+
+			_, err := client.UpdateTask(ctx, taskID, &api.TaskUpdateOptions{Status: taskStatus})
 			if err != nil {
 				errorCount++
 				fmt.Printf("  ✗ %s: %v\n", taskID, err)
@@ -342,6 +354,7 @@ func init() {
 
 	// Bulk close flags
 	bulkCloseCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
+	bulkCloseCmd.Flags().StringP("status", "s", "", "Status to set (default: each list's done status)")
 
 	// Bulk delete flags
 	bulkDeleteCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
