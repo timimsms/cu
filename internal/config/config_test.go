@@ -613,3 +613,44 @@ func TestWorkingDirectoryIsNotAGlobalConfigSource(t *testing.T) {
 	assert.NotEqual(t, filepath.Join(repo, ConfigFileName+"."+ConfigType), viper.ConfigFileUsed(),
 		"the working directory must not be searched for the global config")
 }
+
+func TestCredentialKeysAreNeverStaged(t *testing.T) {
+	t.Run("IsCredentialKey", func(t *testing.T) {
+		assert.True(t, IsCredentialKey("api_token"))
+		assert.True(t, IsCredentialKey("API_TOKEN"), "matching is case-insensitive")
+		assert.False(t, IsCredentialKey("default_list"))
+	})
+
+	t.Run("Set applies in-process but does not persist", func(t *testing.T) {
+		cfgDir, _ := newLayeredFixture(t, "default_space: global-space\n", "default_list: from-project\n")
+		require.NoError(t, Init(""))
+
+		Set("api_token", "sk-should-not-be-written")
+		Set("default_list", "persisted")
+		require.NoError(t, Save())
+
+		// Available to the running process...
+		assert.Equal(t, "sk-should-not-be-written", GetString("api_token"))
+
+		// ...but never written to disk.
+		written, err := os.ReadFile(filepath.Join(cfgDir, ConfigFileName+"."+ConfigType))
+		require.NoError(t, err)
+		assert.NotContains(t, string(written), "sk-should-not-be-written",
+			"a credential must never reach the config file")
+		assert.Contains(t, string(written), "persisted", "ordinary keys are still saved")
+	})
+
+	t.Run("a pre-existing plaintext token is preserved, not silently dropped", func(t *testing.T) {
+		// Deleting a user's data would be a surprise; refusing to add more is
+		// the fix. `config list` redacts whatever is already there.
+		cfgDir, _ := newLayeredFixture(t, "api_token: legacy-token\n", "default_list: from-project\n")
+		require.NoError(t, Init(""))
+
+		Set("default_list", "x")
+		require.NoError(t, Save())
+
+		written, err := os.ReadFile(filepath.Join(cfgDir, ConfigFileName+"."+ConfigType))
+		require.NoError(t, err)
+		assert.Contains(t, string(written), "legacy-token")
+	})
+}
