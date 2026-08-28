@@ -86,8 +86,12 @@ func Init(cfgFile string) error {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
+		// Only the configured directory. The working directory is deliberately
+		// not searched: a config.yaml sitting in a repo would be loaded as the
+		// *global* layer and so would bypass the credentialKeys filter below,
+		// which only guards the project overlay. Repo-local configuration has
+		// its own file, .cu.yml, and its own layer.
 		viper.AddConfigPath(DefaultConfigDir)
-		viper.AddConfigPath(".")
 		viper.SetConfigType(ConfigType)
 		viper.SetConfigName(ConfigFileName)
 	}

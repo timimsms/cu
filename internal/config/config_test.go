@@ -582,3 +582,34 @@ func TestSaveDoesNotLeakProjectConfig(t *testing.T) {
 	assert.Contains(t, got, "ws-1", "explicitly set values are persisted")
 	assert.Contains(t, got, "global-space", "pre-existing global values are preserved")
 }
+
+func TestWorkingDirectoryIsNotAGlobalConfigSource(t *testing.T) {
+	// A repo that happens to contain a config.yaml must not become the global
+	// config layer. Before the fix, viper searched "." for the global file, so
+	// that file was read ahead of the project overlay and never passed through
+	// the credentialKeys filter — the guard applied to .cu.yml only.
+	viper.Reset()
+
+	tmp := t.TempDir()
+	cfgDir := filepath.Join(tmp, ".config", "cu") // present but empty: fresh machine
+	require.NoError(t, os.MkdirAll(cfgDir, 0o750))
+
+	repo := filepath.Join(tmp, "repo")
+	require.NoError(t, os.MkdirAll(repo, 0o750))
+	require.NoError(t, os.WriteFile(filepath.Join(repo, ConfigFileName+"."+ConfigType),
+		[]byte("api_token: from-repo-config-yaml\ndefault_list: from-repo-config-yaml\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(repo, ProjectConfigFileName),
+		[]byte("default_list: from-project\n"), 0o600))
+
+	old := DefaultConfigDir
+	DefaultConfigDir = cfgDir
+	t.Cleanup(func() { DefaultConfigDir = old; viper.Reset() })
+	t.Chdir(repo)
+
+	require.NoError(t, Init(""))
+
+	assert.Empty(t, GetString("api_token"), "a repo's config.yaml must not supply credentials")
+	assert.Equal(t, "from-project", GetString("default_list"), "repo-local config comes from .cu.yml, not config.yaml")
+	assert.NotEqual(t, filepath.Join(repo, ConfigFileName+"."+ConfigType), viper.ConfigFileUsed(),
+		"the working directory must not be searched for the global config")
+}
