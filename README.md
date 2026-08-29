@@ -78,6 +78,10 @@ cu task create
 # View task details
 cu task view <task-id>
 
+# Archive a task (reversible; keeps history and URL)
+cu task archive <task-id>
+cu task archive <task-id> --undo
+
 # Export tasks to CSV
 cu export tasks --format csv > tasks.csv
 ```
