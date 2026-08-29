@@ -23,6 +23,7 @@ Create, view, update, and manage ClickUp tasks.
 ### SEE ALSO
 
 * [cu](cu.md)	 - A GitHub CLI-inspired command-line interface for ClickUp
+* [cu task archive](cu_task_archive.md)	 - Archive a task
 * [cu task close](cu_task_close.md)	 - Close a task
 * [cu task create](cu_task_create.md)	 - Create a new task
 * [cu task interactive](cu_task_interactive.md)	 - Interactive task browser
