@@ -28,33 +28,31 @@ var exportTasksCmd = &cobra.Command{
 
 Examples:
   # Export all tasks from a list to CSV
-  cu export tasks --list mylist --format csv --output tasks.csv
-  
+  cu export tasks --list mylist --format csv --file tasks.csv
+
   # Export tasks with specific status to JSON
   cu export tasks --list mylist --status open --format json > open-tasks.json
-  
+
+  # -o selects the format here, the same as everywhere else in cu
+  cu export tasks --list mylist -o json
+
   # Generate a Markdown report of high priority tasks
-  cu export tasks --priority high --format markdown --output report.md`,
+  cu export tasks --priority high --format markdown --file report.md`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 
 		// Get flags
 		listID, _ := cmd.Flags().GetString("list")
 		spaceID, _ := cmd.Flags().GetString("space")
-		format, _ := cmd.Flags().GetString("format")
-		outputFile, _ := cmd.Flags().GetString("output")
+		outputFile, _ := cmd.Flags().GetString("file")
 		status, _ := cmd.Flags().GetString("status")
 		priority, _ := cmd.Flags().GetString("priority")
 		assignee, _ := cmd.Flags().GetString("assignee")
 
-		// Validate format
-		format = strings.ToLower(format)
-		if format != "csv" && format != "json" && format != "markdown" && format != "md" {
-			fmt.Fprintf(os.Stderr, "Invalid format: %s. Must be csv, json, or markdown\n", format)
+		format, err := resolveExportFormat(cmd)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
-		}
-		if format == "md" {
-			format = "markdown"
 		}
 
 		// Create API client
@@ -183,6 +181,71 @@ Examples:
 			fmt.Printf("✓ Exported %d task(s) to %s\n", len(tasks), outputFile)
 		}
 	},
+}
+
+// exportFormats are the formats `export tasks` can produce, keyed by every
+// spelling accepted for them. This is a different set from what the global
+// --output offers elsewhere in cu: a task export has no "table" or "yaml"
+// rendering, and "markdown" exists only here.
+var exportFormats = map[string]string{
+	"csv":      "csv",
+	"json":     "json",
+	"markdown": "markdown",
+	"md":       "markdown",
+}
+
+// resolveExportFormat picks the export format from --format and the global
+// --output, which mean the same thing for this command.
+//
+// export used to define its own -o/--output as the *destination file*, which
+// shadowed the global format flag: `cu export tasks -o json` wrote a file
+// literally named "json". Freeing -o fixes that, but simply not reading it
+// would replace one silent failure with another — a user who asked for JSON
+// would receive the default CSV and no warning. So export honours it, and
+// anything it cannot produce is a loud error rather than a quiet fallback.
+func resolveExportFormat(cmd *cobra.Command) (string, error) {
+	formatFlag, _ := cmd.Flags().GetString("format")
+	outputFlag, _ := cmd.Flags().GetString("output")
+	formatSet := cmd.Flags().Changed("format")
+	outputSet := cmd.Flags().Changed("output")
+
+	if formatSet && outputSet {
+		f, fok := exportFormats[strings.ToLower(formatFlag)]
+		if !fok {
+			return "", unsupportedExportFormat("--format", formatFlag)
+		}
+		o, ook := exportFormats[strings.ToLower(outputFlag)]
+		if !ook {
+			return "", unsupportedExportFormat("--output", outputFlag)
+		}
+		// Both name a format, so disagreeing is ambiguous rather than
+		// resolvable — guessing a winner is how silently-wrong output happens.
+		if f != o {
+			return "", fmt.Errorf("conflicting formats: --format %s and --output %s select the same setting; pass only one", formatFlag, outputFlag)
+		}
+		return f, nil
+	}
+
+	flag, value := "--format", formatFlag
+	if outputSet {
+		flag, value = "--output", outputFlag
+	}
+	resolved, ok := exportFormats[strings.ToLower(value)]
+	if !ok {
+		return "", unsupportedExportFormat(flag, value)
+	}
+	return resolved, nil
+}
+
+// unsupportedExportFormat explains a rejected format, and recognises the one
+// mistake this flag change makes likely: a value that looks like a path is
+// almost certainly someone reaching for the old `-o <file>`.
+func unsupportedExportFormat(flag, value string) error {
+	base := fmt.Errorf("%s %q is not an export format (csv, json, markdown)", flag, value)
+	if strings.ContainsAny(value, `/\.`) {
+		return fmt.Errorf("%w\nIf you meant a destination file, that is now --file %s", base, value)
+	}
+	return base
 }
 
 func filterTasksForExport(tasks []clickup.Task, status, priority, assignee string) []clickup.Task {
@@ -350,7 +413,9 @@ func init() {
 	exportTasksCmd.Flags().StringP("list", "l", "", "List ID to export tasks from")
 	exportTasksCmd.Flags().StringP("space", "s", "", "Space ID to export tasks from")
 	exportTasksCmd.Flags().StringP("format", "f", "csv", "Export format (csv, json, markdown)")
-	exportTasksCmd.Flags().StringP("output", "o", "", "Output file (default: stdout)")
+	// Deliberately not "output"/-o: that is the global format flag, and
+	// redefining it here shadowed it, so `-o json` wrote a file named "json".
+	exportTasksCmd.Flags().StringP("file", "F", "", "Write to a file instead of stdout")
 	exportTasksCmd.Flags().String("status", "", "Filter by status")
 	exportTasksCmd.Flags().String("priority", "", "Filter by priority")
 	exportTasksCmd.Flags().String("assignee", "", "Filter by assignee")
