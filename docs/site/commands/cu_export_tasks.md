@@ -26,11 +26,13 @@ cu export tasks [flags]
       --assignee string   Filter by assignee
   -f, --format string     Export format (csv, json, markdown) (default "csv")
   -h, --help              help for tasks
+      --include-closed    Include closed tasks in the export
   -l, --list string       List ID to export tasks from
   -o, --output string     Output file (default: stdout)
       --priority string   Filter by priority
   -s, --space string      Space ID to export tasks from
       --status string     Filter by status
+      --subtasks          Include subtasks in the export
 ```
 
 ### Options inherited from parent commands

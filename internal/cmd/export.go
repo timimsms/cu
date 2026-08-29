@@ -93,12 +93,20 @@ Examples:
 				}
 			}
 
-			tasks, err = client.GetTasks(ctx, listID, queryOpts)
+			res, err := client.ListTasksAllPages(ctx, listID, queryOpts, 0)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to get tasks: %v\n", err)
 				os.Exit(1)
 			}
+			if res.Truncated {
+				fmt.Fprintf(os.Stderr, "Warning: stopped after %d pages; export may be incomplete.\n", api.DefaultMaxTaskPages)
+			}
+			tasks = res.Tasks
 		} else {
+			// Defaults mirror the previous crawl (open tasks, no subtasks).
+			includeClosed, _ := cmd.Flags().GetBool("include-closed")
+			includeSubtasks, _ := cmd.Flags().GetBool("subtasks")
+
 			// Get all tasks from workspace or space
 			workspaces, err := client.GetWorkspaces(ctx)
 			if err != nil {
@@ -106,38 +114,51 @@ Examples:
 				os.Exit(1)
 			}
 
+			// One server-side query per workspace instead of walking
+			// spaces → folders → lists. The crawl discarded GetFolders and
+			// GetLists errors, so an export could silently omit whole
+			// subtrees and still look successful.
+			var truncated bool
 			for _, workspace := range workspaces {
-				spaces, err := client.GetSpaces(ctx, workspace.ID)
+				res, err := client.SearchTeamTasks(ctx, workspace.ID, &api.TeamTaskQuery{
+					IncludeClosed: includeClosed,
+					Subtasks:      includeSubtasks,
+				})
 				if err != nil {
-					continue
+					fmt.Fprintf(os.Stderr, "Failed to read tasks for workspace %s: %v\n", workspace.Name, err)
+					os.Exit(1)
 				}
+				tasks = append(tasks, res.Tasks...)
+				truncated = truncated || res.Truncated
+			}
 
-				for _, space := range spaces {
-					if spaceID != "" && space.ID != spaceID && space.Name != spaceID {
-						continue
+			if truncated {
+				fmt.Fprintf(os.Stderr, "Warning: stopped after %d pages; export may be incomplete.\n", api.DefaultMaxTaskPages)
+			}
+
+			// Tasks carry only a space id, so resolve a --space given by name.
+			if spaceID != "" {
+				wantID := spaceID
+				for _, workspace := range workspaces {
+					spaces, err := client.GetSpaces(ctx, workspace.ID)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Failed to resolve spaces for workspace %s: %v\n", workspace.Name, err)
+						os.Exit(1)
 					}
-
-					// Get tasks from all lists in space
-					folders, _ := client.GetFolders(ctx, space.ID)
-					for _, folder := range folders {
-						lists, _ := client.GetLists(ctx, folder.ID)
-						for _, list := range lists {
-							listTasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
-							if err == nil {
-								tasks = append(tasks, listTasks...)
-							}
-						}
-					}
-
-					// Get folderless lists
-					lists, _ := client.GetFolderlessLists(ctx, space.ID)
-					for _, list := range lists {
-						listTasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
-						if err == nil {
-							tasks = append(tasks, listTasks...)
+					for _, sp := range spaces {
+						if sp.Name == spaceID {
+							wantID = sp.ID
 						}
 					}
 				}
+
+				filtered := tasks[:0]
+				for _, t := range tasks {
+					if t.Space.ID == wantID {
+						filtered = append(filtered, t)
+					}
+				}
+				tasks = filtered
 			}
 
 			// Client-side filtering
@@ -350,6 +371,8 @@ func init() {
 	exportTasksCmd.Flags().StringP("list", "l", "", "List ID to export tasks from")
 	exportTasksCmd.Flags().StringP("space", "s", "", "Space ID to export tasks from")
 	exportTasksCmd.Flags().StringP("format", "f", "csv", "Export format (csv, json, markdown)")
+	exportTasksCmd.Flags().Bool("include-closed", false, "Include closed tasks in the export")
+	exportTasksCmd.Flags().Bool("subtasks", false, "Include subtasks in the export")
 	exportTasksCmd.Flags().StringP("output", "o", "", "Output file (default: stdout)")
 	exportTasksCmd.Flags().String("status", "", "Filter by status")
 	exportTasksCmd.Flags().String("priority", "", "Filter by priority")
