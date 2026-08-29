@@ -30,10 +30,12 @@ cu export tasks [flags]
   -F, --file string       Write to a file instead of stdout
   -f, --format string     Export format (csv, json, markdown) (default "csv")
   -h, --help              help for tasks
+      --include-closed    Include closed tasks in the export
   -l, --list string       List ID to export tasks from
       --priority string   Filter by priority
   -s, --space string      Space ID to export tasks from
       --status string     Filter by status
+      --subtasks          Include subtasks in the export
 ```
 
 ### Options inherited from parent commands
