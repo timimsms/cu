@@ -654,3 +654,43 @@ func TestCredentialKeysAreNeverStaged(t *testing.T) {
 		assert.Contains(t, string(written), "legacy-token")
 	})
 }
+
+func TestSaveProjectConfigRefusesCredentials(t *testing.T) {
+	// Init already refuses to read a credential back out of .cu.yml, so writing
+	// one there would strand a plaintext secret on disk that cu never uses.
+	// The guard closes that direction.
+	_, projDir := newLayeredFixture(t, "default_space: global-space\n", "default_list: from-project\n")
+	require.NoError(t, Init(""))
+
+	require.NoError(t, SaveProjectConfig(map[string]interface{}{
+		"api_token":    "sk-must-not-be-written",
+		"default_list": "written",
+	}))
+
+	written, err := os.ReadFile(filepath.Join(projDir, ProjectConfigFileName))
+	require.NoError(t, err)
+	assert.NotContains(t, string(written), "sk-must-not-be-written",
+		"a credential must never be written to .cu.yml")
+	assert.Contains(t, string(written), "written", "ordinary keys are still saved")
+}
+
+func TestSaveProjectConfigDoesNotMutateCallerMap(t *testing.T) {
+	// stripCredentials copies rather than deleting in place, so a caller that
+	// reuses its settings map does not silently lose keys.
+	newLayeredFixture(t, "", "default_list: from-project\n")
+	require.NoError(t, Init(""))
+
+	settings := map[string]interface{}{"api_token": "sk-x", "default_list": "y"}
+	require.NoError(t, SaveProjectConfig(settings))
+
+	assert.Len(t, settings, 2, "the caller's map must be left alone")
+	assert.Equal(t, "sk-x", settings["api_token"])
+}
+
+func TestGlobalConfigPathNamesTheFileSaveWrites(t *testing.T) {
+	cfgDir, _ := newLayeredFixture(t, "default_space: global-space\n", "default_list: from-project\n")
+	require.NoError(t, Init(""))
+
+	assert.Equal(t, filepath.Join(cfgDir, ConfigFileName+"."+ConfigType), GlobalConfigPath(),
+		"the path shown to users must be the one Save actually writes")
+}
