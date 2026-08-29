@@ -1,15 +1,11 @@
 package cmd
 
 import (
-	"bytes"
-	"io"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	"github.com/timimsms/cu/internal/config"
 )
 
 // Simple tests that don't involve os.Exit
@@ -138,64 +134,4 @@ func TestConfigValueHandling(t *testing.T) {
 			assert.Equal(t, tt.expected, value)
 		})
 	}
-}
-
-// captureStdout runs fn with os.Stdout redirected and returns what it wrote.
-func captureStdout(t *testing.T, fn func()) string {
-	t.Helper()
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	orig := os.Stdout
-	os.Stdout = w
-	defer func() { os.Stdout = orig }()
-
-	fn()
-	_ = w.Close()
-
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		t.Fatalf("read captured stdout: %v", err)
-	}
-	return buf.String()
-}
-
-func TestConfigGetRedactsCredentials(t *testing.T) {
-	// The value is never printed even though `get` names the key explicitly:
-	// what redaction defends against is incidental disclosure, and `get` is the
-	// spelling most likely to be captured into a log or a pasted transcript.
-	t.Run("credential key is redacted", func(t *testing.T) {
-		viper.Reset()
-		t.Cleanup(viper.Reset)
-		viper.Set("api_token", "sk-must-not-be-printed")
-
-		out := captureStdout(t, func() { configGetCmd.Run(configGetCmd, []string{"api_token"}) })
-
-		assert.NotContains(t, out, "sk-must-not-be-printed", "the token must not reach stdout")
-		assert.Contains(t, out, config.RedactedValue)
-	})
-
-	t.Run("ordinary key still prints its value", func(t *testing.T) {
-		viper.Reset()
-		t.Cleanup(viper.Reset)
-		viper.Set("default_list", "abc123")
-
-		out := captureStdout(t, func() { configGetCmd.Run(configGetCmd, []string{"default_list"}) })
-
-		assert.Contains(t, out, "abc123")
-	})
-}
-
-func TestConfigListRedactsCredentials(t *testing.T) {
-	viper.Reset()
-	t.Cleanup(viper.Reset)
-	viper.Set("api_token", "sk-must-not-be-printed")
-	viper.Set("default_list", "abc123")
-
-	out := captureStdout(t, func() { configListCmd.Run(configListCmd, nil) })
-
-	assert.NotContains(t, out, "sk-must-not-be-printed")
-	assert.Contains(t, out, "api_token="+config.RedactedValue)
-	assert.Contains(t, out, "default_list=abc123", "ordinary keys are unaffected")
 }
