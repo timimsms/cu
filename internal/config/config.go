@@ -67,6 +67,31 @@ func IsCredentialKey(key string) bool {
 // plaintext leftover, not the keyring entry cu actually authenticates with.
 const RedactedValue = "<redacted — cu authenticates via the system keyring, not this file>"
 
+// stripCredentials returns settings without any credential key, warning about
+// each one it drops. Both config files get the same treatment: a credential in
+// either is a plaintext secret that cu will never authenticate with, so it is
+// refused on the way in (a project .cu.yml being read) and on the way out (a
+// project .cu.yml being written).
+func stripCredentials(settings map[string]interface{}, path string) map[string]interface{} {
+	out := make(map[string]interface{}, len(settings))
+	for k, v := range settings {
+		if IsCredentialKey(k) {
+			fmt.Fprintf(os.Stderr,
+				"cu: ignoring %q in %s — cu authenticates via the system keyring, not a config file\n",
+				k, path)
+			continue
+		}
+		out[k] = v
+	}
+	return out
+}
+
+// GlobalConfigPath returns the global config file cu reads and writes, so
+// commands can point the user at it by name rather than guessing.
+func GlobalConfigPath() string {
+	return globalPath()
+}
+
 // globalPath returns the global config file to write. An explicit --config
 // always wins; otherwise a discovered file is used only while it still lives
 // under the configured directory, since DefaultConfigDir is a variable that
@@ -127,15 +152,7 @@ func Init(cfgFile string) error {
 
 		// Read project config
 		if err := projectViper.ReadInConfig(); err == nil {
-			settings := projectViper.AllSettings()
-			for _, k := range credentialKeys {
-				if _, present := settings[k]; present {
-					delete(settings, k)
-					fmt.Fprintf(os.Stderr,
-						"cu: ignoring %q in %s — credentials come from the keyring, environment, or your global config\n",
-						k, projectConfigPath)
-				}
-			}
+			settings := stripCredentials(projectViper.AllSettings(), projectConfigPath)
 			// MergeConfigMap merges into viper's *config* layer, so project
 			// values override the global file while still losing to
 			// environment variables and command-line flags. Using viper.Set
@@ -316,6 +333,12 @@ func SaveProjectConfig(settings map[string]interface{}) error {
 			return fmt.Errorf("failed to read existing project config: %w", err)
 		}
 	}
+
+	// A credential must not reach .cu.yml either. Init already refuses to read
+	// one back from that file, so writing it would leave a plaintext secret on
+	// disk that nothing ever uses — exactly the state the refusal exists to
+	// prevent, just reached from the other direction.
+	settings = stripCredentials(settings, projectConfigPath)
 
 	// Update with new settings
 	for k, v := range settings {

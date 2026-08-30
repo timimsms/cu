@@ -56,6 +56,22 @@ var configGetCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Configuration key '%s' not found\n", key)
 			os.Exit(1)
 		}
+
+		// Redacted for the same reason `config list` is: what this defends
+		// against is incidental disclosure — pasted terminal output, a
+		// screen-share, a script whose stdout lands in a CI log — and `get` is
+		// the spelling most likely to be captured by one. It was never a way to
+		// reach a secret cu uses, since authentication reads the keyring; a
+		// value here is an unused plaintext leftover. The pointer goes to
+		// stderr so it reaches a person without joining piped output.
+		if config.IsCredentialKey(key) {
+			fmt.Println(config.RedactedValue)
+			fmt.Fprintf(os.Stderr,
+				"%q is not printed. cu authenticates via the system keyring; this value is an unused plaintext leftover.\nTo read or remove it, edit %s directly.\n",
+				key, config.GlobalConfigPath())
+			return
+		}
+
 		fmt.Println(value)
 	},
 }
