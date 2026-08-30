@@ -14,10 +14,12 @@ cu task search [query] [flags]
 
 ```
   -h, --help                  help for search
+      --include-closed        Include closed tasks in the search
       --include-description   Search in task descriptions as well as names
       --limit int             Maximum number of results to return (default 50)
   -l, --list string           Limit search to specific list
   -s, --space string          Limit search to specific space
+      --subtasks              Include subtasks in the search
 ```
 
 ### Options inherited from parent commands

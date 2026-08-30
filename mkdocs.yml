@@ -64,6 +64,7 @@ nav:
       - cu field get: commands/cu_field_get.md
       - cu field set: commands/cu_field_set.md
       - cu field clear: commands/cu_field_clear.md
+      - cu field find: commands/cu_field_find.md
     - Comments:
       - cu comment: commands/cu_comment.md
       - cu comment list: commands/cu_comment_list.md
