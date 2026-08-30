@@ -50,6 +50,7 @@ nav:
       - cu task close: commands/cu_task_close.md
       - cu task reopen: commands/cu_task_reopen.md
       - cu task search: commands/cu_task_search.md
+      - cu task archive: commands/cu_task_archive.md
       - cu task interactive: commands/cu_task_interactive.md
     - Lists:
       - cu list: commands/cu_list.md
