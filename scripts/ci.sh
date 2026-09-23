@@ -6,6 +6,10 @@
 
 set -euo pipefail
 
+# Keep in step with .github/workflows/ci.yml — a local run that uses a
+# different gosec can pass while CI fails.
+GOSEC_VERSION="v2.28.0"
+
 # Add Go bin to PATH
 export PATH="$PATH:$(go env GOPATH)/bin"
 
@@ -92,8 +96,10 @@ fi
 # Step 6: Run gosec
 print_step "Running security scan (gosec)"
 if command -v gosec &> /dev/null; then
-    # Run gosec with same config as CI
-    if gosec -fmt json -out gosec-report.json -stdout -verbose=text -severity medium ./...; then
+    # Match .github/workflows/ci.yml exactly: pinned version, no severity
+    # filter. A -severity medium filter here would hide LOW findings that fail
+    # in CI, and an unpinned gosec can differ on which rules exist at all.
+    if gosec -fmt json -out gosec-report.json -stdout -verbose=text ./...; then
         print_success "Security scan passed"
         rm -f gosec-report.json
     else
@@ -101,9 +107,9 @@ if command -v gosec &> /dev/null; then
         FAILED=1
     fi
 else
-    echo "gosec not installed, installing..."
-    go install github.com/securego/gosec/v2/cmd/gosec@latest
-    if gosec -fmt json -out gosec-report.json -stdout -verbose=text -severity medium ./...; then
+    echo "gosec not installed, installing $GOSEC_VERSION..."
+    go install github.com/securego/gosec/v2/cmd/gosec@$GOSEC_VERSION
+    if gosec -fmt json -out gosec-report.json -stdout -verbose=text ./...; then
         print_success "Security scan passed"
         rm -f gosec-report.json
     else
