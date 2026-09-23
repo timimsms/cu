@@ -29,6 +29,16 @@ func newFieldRow(f *clickup.CustomField) fieldRow {
 	}
 }
 
+// fieldWriteResult reports what a set or clear actually wrote, so a scripted
+// caller can confirm which field was resolved rather than re-reading the task.
+type fieldWriteResult struct {
+	TaskID  string `json:"task_id"`
+	Field   string `json:"field"`
+	FieldID string `json:"field_id"`
+	Value   string `json:"value,omitempty"`
+	Cleared bool   `json:"cleared"`
+}
+
 var fieldCmd = &cobra.Command{
 	Use:   "field",
 	Short: "Manage custom field values",
@@ -137,6 +147,12 @@ Examples:
 			return err
 		}
 
+		if outputFormat != "table" {
+			return output.Format(outputFormat, fieldWriteResult{
+				TaskID: taskID, Field: field.Name, FieldID: field.ID, Value: raw, Cleared: false,
+			})
+		}
+
 		fmt.Printf("Set %s on task %s\n", field.Name, taskID)
 		return nil
 	},
@@ -162,6 +178,12 @@ var fieldClearCmd = &cobra.Command{
 
 		if err := client.RemoveCustomFieldValue(ctx, taskID, field.ID); err != nil {
 			return err
+		}
+
+		if outputFormat != "table" {
+			return output.Format(outputFormat, fieldWriteResult{
+				TaskID: taskID, Field: field.Name, FieldID: field.ID, Cleared: true,
+			})
 		}
 
 		fmt.Printf("Cleared %s on task %s\n", field.Name, taskID)
