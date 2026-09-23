@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -15,6 +16,13 @@ import (
 // extensionPrefix is the naming convention for external subcommands:
 // `cu worklog` runs `cu-worklog` from PATH, the same shape kubectl and gh use.
 const extensionPrefix = "cu-"
+
+// extensionName constrains a word to a bare command name. Without this,
+// exec.LookPath treats anything containing a separator as a *path* rather than
+// a PATH search, so `cu ../../tmp/evil` would resolve and run an executable
+// that was never on PATH at all. Extensions are found on PATH, by name, or not
+// at all.
+var extensionName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
 
 // tryExtension runs an external subcommand when cobra cannot resolve the word,
 // and never returns if it does. It is deliberately the *last* resort: builtins
@@ -33,7 +41,7 @@ func tryExtension(args []string) {
 	}
 
 	word := firstCommandWord(args, rootCmd.PersistentFlags())
-	if word == "" || strings.HasPrefix(word, extensionPrefix) {
+	if word == "" || strings.HasPrefix(word, extensionPrefix) || !extensionName.MatchString(word) {
 		return
 	}
 
@@ -54,7 +62,13 @@ func runExtension(path, word string, args []string) {
 	// flags that look like cu's own — they belong to the extension.
 	rest := argsAfter(args, word)
 
-	cmd := exec.Command(path, rest...) // #nosec G204 - path comes from exec.LookPath, args are the user's own
+	// #nosec G702 G204 -- the resolved path is not attacker-controlled: the word
+	// is constrained to ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ so it cannot contain a path
+	// separator, meaning LookPath can only return an executable already on the
+	// user's own PATH. The arguments are the user's own command line, forwarded
+	// verbatim, and cross no privilege boundary — this is the same trust model
+	// as the shell that invoked cu.
+	cmd := exec.Command(path, rest...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

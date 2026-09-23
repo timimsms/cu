@@ -85,3 +85,20 @@ func TestTryExtensionLeavesBuiltinsAlone(t *testing.T) {
 	tryExtension([]string{"task", "list"})
 	tryExtension([]string{})
 }
+
+func TestExtensionNameRejectsPaths(t *testing.T) {
+	// exec.LookPath treats a word containing a separator as a path rather than
+	// a PATH search, so without this constraint `cu ../../tmp/evil` would run
+	// an executable that was never on PATH. Extensions are found on PATH, by
+	// name, or not at all.
+	for _, bad := range []string{
+		"../evil", "../../tmp/evil", "/abs/evil", "dir/evil",
+		".hidden", "-leading-dash", "", "has space", "semi;colon", "dot.dot",
+	} {
+		assert.False(t, extensionName.MatchString(bad), "must reject %q", bad)
+	}
+
+	for _, good := range []string{"worklog", "trailer", "my-ext", "my_ext", "ext2"} {
+		assert.True(t, extensionName.MatchString(good), "must accept %q", good)
+	}
+}
