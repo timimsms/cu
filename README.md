@@ -147,6 +147,21 @@ cu api /list/abc123/task -X POST -d '{"name": "New Task"}'
 cu api "/list/abc123/task?archived=false"
 ```
 
+## Extensions
+
+Any executable named `cu-<name>` on your `PATH` becomes `cu <name>`, the same
+convention `kubectl` and `gh` use:
+
+```bash
+# an executable called cu-worklog on PATH
+cu worklog plan --since 1d      # runs: cu-worklog plan --since 1d
+```
+
+Builtins always win, so an extension can never shadow a cu command — a shadowed
+extension stays runnable directly as `cu-<name>`. The child inherits
+`CU_CONFIG_DIR`, `CU_WORKSPACE` and `CU_PROJECT_CONFIG` so it does not have to
+rediscover cu's context, and its exit code is passed through unchanged.
+
 ## Documentation
 
 Full documentation is available at [https://timimsms.github.io/cu/](https://timimsms.github.io/cu/)

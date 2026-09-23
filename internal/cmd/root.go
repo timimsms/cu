@@ -40,6 +40,9 @@ enabling efficient task management and seamless integration with development wor
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() error {
+	// Builtins first: tryExtension only acts on a word cobra cannot resolve,
+	// and does not return when it finds one.
+	tryExtension(os.Args[1:])
 	return rootCmd.Execute()
 }
 
