@@ -111,6 +111,19 @@ cu field set <task-id> Machine "Chilastra,Sunrunner"
 cu field clear <task-id> "Last synced"
 ```
 
+### Machine-readable output
+
+Every command that produces output honours `-o json|yaml|csv`, so cu is
+scriptable and usable by AI agents without screen-scraping:
+
+```bash
+cu version -o json
+cu auth status -o json          # reports the unauthenticated state as data too
+cu config list -o json          # credentials are redacted in every format
+cu task list -o json | jq '.[].id'
+cu bulk close t1 t2 --yes -o json   # per-task results, not just progress lines
+```
+
 ### Cache Management
 ```bash
 # View cache statistics

@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBulkCommand_Structure(t *testing.T) {
@@ -87,4 +89,25 @@ func TestBulkCommand_Structure(t *testing.T) {
 			assert.NotNil(t, deleteCmd.Run)
 		}
 	})
+}
+
+func TestBulkSummaryRecord(t *testing.T) {
+	// Progress lines are suppressed outside table output; with outputFormat
+	// unset (the zero value) `human` stays quiet, so this exercises the
+	// accounting without writing to stdout.
+	var s bulkSummary
+
+	s.record("t1", nil)
+	s.record("t2", errors.New("boom"))
+	s.record("t3", nil)
+
+	assert.Equal(t, 2, s.Succeeded)
+	assert.Equal(t, 1, s.Failed)
+	require.Len(t, s.Results, 3)
+
+	assert.Equal(t, bulkOutcome{TaskID: "t1", OK: true}, s.Results[0])
+	assert.Equal(t, "t2", s.Results[1].TaskID)
+	assert.False(t, s.Results[1].OK)
+	assert.Equal(t, "boom", s.Results[1].Error, "the failure reason must survive into structured output")
+	assert.True(t, s.Results[2].OK)
 }

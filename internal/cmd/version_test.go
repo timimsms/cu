@@ -13,6 +13,8 @@ func TestVersionCommand_Structure(t *testing.T) {
 		assert.NotNil(t, cmd)
 		assert.Equal(t, "version", cmd.Use)
 		assert.NotEmpty(t, cmd.Short)
-		assert.NotNil(t, cmd.Run)
+		// RunE rather than Run: formatting can fail, and the error should
+		// propagate as a non-zero exit rather than being swallowed.
+		assert.True(t, cmd.Run != nil || cmd.RunE != nil, "version command must be runnable")
 	})
 }
