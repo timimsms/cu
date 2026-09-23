@@ -12,6 +12,64 @@ import (
 	"github.com/timimsms/cu/internal/output"
 )
 
+// bulkOutcome is the per-task result of a bulk operation, and bulkSummary the
+// whole run. Progress lines are for a human watching; a scripted caller needs
+// to know which ids failed and why, which the progress output cannot express.
+type bulkOutcome struct {
+	TaskID string `json:"task_id"`
+	OK     bool   `json:"ok"`
+	Error  string `json:"error,omitempty"`
+}
+
+type bulkSummary struct {
+	Operation string        `json:"operation"`
+	Succeeded int           `json:"succeeded"`
+	Failed    int           `json:"failed"`
+	Results   []bulkOutcome `json:"results"`
+}
+
+// record appends one task's outcome and prints the human progress line. The
+// line is suppressed outside table output, where it would otherwise interleave
+// with the structured document on stdout and make it unparseable.
+func (b *bulkSummary) record(taskID string, err error) {
+	if err != nil {
+		b.Failed++
+		b.Results = append(b.Results, bulkOutcome{TaskID: taskID, OK: false, Error: err.Error()})
+		human("  ✗ %s: %v", taskID, err)
+		return
+	}
+	b.Succeeded++
+	b.Results = append(b.Results, bulkOutcome{TaskID: taskID, OK: true})
+	human("  ✓ %s", taskID)
+}
+
+// finish emits the summary in whichever format was requested and exits
+// non-zero if any task failed.
+func (b bulkSummary) finish() {
+	if outputFormat != "table" {
+		if err := output.Format(outputFormat, b); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Printf("\nSummary:\n")
+		fmt.Printf("  Success: %d\n", b.Succeeded)
+		fmt.Printf("  Failed:  %d\n", b.Failed)
+	}
+
+	if b.Failed > 0 {
+		os.Exit(1)
+	}
+}
+
+// human prints progress intended for a person watching, and only then.
+func human(format string, a ...interface{}) {
+	if outputFormat != "table" {
+		return
+	}
+	fmt.Printf(format+"\n", a...)
+}
+
 var bulkCmd = &cobra.Command{
 	Use:   "bulk",
 	Short: "Perform bulk operations on tasks",
@@ -124,28 +182,15 @@ Examples:
 		}
 
 		// Update tasks
-		var successCount, errorCount int
+		summary := bulkSummary{Operation: "update"}
 
-		fmt.Println("\nUpdating tasks...")
+		human("\nUpdating tasks...")
 		for _, taskID := range taskIDs {
 			_, err := client.UpdateTask(ctx, taskID, updateOpts)
-			if err != nil {
-				errorCount++
-				fmt.Printf("  ✗ %s: %v\n", taskID, err)
-			} else {
-				successCount++
-				fmt.Printf("  ✓ %s\n", taskID)
-			}
+			summary.record(taskID, err)
 		}
 
-		// Summary
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Success: %d\n", successCount)
-		fmt.Printf("  Failed:  %d\n", errorCount)
-
-		if errorCount > 0 {
-			os.Exit(1)
-		}
+		summary.finish()
 	},
 }
 
@@ -210,39 +255,25 @@ Examples:
 		status, _ := cmd.Flags().GetString("status")
 		resolver := api.NewStatusResolver(client)
 
-		var successCount, errorCount int
+		summary := bulkSummary{Operation: "close"}
 
-		fmt.Println("Closing tasks...")
+		human("Closing tasks...")
 		for _, taskID := range taskIDs {
 			taskStatus := status
 			if taskStatus == "" {
 				resolved, err := resolver.ClosedStatusForTask(ctx, taskID)
 				if err != nil {
-					errorCount++
-					fmt.Printf("  ✗ %s: %v\n", taskID, err)
+					summary.record(taskID, err)
 					continue
 				}
 				taskStatus = resolved
 			}
 
 			_, err := client.UpdateTask(ctx, taskID, &api.TaskUpdateOptions{Status: taskStatus})
-			if err != nil {
-				errorCount++
-				fmt.Printf("  ✗ %s: %v\n", taskID, err)
-			} else {
-				successCount++
-				fmt.Printf("  ✓ %s\n", taskID)
-			}
+			summary.record(taskID, err)
 		}
 
-		// Summary
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Success: %d\n", successCount)
-		fmt.Printf("  Failed:  %d\n", errorCount)
-
-		if errorCount > 0 {
-			os.Exit(1)
-		}
+		summary.finish()
 	},
 }
 
@@ -303,38 +334,14 @@ Examples:
 		}
 
 		// Delete tasks
-		var successCount, errorCount int
-		var deletedTasks []string
+		summary := bulkSummary{Operation: "delete"}
 
-		fmt.Println("Deleting tasks...")
+		human("Deleting tasks...")
 		for _, taskID := range taskIDs {
-			err := client.DeleteTask(ctx, taskID)
-			if err != nil {
-				errorCount++
-				fmt.Printf("  ✗ %s: %v\n", taskID, err)
-			} else {
-				successCount++
-				deletedTasks = append(deletedTasks, taskID)
-				fmt.Printf("  ✓ %s\n", taskID)
-			}
+			summary.record(taskID, client.DeleteTask(ctx, taskID))
 		}
 
-		// Summary
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Deleted: %d\n", successCount)
-		fmt.Printf("  Failed:  %d\n", errorCount)
-
-		// Output deleted task IDs for potential recovery scripts
-		format := cmd.Flag("output").Value.String()
-		if format != "table" && len(deletedTasks) > 0 {
-			if err := output.Format(format, deletedTasks); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
-			}
-		}
-
-		if errorCount > 0 {
-			os.Exit(1)
-		}
+		summary.finish()
 	},
 }
 
