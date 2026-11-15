@@ -8,6 +8,7 @@ import (
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTaskCommands_Structure(t *testing.T) {
@@ -67,6 +68,20 @@ func TestTaskCommands_Structure(t *testing.T) {
 		assert.NotNil(t, taskCloseCmd)
 		assert.NotNil(t, taskReopenCmd)
 		assert.NotNil(t, taskSearchCmd)
+	})
+
+	// Test task archive command
+	t.Run("task archive command", func(t *testing.T) {
+		cmd, _, err := taskCmd.Find([]string{"archive"})
+		require.NoError(t, err)
+		assert.Same(t, taskArchiveCmd, cmd)
+		assert.NotNil(t, cmd.RunE)
+		assert.True(t, cmd.SilenceUsage)
+
+		undo := cmd.Flags().Lookup("undo")
+		require.NotNil(t, undo)
+		assert.Equal(t, "bool", undo.Value.Type())
+		assert.Equal(t, "false", undo.DefValue)
 	})
 }
 
