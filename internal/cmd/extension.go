@@ -35,13 +35,23 @@ func tryExtension(args []string) {
 		return
 	}
 
+	// cobra only registers its default help and completion commands inside
+	// Execute, so register them now: otherwise Find cannot see `help`, and a
+	// `cu-help` on PATH would replace it.
+	rootCmd.InitDefaultHelpCmd()
+	rootCmd.InitDefaultCompletionCmd(args...)
+
 	// Only consider a word cobra itself could not resolve.
 	if _, _, err := rootCmd.Find(args); err == nil {
 		return
 	}
 
-	word := firstCommandWord(args, rootCmd.PersistentFlags())
-	if word == "" || strings.HasPrefix(word, extensionPrefix) || !extensionName.MatchString(word) {
+	idx := firstCommandWord(args, rootCmd.PersistentFlags())
+	if idx < 0 {
+		return
+	}
+	word := args[idx]
+	if strings.HasPrefix(word, extensionPrefix) || !extensionName.MatchString(word) {
 		return
 	}
 
@@ -52,15 +62,15 @@ func tryExtension(args []string) {
 		return
 	}
 
-	runExtension(path, word, args)
+	runExtension(path, args[:idx], args[idx+1:])
 }
 
 // runExtension execs the extension and exits with its status. It does not
-// return.
-func runExtension(path, word string, args []string) {
+// return. globals are cu's own arguments that preceded the extension word;
+// rest is everything after it.
+func runExtension(path string, globals, rest []string) {
 	// Pass every argument after the extension word through verbatim, including
 	// flags that look like cu's own — they belong to the extension.
-	rest := argsAfter(args, word)
 
 	// #nosec G702 G204 -- the resolved path is not attacker-controlled: the word
 	// is constrained to ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ so it cannot contain a path
@@ -72,7 +82,7 @@ func runExtension(path, word string, args []string) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = extensionEnv(args)
+	cmd.Env = extensionEnv(globals)
 
 	err := cmd.Run()
 	if err == nil {
@@ -83,7 +93,7 @@ func runExtension(path, word string, args []string) {
 	// extension should reach the caller's shell unchanged.
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		os.Exit(exitErr.ExitCode())
+		os.Exit(exitStatus(exitErr))
 	}
 
 	fmt.Fprintf(os.Stderr, "failed to run %s: %v\n", filepath.Base(path), err)
@@ -92,11 +102,12 @@ func runExtension(path, word string, args []string) {
 
 // extensionEnv hands the child the context it would otherwise have to
 // rediscover: which config cu resolved, and which workspace and project file
-// are in play.
-func extensionEnv(args []string) []string {
+// are in play. globals must be only the arguments before the extension word:
+// a --config after it belongs to the extension, not to cu.
+func extensionEnv(globals []string) []string {
 	// The extension runs before PersistentPreRunE, so load config here. A
 	// failure is not fatal — the extension simply gets less context.
-	_ = config.Init(configFileFrom(args))
+	_ = config.Init(configFileFrom(globals))
 
 	env := append(os.Environ(),
 		"CU_CONFIG_DIR="+filepath.Dir(config.GlobalConfigPath()),
@@ -121,28 +132,19 @@ func configFileFrom(args []string) string {
 	return ""
 }
 
-// argsAfter returns everything following the extension word, so cu's own
-// global flags that preceded it are not forwarded.
-func argsAfter(args []string, word string) []string {
-	for i, a := range args {
-		if a == word {
-			return args[i+1:]
-		}
-	}
-	return nil
-}
-
-// firstCommandWord returns the first positional argument — the candidate
-// command — skipping global flags and the values they consume. Getting this
-// wrong would treat a flag's value as a command name, so flag arity is read
-// from the flag set rather than guessed.
-func firstCommandWord(args []string, flags *pflag.FlagSet) string {
+// firstCommandWord returns the index of the first positional argument — the
+// candidate command — skipping global flags and the values they consume, or -1
+// if there is none. Getting this wrong would treat a flag's value as a command
+// name, so flag arity is read from the flag set rather than guessed. It returns
+// an index rather than the word because the word can also appear earlier as a
+// flag value (`cu --config hello hello`).
+func firstCommandWord(args []string, flags *pflag.FlagSet) int {
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 
 		switch {
 		case a == "--":
-			return ""
+			return -1
 
 		case strings.HasPrefix(a, "--"):
 			if strings.Contains(a, "=") {
@@ -164,10 +166,10 @@ func firstCommandWord(args []string, flags *pflag.FlagSet) string {
 			}
 
 		default:
-			return a
+			return i
 		}
 	}
-	return ""
+	return -1
 }
 
 // takesValue reports whether a flag consumes the following argument. An
