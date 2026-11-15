@@ -497,6 +497,49 @@ var taskReopenCmd = &cobra.Command{
 	},
 }
 
+var taskArchiveCmd = &cobra.Command{
+	Use:   "archive [task-id]",
+	Short: "Archive a task",
+	Long: `Archive a task, removing it from active views while keeping its history
+and URL intact.
+
+Archiving is reversible with --undo. Prefer it over closing a task whose work
+has moved elsewhere: closing asserts a status the task never reached, and not
+every list even has a status named "closed".`,
+	Args: cobra.ExactArgs(1),
+	// API failures are not usage errors; don't bury them under the help text.
+	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		taskID := args[0]
+		undo, _ := cmd.Flags().GetBool("undo")
+
+		verb, action := "Archived", "archive"
+		if undo {
+			verb, action = "Unarchived", "unarchive"
+		}
+
+		client, err := api.NewClient()
+		if err != nil {
+			return fmt.Errorf("failed to create API client: %w", err)
+		}
+
+		task, err := client.SetTaskArchived(context.Background(), taskID, !undo)
+		if err != nil {
+			return fmt.Errorf("failed to %s task: %w", action, err)
+		}
+
+		if outputFormat != "table" {
+			return output.Format(outputFormat, task)
+		}
+
+		fmt.Printf("✓ %s task %s: %s\n", verb, task.ID, task.Name)
+		if task.URL != "" {
+			fmt.Printf("  View in ClickUp: %s\n", task.URL)
+		}
+		return nil
+	},
+}
+
 var taskSearchCmd = &cobra.Command{
 	Use:   "search [query]",
 	Short: "Search for tasks",
@@ -683,6 +726,7 @@ func init() {
 	taskCmd.AddCommand(taskCloseCmd)
 	taskCmd.AddCommand(taskReopenCmd)
 	taskCmd.AddCommand(taskSearchCmd)
+	taskCmd.AddCommand(taskArchiveCmd)
 
 	// List command flags
 	taskListCmd.Flags().StringP("list", "l", "", "List ID or name")
@@ -717,6 +761,9 @@ func init() {
 	taskUpdateCmd.Flags().StringSlice("tag", []string{}, "Replace tags with these tags")
 	taskUpdateCmd.Flags().StringSlice("add-assignee", []string{}, "Add assignees (username or ID)")
 	taskUpdateCmd.Flags().StringSlice("remove-assignee", []string{}, "Remove assignees (username or ID)")
+
+	// Archive command flags
+	taskArchiveCmd.Flags().Bool("undo", false, "Unarchive instead of archiving")
 
 	// Reopen command flags
 	taskCloseCmd.Flags().StringP("status", "s", "", "Status to set (default: the list's done status)")
