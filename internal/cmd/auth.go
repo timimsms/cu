@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/timimsms/cu/internal/auth"
 	"github.com/timimsms/cu/internal/config"
+	"github.com/timimsms/cu/internal/output"
 )
 
 var authCmd = &cobra.Command{
@@ -86,6 +87,14 @@ var authLoginCmd = &cobra.Command{
 	},
 }
 
+// authStatus is the machine-readable form of `cu auth status`.
+type authStatus struct {
+	Authenticated bool   `json:"authenticated" yaml:"authenticated"`
+	Workspace     string `json:"workspace" yaml:"workspace"`
+	Email         string `json:"email,omitempty" yaml:"email,omitempty"`
+	TokenSource   string `json:"token_source" yaml:"token_source"`
+}
+
 var authStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show authentication status",
@@ -98,6 +107,29 @@ var authStatusCmd = &cobra.Command{
 		}
 
 		token, err := authMgr.GetToken(workspace)
+
+		// Structured consumers need the same answer the human output gives,
+		// including the unauthenticated case — which is a state, not a crash,
+		// so it is reported as data while still exiting non-zero.
+		if outputFormat != "table" {
+			status := authStatus{
+				Authenticated: err == nil,
+				Workspace:     workspace,
+				TokenSource:   "keyring",
+			}
+			if err == nil && token.Email != "" {
+				status.Email = token.Email
+			}
+			if ferr := output.Format(outputFormat, status); ferr != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", ferr)
+				os.Exit(1)
+			}
+			if err != nil {
+				os.Exit(1)
+			}
+			return
+		}
+
 		if err != nil {
 			fmt.Println("Not authenticated")
 			fmt.Println("\nRun 'cu auth login' to authenticate")

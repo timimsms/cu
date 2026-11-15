@@ -30,16 +30,40 @@ var configListCmd = &cobra.Command{
 		}
 		sort.Strings(keys)
 
+		// A token here predates the refusal in `config set`, or was added by
+		// hand. Never print it: `config list` output gets pasted into issues
+		// and terminals far more casually than an explicit `config get <key>`
+		// does. Redaction happens once, before rendering, so every output
+		// format inherits it rather than each one re-deciding.
+		values := make(map[string]interface{}, len(settings))
 		for _, key := range keys {
-			// A token here predates the refusal in `config set`, or was added
-			// by hand. Never print it: `config list` output gets pasted into
-			// issues and terminals far more casually than an explicit
-			// `config get <key>` does.
 			if config.IsCredentialKey(key) {
-				fmt.Printf("%s=%s\n", key, config.RedactedValue)
+				values[key] = config.RedactedValue
 				continue
 			}
-			fmt.Printf("%s=%v\n", key, settings[key])
+			values[key] = settings[key]
+		}
+
+		if outputFormat != "table" {
+			var data interface{} = values
+			if strings.EqualFold(outputFormat, "csv") {
+				// The CSV formatter walks a map in random order; build the row
+				// from the sorted keys so columns are stable between runs.
+				row := make([]string, len(keys))
+				for i, key := range keys {
+					row[i] = fmt.Sprint(values[key])
+				}
+				data = [][]string{keys, row}
+			}
+			if err := output.Format(outputFormat, data); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
+
+		for _, key := range keys {
+			fmt.Printf("%s=%v\n", key, values[key])
 		}
 	},
 }
@@ -65,10 +89,26 @@ var configGetCmd = &cobra.Command{
 		// value here is an unused plaintext leftover. The pointer goes to
 		// stderr so it reaches a person without joining piped output.
 		if config.IsCredentialKey(key) {
-			fmt.Println(config.RedactedValue)
+			value = config.RedactedValue
 			fmt.Fprintf(os.Stderr,
 				"%q is not printed. cu authenticates via the system keyring; this value is an unused plaintext leftover.\nTo read or remove it, edit %s directly.\n",
 				key, config.GlobalConfigPath())
+		}
+
+		if outputFormat != "table" {
+			// Encoded as a bare value, not wrapped in an object: `config get`
+			// asks for one setting, so the result should be usable directly.
+			// Redaction above applies here too — a format flag must not be a
+			// way around it. CSV has no bare scalar, so it gets a one-column
+			// table headed by the key.
+			var data = value
+			if strings.EqualFold(outputFormat, "csv") {
+				data = [][]string{{key}, {fmt.Sprint(value)}}
+			}
+			if err := output.Format(outputFormat, data); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+				os.Exit(1)
+			}
 			return
 		}
 

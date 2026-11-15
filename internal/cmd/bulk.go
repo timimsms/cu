@@ -5,12 +5,109 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/timimsms/cu/internal/api"
 	"github.com/timimsms/cu/internal/output"
 )
+
+// bulkOutcome is the per-task result of a bulk operation, and bulkSummary the
+// whole run. Progress lines are for a human watching; a scripted caller needs
+// to know which ids failed and why, which the progress output cannot express.
+type bulkOutcome struct {
+	TaskID string `json:"task_id" yaml:"task_id"`
+	OK     bool   `json:"ok" yaml:"ok"`
+	Error  string `json:"error,omitempty" yaml:"error,omitempty"`
+}
+
+type bulkSummary struct {
+	Operation string        `json:"operation" yaml:"operation"`
+	Succeeded int           `json:"succeeded" yaml:"succeeded"`
+	Failed    int           `json:"failed" yaml:"failed"`
+	Results   []bulkOutcome `json:"results" yaml:"results"`
+
+	// successLabel names the success count in the human summary; delete has
+	// always said "Deleted", the others "Success".
+	successLabel string
+}
+
+// bulkDryRun is the structured form of `bulk update --dry-run`.
+type bulkDryRun struct {
+	Operation string   `json:"operation" yaml:"operation"`
+	DryRun    bool     `json:"dry_run" yaml:"dry_run"`
+	TaskIDs   []string `json:"task_ids" yaml:"task_ids"`
+}
+
+// record appends one task's outcome and prints the human progress line. The
+// line is suppressed outside table output, where it would otherwise interleave
+// with the structured document on stdout and make it unparseable.
+func (b *bulkSummary) record(taskID string, err error) {
+	if err != nil {
+		b.Failed++
+		b.Results = append(b.Results, bulkOutcome{TaskID: taskID, OK: false, Error: err.Error()})
+		human("  ✗ %s: %v", taskID, err)
+		return
+	}
+	b.Succeeded++
+	b.Results = append(b.Results, bulkOutcome{TaskID: taskID, OK: true})
+	human("  ✓ %s", taskID)
+}
+
+// finish emits the summary in whichever format was requested and exits
+// non-zero if any task failed.
+func (b bulkSummary) finish() {
+	if outputFormat != "table" {
+		if err := output.Format(outputFormat, b.formatData()); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		label := b.successLabel
+		if label == "" {
+			label = "Success"
+		}
+		fmt.Printf("\nSummary:\n")
+		fmt.Printf("  %s: %d\n", label, b.Succeeded)
+		fmt.Printf("  Failed:  %d\n", b.Failed)
+	}
+
+	if b.Failed > 0 {
+		os.Exit(1)
+	}
+}
+
+// formatData is what the structured formats render. CSV cannot nest the
+// results inside the summary, so it gets one row per task instead.
+func (b bulkSummary) formatData() interface{} {
+	if !strings.EqualFold(outputFormat, "csv") {
+		return b
+	}
+	rows := [][]string{{"task_id", "ok", "error"}}
+	for _, r := range b.Results {
+		rows = append(rows, []string{r.TaskID, strconv.FormatBool(r.OK), r.Error})
+	}
+	return rows
+}
+
+// noticef prints prompts and previews. They are for a person, so outside
+// table output they go to stderr and stdout carries only the document.
+func noticef(format string, a ...interface{}) {
+	w := os.Stdout
+	if outputFormat != "table" {
+		w = os.Stderr
+	}
+	fmt.Fprintf(w, format, a...)
+}
+
+// human prints progress intended for a person watching, and only then.
+func human(format string, a ...interface{}) {
+	if outputFormat != "table" {
+		return
+	}
+	fmt.Printf(format+"\n", a...)
+}
 
 var bulkCmd = &cobra.Command{
 	Use:   "bulk",
@@ -81,37 +178,43 @@ Examples:
 		}
 
 		// Show what will be updated
-		fmt.Printf("Updating %d task(s):\n", len(taskIDs))
+		noticef("Updating %d task(s):\n", len(taskIDs))
 		if status != "" {
-			fmt.Printf("  Status: %s\n", status)
+			noticef("  Status: %s\n", status)
 		}
 		if priority != "" {
-			fmt.Printf("  Priority: %s\n", priority)
+			noticef("  Priority: %s\n", priority)
 		}
 		if len(tags) > 0 {
-			fmt.Printf("  Tags: %s\n", strings.Join(tags, ", "))
+			noticef("  Tags: %s\n", strings.Join(tags, ", "))
 		}
 		if len(addAssignees) > 0 {
-			fmt.Printf("  Add assignees: %s\n", strings.Join(addAssignees, ", "))
+			noticef("  Add assignees: %s\n", strings.Join(addAssignees, ", "))
 		}
 		if len(removeAssignees) > 0 {
-			fmt.Printf("  Remove assignees: %s\n", strings.Join(removeAssignees, ", "))
+			noticef("  Remove assignees: %s\n", strings.Join(removeAssignees, ", "))
 		}
 
 		if dryRun {
-			fmt.Println("\nDry run - no changes will be made")
-			fmt.Printf("Would update tasks: %s\n", strings.Join(taskIDs, ", "))
+			noticef("\nDry run - no changes will be made\n")
+			noticef("Would update tasks: %s\n", strings.Join(taskIDs, ", "))
+			if outputFormat != "table" {
+				if err := output.Format(outputFormat, bulkDryRun{Operation: "update", DryRun: true, TaskIDs: taskIDs}); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
+					os.Exit(1)
+				}
+			}
 			return
 		}
 
 		// Confirmation prompt unless --yes flag is set
 		yes, _ := cmd.Flags().GetBool("yes")
 		if !yes {
-			fmt.Printf("\nAre you sure you want to update %d task(s)? [y/N] ", len(taskIDs))
+			noticef("\nAre you sure you want to update %d task(s)? [y/N] ", len(taskIDs))
 			var response string
 			_, _ = fmt.Scanln(&response)
 			if strings.ToLower(response) != "y" {
-				fmt.Println("Cancelled")
+				noticef("Cancelled\n")
 				return
 			}
 		}
@@ -124,28 +227,15 @@ Examples:
 		}
 
 		// Update tasks
-		var successCount, errorCount int
+		summary := bulkSummary{Operation: "update"}
 
-		fmt.Println("\nUpdating tasks...")
+		human("\nUpdating tasks...")
 		for _, taskID := range taskIDs {
 			_, err := client.UpdateTask(ctx, taskID, updateOpts)
-			if err != nil {
-				errorCount++
-				fmt.Printf("  ✗ %s: %v\n", taskID, err)
-			} else {
-				successCount++
-				fmt.Printf("  ✓ %s\n", taskID)
-			}
+			summary.record(taskID, err)
 		}
 
-		// Summary
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Success: %d\n", successCount)
-		fmt.Printf("  Failed:  %d\n", errorCount)
-
-		if errorCount > 0 {
-			os.Exit(1)
-		}
+		summary.finish()
 	},
 }
 
@@ -188,11 +278,11 @@ Examples:
 		// Confirmation prompt unless --yes flag is set
 		yes, _ := cmd.Flags().GetBool("yes")
 		if !yes {
-			fmt.Printf("Are you sure you want to close %d task(s)? [y/N] ", len(taskIDs))
+			noticef("Are you sure you want to close %d task(s)? [y/N] ", len(taskIDs))
 			var response string
 			_, _ = fmt.Scanln(&response)
 			if strings.ToLower(response) != "y" {
-				fmt.Println("Cancelled")
+				noticef("Cancelled\n")
 				return
 			}
 		}
@@ -210,39 +300,25 @@ Examples:
 		status, _ := cmd.Flags().GetString("status")
 		resolver := api.NewStatusResolver(client)
 
-		var successCount, errorCount int
+		summary := bulkSummary{Operation: "close"}
 
-		fmt.Println("Closing tasks...")
+		human("Closing tasks...")
 		for _, taskID := range taskIDs {
 			taskStatus := status
 			if taskStatus == "" {
 				resolved, err := resolver.ClosedStatusForTask(ctx, taskID)
 				if err != nil {
-					errorCount++
-					fmt.Printf("  ✗ %s: %v\n", taskID, err)
+					summary.record(taskID, err)
 					continue
 				}
 				taskStatus = resolved
 			}
 
 			_, err := client.UpdateTask(ctx, taskID, &api.TaskUpdateOptions{Status: taskStatus})
-			if err != nil {
-				errorCount++
-				fmt.Printf("  ✗ %s: %v\n", taskID, err)
-			} else {
-				successCount++
-				fmt.Printf("  ✓ %s\n", taskID)
-			}
+			summary.record(taskID, err)
 		}
 
-		// Summary
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Success: %d\n", successCount)
-		fmt.Printf("  Failed:  %d\n", errorCount)
-
-		if errorCount > 0 {
-			os.Exit(1)
-		}
+		summary.finish()
 	},
 }
 
@@ -285,12 +361,12 @@ Examples:
 		// Strong confirmation for delete
 		yes, _ := cmd.Flags().GetBool("yes")
 		if !yes {
-			fmt.Printf("⚠️  WARNING: This will permanently delete %d task(s).\n", len(taskIDs))
-			fmt.Printf("Are you absolutely sure? Type 'delete' to confirm: ")
+			noticef("⚠️  WARNING: This will permanently delete %d task(s).\n", len(taskIDs))
+			noticef("Are you absolutely sure? Type 'delete' to confirm: ")
 			var response string
 			_, _ = fmt.Scanln(&response)
 			if response != "delete" {
-				fmt.Println("Cancelled")
+				noticef("Cancelled\n")
 				return
 			}
 		}
@@ -303,38 +379,14 @@ Examples:
 		}
 
 		// Delete tasks
-		var successCount, errorCount int
-		var deletedTasks []string
+		summary := bulkSummary{Operation: "delete", successLabel: "Deleted"}
 
-		fmt.Println("Deleting tasks...")
+		human("Deleting tasks...")
 		for _, taskID := range taskIDs {
-			err := client.DeleteTask(ctx, taskID)
-			if err != nil {
-				errorCount++
-				fmt.Printf("  ✗ %s: %v\n", taskID, err)
-			} else {
-				successCount++
-				deletedTasks = append(deletedTasks, taskID)
-				fmt.Printf("  ✓ %s\n", taskID)
-			}
+			summary.record(taskID, client.DeleteTask(ctx, taskID))
 		}
 
-		// Summary
-		fmt.Printf("\nSummary:\n")
-		fmt.Printf("  Deleted: %d\n", successCount)
-		fmt.Printf("  Failed:  %d\n", errorCount)
-
-		// Output deleted task IDs for potential recovery scripts
-		format := cmd.Flag("output").Value.String()
-		if format != "table" && len(deletedTasks) > 0 {
-			if err := output.Format(format, deletedTasks); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
-			}
-		}
-
-		if errorCount > 0 {
-			os.Exit(1)
-		}
+		summary.finish()
 	},
 }
 
