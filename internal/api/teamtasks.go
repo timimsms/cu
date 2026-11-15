@@ -2,7 +2,11 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/raksul/go-clickup/clickup"
 )
@@ -13,15 +17,23 @@ const tasksPerPage = 100
 
 // DefaultMaxTaskPages bounds pagination so a mistaken filter cannot walk an
 // entire workspace forever under the rate limiter. Callers that genuinely want
-// everything can raise it.
+// everything can set TeamTaskQuery.MaxPages.
 const DefaultMaxTaskPages = 50
 
 // TeamTaskQuery filters a workspace-wide task search. Zero values mean "no
 // filter", matching the API.
 type TeamTaskQuery struct {
-	Statuses      []string
-	Assignees     []string
-	Tags          []string
+	Statuses  []string
+	Assignees []string // user ids; the endpoint does not accept usernames
+	Tags      []string
+
+	// Location filters. Applying these server-side matters: filtering after
+	// the fact runs into MaxPages first, so a narrow space in a large
+	// workspace could come back empty and merely "truncated".
+	SpaceIDs   []string
+	ProjectIDs []string // folder ids — the API still calls folders projects
+	ListIDs    []string
+
 	IncludeClosed bool
 	Subtasks      bool
 	Archived      bool
@@ -36,28 +48,79 @@ type TeamTaskQuery struct {
 	MaxPages int
 }
 
-func (q *TeamTaskQuery) toSDK(page int) *clickup.GetTasksOptions {
-	opts := &clickup.GetTasksOptions{
-		Page:          page,
-		IncludeClosed: q.IncludeClosed,
-		Subtasks:      q.Subtasks,
-		Archived:      q.Archived,
-		OrderBy:       q.OrderBy,
-		Reverse:       q.Reverse,
+// values encodes the query for GET /team/{team_id}/task.
+//
+// This is built by hand rather than through clickup.GetTasksOptions for two
+// reasons: the SDK has no space_ids[]/project_ids[]/list_ids[], and its
+// custom_fields encoder concatenates JSON strings without escaping, so a value
+// containing a quote or backslash produced a malformed filter.
+func (q *TeamTaskQuery) values(page int) (url.Values, error) {
+	v := url.Values{}
+	v.Set("page", strconv.Itoa(page))
+
+	setBool := func(key string, b bool) {
+		if b {
+			v.Set(key, "true")
+		}
 	}
-	if len(q.Statuses) > 0 {
-		opts.Statuses = q.Statuses
+	setBool("include_closed", q.IncludeClosed)
+	setBool("subtasks", q.Subtasks)
+	setBool("archived", q.Archived)
+	setBool("reverse", q.Reverse)
+	if q.OrderBy != "" {
+		v.Set("order_by", q.OrderBy)
 	}
-	if len(q.Assignees) > 0 {
-		opts.Assignees = q.Assignees
+
+	for key, vals := range map[string][]string{
+		"statuses[]":    q.Statuses,
+		"assignees[]":   q.Assignees,
+		"tags[]":        q.Tags,
+		"space_ids[]":   q.SpaceIDs,
+		"project_ids[]": q.ProjectIDs,
+		"list_ids[]":    q.ListIDs,
+	} {
+		for _, val := range vals {
+			v.Add(key, val)
+		}
 	}
-	if len(q.Tags) > 0 {
-		opts.Tags = q.Tags
-	}
+
 	if len(q.CustomFields) > 0 {
-		opts.CustomFields = q.CustomFields
+		cf, err := encodeCustomFieldFilter(q.CustomFields)
+		if err != nil {
+			return nil, err
+		}
+		v.Set("custom_fields", cf)
 	}
-	return opts
+	return v, nil
+}
+
+// customFieldFilter is the JSON shape the endpoint expects for each
+// custom_fields entry. Value is a bare string for one value and an array for
+// several, matching what the API documents.
+type customFieldFilter struct {
+	FieldID  string `json:"field_id"`
+	Operator string `json:"operator"`
+	Value    any    `json:"value,omitempty"`
+}
+
+func encodeCustomFieldFilter(fields clickup.CustomFieldsInGetTasksRequest) (string, error) {
+	out := make([]customFieldFilter, 0, len(fields))
+	for _, f := range fields {
+		entry := customFieldFilter{FieldID: f.FieldId, Operator: f.Operator.String()}
+		switch len(f.Value) {
+		case 0:
+		case 1:
+			entry.Value = f.Value[0]
+		default:
+			entry.Value = f.Value
+		}
+		out = append(out, entry)
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 // TaskPageResult reports what a paged fetch actually covered, so callers can
@@ -113,11 +176,19 @@ func (c *Client) SearchTeamTasks(ctx context.Context, teamID string, query *Team
 		if err := c.rateLimiter.Wait(ctx); err != nil {
 			return nil, err
 		}
-		tasks, _, err := c.client.Tasks.GetFilteredTeamTasks(ctx, teamID, query.toSDK(page))
+		v, err := query.values(page)
 		if err != nil {
+			return nil, err
+		}
+		req, err := c.client.NewRequest(http.MethodGet, fmt.Sprintf("team/%s/task?%s", url.PathEscape(teamID), v.Encode()), nil)
+		if err != nil {
+			return nil, err
+		}
+		var resp clickup.GetTasksResponse
+		if _, err := c.client.Do(ctx, req, &resp); err != nil {
 			return nil, c.handleError(err)
 		}
-		return tasks, nil
+		return resp.Tasks, nil
 	})
 }
 
@@ -136,7 +207,8 @@ func (c *Client) ListTasksAllPages(ctx context.Context, listID string, options *
 
 // FindTasksByCustomField returns the tasks in a workspace whose custom field
 // equals value — the reverse lookup from an external identifier back to a task.
-func (c *Client) FindTasksByCustomField(ctx context.Context, teamID, fieldID, value string) ([]clickup.Task, error) {
+// The page result is returned whole so callers can report truncation.
+func (c *Client) FindTasksByCustomField(ctx context.Context, teamID, fieldID, value string) (*TaskPageResult, error) {
 	if fieldID == "" {
 		return nil, fmt.Errorf("a custom field id is required")
 	}
@@ -152,9 +224,5 @@ func (c *Client) FindTasksByCustomField(ctx context.Context, teamID, fieldID, va
 		},
 	}
 
-	result, err := c.SearchTeamTasks(ctx, teamID, query)
-	if err != nil {
-		return nil, err
-	}
-	return result.Tasks, nil
+	return c.SearchTeamTasks(ctx, teamID, query)
 }

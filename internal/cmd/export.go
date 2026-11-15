@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -116,12 +117,44 @@ Examples:
 			// spaces → folders → lists. The crawl discarded GetFolders and
 			// GetLists errors, so an export could silently omit whole
 			// subtrees and still look successful.
-			var truncated bool
+			//
+			// --space, --status and --assignee go to the server so they
+			// narrow the paged set; applied afterwards they would run into
+			// the page cap first and a narrow filter could come back empty.
+			var truncated, spaceFound bool
 			for _, workspace := range workspaces {
-				res, err := client.SearchTeamTasks(ctx, workspace.ID, &api.TeamTaskQuery{
+				query := &api.TeamTaskQuery{
 					IncludeClosed: includeClosed,
 					Subtasks:      includeSubtasks,
-				})
+				}
+				if spaceID != "" {
+					id, err := resolveSpaceInWorkspace(ctx, client, workspace, spaceID)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+						os.Exit(1)
+					}
+					if id == "" {
+						continue // the space lives in another workspace
+					}
+					query.SpaceIDs = []string{id}
+					spaceFound = true
+				}
+				if status != "" {
+					query.Statuses = []string{status}
+				}
+				if assignee != "" {
+					id, err := resolveAssigneeInWorkspace(ctx, client, workspace.ID, assignee)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+						os.Exit(1)
+					}
+					if id == "" {
+						continue // not a member here, so no tasks can match
+					}
+					query.Assignees = []string{id}
+				}
+
+				res, err := client.SearchTeamTasks(ctx, workspace.ID, query)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to read tasks for workspace %s: %v\n", workspace.Name, err)
 					os.Exit(1)
@@ -130,37 +163,17 @@ Examples:
 				truncated = truncated || res.Truncated
 			}
 
+			if spaceID != "" && !spaceFound {
+				fmt.Fprintf(os.Stderr, "Space not found: %s\n", spaceID)
+				os.Exit(1)
+			}
 			if truncated {
-				fmt.Fprintf(os.Stderr, "Warning: stopped after %d pages; export may be incomplete.\n", api.DefaultMaxTaskPages)
+				fmt.Fprintf(os.Stderr, "Warning: stopped after %d pages; export may be incomplete. Narrow it with --space, --status or --assignee.\n", api.DefaultMaxTaskPages)
 			}
 
-			// Tasks carry only a space id, so resolve a --space given by name.
-			if spaceID != "" {
-				wantID := spaceID
-				for _, workspace := range workspaces {
-					spaces, err := client.GetSpaces(ctx, workspace.ID)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to resolve spaces for workspace %s: %v\n", workspace.Name, err)
-						os.Exit(1)
-					}
-					for _, sp := range spaces {
-						if sp.Name == spaceID {
-							wantID = sp.ID
-						}
-					}
-				}
-
-				filtered := tasks[:0]
-				for _, t := range tasks {
-					if t.Space.ID == wantID {
-						filtered = append(filtered, t)
-					}
-				}
-				tasks = filtered
-			}
-
-			// Client-side filtering
-			tasks = filterTasksForExport(tasks, status, priority, assignee)
+			// The endpoint has no priority filter, so that one stays
+			// client-side.
+			tasks = filterTasksForExport(tasks, "", priority, "")
 		}
 
 		// Open output file or use stdout
@@ -267,6 +280,24 @@ func unsupportedExportFormat(flag, value string) error {
 		return fmt.Errorf("%w\nIf you meant a destination file, that is now --file %s", base, value)
 	}
 	return base
+}
+
+// resolveAssigneeInWorkspace maps an --assignee value (user id or username) to
+// the user id the endpoint's assignees[] filter needs. It returns "" when the
+// username is not a member of the workspace.
+func resolveAssigneeInWorkspace(ctx context.Context, client *api.Client, workspaceID, assignee string) (string, error) {
+	if _, err := strconv.Atoi(assignee); err == nil {
+		return assignee, nil
+	}
+	lookup := client.UserLookup()
+	if err := lookup.LoadWorkspaceUsers(ctx, workspaceID); err != nil {
+		return "", fmt.Errorf("failed to load workspace members to resolve %s: %w", assignee, err)
+	}
+	user, err := lookup.LookupByUsername(assignee)
+	if err != nil {
+		return "", nil
+	}
+	return strconv.Itoa(user.ID), nil
 }
 
 func filterTasksForExport(tasks []clickup.Task, status, priority, assignee string) []clickup.Task {

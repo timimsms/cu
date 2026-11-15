@@ -594,11 +594,29 @@ var taskSearchCmd = &cobra.Command{
 			// instead of walking spaces → folders → lists and issuing a
 			// request per list, which cost a request per list under the
 			// 100 req/min limit and only ever read each list's first page.
+			spaceFound := false
 			for _, workspace := range workspaces {
+				// --space is applied server-side via space_ids[]; filtering
+				// afterwards would run into the page cap first.
+				var spaceIDs []string
+				if spaceID != "" {
+					id, err := resolveSpaceInWorkspace(ctx, client, workspace, spaceID)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+						os.Exit(1)
+					}
+					if id == "" {
+						continue // the space lives in another workspace
+					}
+					spaceIDs = []string{id}
+					spaceFound = true
+				}
+
 				// Defaults mirror the previous per-list crawl (open tasks,
 				// no subtasks) so this stays a performance fix; the endpoint
 				// makes the fuller set reachable behind explicit flags.
 				res, err := client.SearchTeamTasks(ctx, workspace.ID, &api.TeamTaskQuery{
+					SpaceIDs:      spaceIDs,
 					IncludeClosed: includeClosed,
 					Subtasks:      includeSubtasks,
 				})
@@ -609,37 +627,15 @@ var taskSearchCmd = &cobra.Command{
 				allTasks = append(allTasks, res.Tasks...)
 				truncated = truncated || res.Truncated
 			}
-
-			// The endpoint has no space filter, so scope client-side. Tasks
-			// carry only a space id, so a --space given as a name has to be
-			// resolved first — the previous crawl compared against both.
-			if spaceID != "" {
-				wantID := spaceID
-				for _, workspace := range workspaces {
-					spaces, err := client.GetSpaces(ctx, workspace.ID)
-					if err != nil {
-						continue
-					}
-					for _, sp := range spaces {
-						if sp.Name == spaceID {
-							wantID = sp.ID
-						}
-					}
-				}
-
-				filtered := allTasks[:0]
-				for _, t := range allTasks {
-					if t.Space.ID == wantID {
-						filtered = append(filtered, t)
-					}
-				}
-				allTasks = filtered
+			if spaceID != "" && !spaceFound {
+				fmt.Fprintf(os.Stderr, "Space not found: %s\n", spaceID)
+				os.Exit(1)
 			}
 		}
 
 		if truncated {
 			fmt.Fprintf(os.Stderr,
-				"Warning: stopped after %d pages; results may be incomplete. Narrow the search or raise the page cap.\n",
+				"Warning: stopped after %d pages; results may be incomplete. Narrow the search with --space or --list.\n",
 				api.DefaultMaxTaskPages)
 		}
 
@@ -982,4 +978,20 @@ func getPriorityValue(priority string) int {
 	default:
 		return 3 // Default to normal
 	}
+}
+
+// resolveSpaceInWorkspace maps a --space value (id or name) to a space id in
+// one workspace. It returns "" when the workspace has no such space, so a
+// multi-workspace caller can skip it.
+func resolveSpaceInWorkspace(ctx context.Context, client *api.Client, workspace clickup.Team, idOrName string) (string, error) {
+	spaces, err := client.GetSpaces(ctx, workspace.ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve spaces for workspace %s: %w", workspace.Name, err)
+	}
+	for _, sp := range spaces {
+		if sp.ID == idOrName || sp.Name == idOrName {
+			return sp.ID, nil
+		}
+	}
+	return "", nil
 }
