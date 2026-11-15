@@ -507,23 +507,25 @@ Archiving is reversible with --undo. Prefer it over closing a task whose work
 has moved elsewhere: closing asserts a status the task never reached, and not
 every list even has a status named "closed".`,
 	Args: cobra.ExactArgs(1),
+	// API failures are not usage errors; don't bury them under the help text.
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		taskID := args[0]
 		undo, _ := cmd.Flags().GetBool("undo")
 
+		verb, action := "Archived", "archive"
+		if undo {
+			verb, action = "Unarchived", "unarchive"
+		}
+
 		client, err := api.NewClient()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create API client: %w", err)
 		}
 
 		task, err := client.SetTaskArchived(context.Background(), taskID, !undo)
 		if err != nil {
-			return err
-		}
-
-		verb := "Archived"
-		if undo {
-			verb = "Unarchived"
+			return fmt.Errorf("failed to %s task: %w", action, err)
 		}
 
 		if outputFormat != "table" {
@@ -760,8 +762,10 @@ func init() {
 	taskUpdateCmd.Flags().StringSlice("add-assignee", []string{}, "Add assignees (username or ID)")
 	taskUpdateCmd.Flags().StringSlice("remove-assignee", []string{}, "Remove assignees (username or ID)")
 
-	// Reopen command flags
+	// Archive command flags
 	taskArchiveCmd.Flags().Bool("undo", false, "Unarchive instead of archiving")
+
+	// Reopen command flags
 	taskCloseCmd.Flags().StringP("status", "s", "", "Status to set (default: the list's done status)")
 	taskReopenCmd.Flags().StringP("status", "s", "", "Status to set (default: the list's first open status)")
 

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/raksul/go-clickup/clickup"
 )
@@ -28,7 +29,7 @@ func (c *Client) SetTaskArchived(ctx context.Context, taskID string, archived bo
 		return nil, err
 	}
 
-	req, err := c.client.NewRequest("PUT", fmt.Sprintf("task/%s", taskID), &archiveRequest{Archived: archived})
+	req, err := c.client.NewRequest("PUT", "task/"+url.PathEscape(taskID), &archiveRequest{Archived: archived})
 	if err != nil {
 		return nil, err
 	}
