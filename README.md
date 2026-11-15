@@ -48,6 +48,15 @@ The package name `@timimsms/cu` is reserved on npm as a placeholder only — a f
 ### Direct Download
 Download the latest release from the [releases page](https://github.com/timimsms/cu/releases).
 
+### `cu` runs a different program on macOS
+macOS ships its own `/usr/bin/cu`, the Taylor UUCP serial-line dialer. If `/usr/bin` comes before Homebrew's bin directory (or `~/go/bin`) on your `PATH`, typing `cu` runs that tool and prints UUCP usage text instead. Check which one you get:
+
+```bash
+which -a cu   # the first entry should be /opt/homebrew/bin/cu (or ~/go/bin/cu)
+```
+
+If `/usr/bin/cu` is listed first, move Homebrew's or Go's bin directory ahead of `/usr/bin` in your shell profile.
+
 ## Quick Start
 
 1. Authenticate with ClickUp:

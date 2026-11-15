@@ -83,11 +83,15 @@ homebrew_casks:
     directory: Casks
     homepage: "https://github.com/timimsms/cu"
     description: "A CLI for ClickUp — like gh is for GitHub"
+    # install_steps renders Homebrew's declarative postflight_steps; the raw
+    # Ruby `install` hook renders `postflight do`, which Homebrew 7 deprecates.
+    # The steps DSL is not Ruby, so the staged path is GoReleaser's
+    # {{ .StagedPath }} token rather than #{staged_path}.
     hooks:
       post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/cu"]
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/cu"]
           end
 
 release:
