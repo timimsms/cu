@@ -95,27 +95,18 @@ fi
 
 # Step 6: Run gosec
 print_step "Running security scan (gosec)"
-if command -v gosec &> /dev/null; then
-    # Match .github/workflows/ci.yml exactly: pinned version, no severity
-    # filter. A -severity medium filter here would hide LOW findings that fail
-    # in CI, and an unpinned gosec can differ on which rules exist at all.
-    if gosec -fmt json -out gosec-report.json -stdout -verbose=text ./...; then
-        print_success "Security scan passed"
-        rm -f gosec-report.json
-    else
-        print_error "Security scan failed"
-        FAILED=1
-    fi
+# Match .github/workflows/ci.yml exactly: pinned version, no severity filter.
+# A -severity medium filter would hide LOW findings that fail in CI, and a
+# different gosec can differ on which rules exist at all. `go run` with the
+# pinned version is used even when a gosec is already on PATH, because that
+# one may be any version.
+if go run "github.com/securego/gosec/v2/cmd/gosec@$GOSEC_VERSION" \
+    -fmt json -out gosec-report.json -stdout -verbose=text ./...; then
+    print_success "Security scan passed"
+    rm -f gosec-report.json
 else
-    echo "gosec not installed, installing $GOSEC_VERSION..."
-    go install github.com/securego/gosec/v2/cmd/gosec@$GOSEC_VERSION
-    if gosec -fmt json -out gosec-report.json -stdout -verbose=text ./...; then
-        print_success "Security scan passed"
-        rm -f gosec-report.json
-    else
-        print_error "Security scan failed"
-        FAILED=1
-    fi
+    print_error "Security scan failed"
+    FAILED=1
 fi
 
 # Step 7: Check for unchecked errors
