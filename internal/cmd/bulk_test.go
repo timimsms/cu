@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestBulkCommand_Structure(t *testing.T) {
@@ -110,4 +111,33 @@ func TestBulkSummaryRecord(t *testing.T) {
 	assert.False(t, s.Results[1].OK)
 	assert.Equal(t, "boom", s.Results[1].Error, "the failure reason must survive into structured output")
 	assert.True(t, s.Results[2].OK)
+}
+
+func TestBulkSummaryYAMLKeysMatchJSON(t *testing.T) {
+	// yaml.v3 lowercases untagged field names, which would give `taskid` in
+	// YAML against `task_id` in JSON.
+	s := bulkSummary{Operation: "close"}
+	s.record("t1", errors.New("boom"))
+
+	out, err := yaml.Marshal(s)
+	require.NoError(t, err)
+	assert.Contains(t, string(out), "task_id: t1")
+	assert.Contains(t, string(out), "error: boom")
+	assert.NotContains(t, string(out), "successlabel")
+}
+
+func TestBulkSummaryCSVRows(t *testing.T) {
+	prev := outputFormat
+	outputFormat = "csv"
+	t.Cleanup(func() { outputFormat = prev })
+
+	var s bulkSummary
+	s.record("t1", nil)
+	s.record("t2", errors.New("boom"))
+
+	assert.Equal(t, [][]string{
+		{"task_id", "ok", "error"},
+		{"t1", "true", ""},
+		{"t2", "false", "boom"},
+	}, s.formatData())
 }

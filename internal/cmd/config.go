@@ -45,7 +45,17 @@ var configListCmd = &cobra.Command{
 		}
 
 		if outputFormat != "table" {
-			if err := output.Format(outputFormat, values); err != nil {
+			var data interface{} = values
+			if strings.EqualFold(outputFormat, "csv") {
+				// The CSV formatter walks a map in random order; build the row
+				// from the sorted keys so columns are stable between runs.
+				row := make([]string, len(keys))
+				for i, key := range keys {
+					row[i] = fmt.Sprint(values[key])
+				}
+				data = [][]string{keys, row}
+			}
+			if err := output.Format(outputFormat, data); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
 				os.Exit(1)
 			}
@@ -89,8 +99,13 @@ var configGetCmd = &cobra.Command{
 			// Encoded as a bare value, not wrapped in an object: `config get`
 			// asks for one setting, so the result should be usable directly.
 			// Redaction above applies here too — a format flag must not be a
-			// way around it.
-			if err := output.Format(outputFormat, value); err != nil {
+			// way around it. CSV has no bare scalar, so it gets a one-column
+			// table headed by the key.
+			var data = value
+			if strings.EqualFold(outputFormat, "csv") {
+				data = [][]string{{key}, {fmt.Sprint(value)}}
+			}
+			if err := output.Format(outputFormat, data); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
 				os.Exit(1)
 			}

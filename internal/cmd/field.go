@@ -32,11 +32,11 @@ func newFieldRow(f *clickup.CustomField) fieldRow {
 // fieldWriteResult reports what a set or clear actually wrote, so a scripted
 // caller can confirm which field was resolved rather than re-reading the task.
 type fieldWriteResult struct {
-	TaskID  string `json:"task_id"`
-	Field   string `json:"field"`
-	FieldID string `json:"field_id"`
-	Value   string `json:"value,omitempty"`
-	Cleared bool   `json:"cleared"`
+	TaskID  string `json:"task_id" yaml:"task_id"`
+	Field   string `json:"field" yaml:"field"`
+	FieldID string `json:"field_id" yaml:"field_id"`
+	Value   string `json:"value,omitempty" yaml:"value,omitempty"`
+	Cleared bool   `json:"cleared" yaml:"cleared"`
 }
 
 var fieldCmd = &cobra.Command{
