@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"regexp"
 
 	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
@@ -210,6 +212,111 @@ func resolveTaskField(ctx context.Context, client *api.Client, taskID, nameOrID 
 	return api.FindCustomField(fields, nameOrID)
 }
 
+var fieldFindCmd = &cobra.Command{
+	Use:   "find <field> <value>",
+	Short: "Find tasks whose custom field equals a value",
+	Long: `Find tasks across the workspace whose custom field equals a value.
+
+Filtering happens server-side via Get Filtered Team Tasks, so this does not walk
+every list. This is the reverse lookup: from an external identifier stored in a
+custom field back to the task that owns it.
+
+A field id (a UUID) works anywhere and is used as given. A field *name* has to
+be resolved against a list, so pass --list or set a default; the resolved field
+itself is workspace-wide.
+
+Examples:
+  cu field find Repo https://github.com/owner/repo
+  cu field find a5013cb5-9244-49be-a6a2-90e1cc8a1d31 https://github.com/owner/repo`,
+	Args:         cobra.ExactArgs(2),
+	SilenceUsage: true, // API and lookup failures are not usage errors
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name, value := args[0], args[1]
+
+		client, err := api.NewClient()
+		if err != nil {
+			return err
+		}
+		ctx := context.Background()
+
+		fieldID, err := resolveFieldID(ctx, client, cmd, name)
+		if err != nil {
+			return err
+		}
+
+		workspaces, err := client.GetWorkspaces(ctx)
+		if err != nil {
+			return err
+		}
+
+		rows := []taskMatchRow{} // "[]", not "null", when nothing matches
+		var truncated bool
+		for _, w := range workspaces {
+			res, err := client.FindTasksByCustomField(ctx, w.ID, fieldID, value)
+			if err != nil {
+				return err
+			}
+			truncated = truncated || res.Truncated
+			for _, t := range res.Tasks {
+				rows = append(rows, taskMatchRow{
+					ID:     t.ID,
+					Name:   t.Name,
+					Status: t.Status.Status,
+					List:   t.List.Name,
+					URL:    t.URL,
+				})
+			}
+		}
+
+		if truncated {
+			fmt.Fprintf(os.Stderr, "Warning: stopped after %d pages; matches may be incomplete.\n", api.DefaultMaxTaskPages)
+		}
+
+		return output.Format(outputFormat, rows)
+	},
+}
+
+// taskMatchRow is the shape `field find` reports, kept narrow so the output is
+// usable as input to other commands.
+type taskMatchRow struct {
+	ID     string `json:"id" yaml:"id"`
+	Name   string `json:"name" yaml:"name"`
+	Status string `json:"status" yaml:"status"`
+	List   string `json:"list" yaml:"list"`
+	URL    string `json:"url" yaml:"url"`
+}
+
+// fieldIDPattern matches ClickUp custom field ids, which are UUIDs.
+var fieldIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// resolveFieldID accepts either a field id or a field name. An id is used as
+// given — fields are workspace-wide, so it must not be checked against a list
+// it may not belong to. A name is looked up against a list, since fields are
+// only enumerable per list.
+func resolveFieldID(ctx context.Context, client *api.Client, cmd *cobra.Command, nameOrID string) (string, error) {
+	if fieldIDPattern.MatchString(nameOrID) {
+		return nameOrID, nil
+	}
+
+	listID, _ := cmd.Flags().GetString("list")
+	if listID == "" {
+		listID = config.GetString("default_list")
+	}
+	if listID == "" {
+		return "", fmt.Errorf("%q is not a field id; pass --list (or set a default list) so the field name can be resolved", nameOrID)
+	}
+
+	fields, err := client.GetCustomFields(ctx, listID)
+	if err != nil {
+		return "", err
+	}
+	field, err := api.FindCustomField(fields, nameOrID)
+	if err != nil {
+		return "", err
+	}
+	return field.ID, nil
+}
+
 func init() {
 	fieldListCmd.Flags().StringP("list", "l", "", "List ID (defaults to the configured default list)")
 
@@ -217,4 +324,7 @@ func init() {
 	fieldCmd.AddCommand(fieldGetCmd)
 	fieldCmd.AddCommand(fieldSetCmd)
 	fieldCmd.AddCommand(fieldClearCmd)
+
+	fieldFindCmd.Flags().StringP("list", "l", "", "List used to resolve a field name to an id (defaults to the configured default list)")
+	fieldCmd.AddCommand(fieldFindCmd)
 }

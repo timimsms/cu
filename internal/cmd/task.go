@@ -560,6 +560,8 @@ var taskSearchCmd = &cobra.Command{
 		spaceID, _ := cmd.Flags().GetString("space")
 		listID, _ := cmd.Flags().GetString("list")
 		searchDescription, _ := cmd.Flags().GetBool("include-description")
+		includeClosed, _ := cmd.Flags().GetBool("include-closed")
+		includeSubtasks, _ := cmd.Flags().GetBool("subtasks")
 		limit, _ := cmd.Flags().GetInt("limit")
 
 		// Get workspaces to search
@@ -575,81 +577,66 @@ var taskSearchCmd = &cobra.Command{
 		}
 
 		var allTasks []clickup.Task
-		var searchErrors []string
+		var truncated bool
 
-		// If specific list is provided, search only that list
 		if listID != "" {
-			tasks, err := client.GetTasks(ctx, listID, &api.TaskQueryOptions{})
+			// A single list is already a direct query; page it to exhaustion
+			// rather than returning only the first 100 tasks.
+			res, err := client.ListTasksAllPages(ctx, listID, &api.TaskQueryOptions{}, 0)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to get tasks from list %s: %v\n", listID, err)
 				os.Exit(1)
 			}
-			allTasks = tasks
+			allTasks = res.Tasks
+			truncated = res.Truncated
 		} else {
-			// Search across all lists in workspace or space
+			// One server-side query per workspace, paged to exhaustion —
+			// instead of walking spaces → folders → lists and issuing a
+			// request per list, which cost a request per list under the
+			// 100 req/min limit and only ever read each list's first page.
+			spaceFound := false
 			for _, workspace := range workspaces {
-				spaces, err := client.GetSpaces(ctx, workspace.ID)
+				// --space is applied server-side via space_ids[]; filtering
+				// afterwards would run into the page cap first.
+				var spaceIDs []string
+				if spaceID != "" {
+					id, err := resolveSpaceInWorkspace(ctx, client, workspace, spaceID)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
+						os.Exit(1)
+					}
+					if id == "" {
+						continue // the space lives in another workspace
+					}
+					spaceIDs = []string{id}
+					spaceFound = true
+				}
+
+				// Defaults mirror the previous per-list crawl (open tasks,
+				// no subtasks) so this stays a performance fix; the endpoint
+				// makes the fuller set reachable behind explicit flags.
+				res, err := client.SearchTeamTasks(ctx, workspace.ID, &api.TeamTaskQuery{
+					SpaceIDs:      spaceIDs,
+					IncludeClosed: includeClosed,
+					Subtasks:      includeSubtasks,
+				})
 				if err != nil {
-					searchErrors = append(searchErrors, fmt.Sprintf("Failed to get spaces for workspace %s: %v", workspace.Name, err))
-					continue
+					fmt.Fprintf(os.Stderr, "Failed to search workspace %s: %v\n", workspace.Name, err)
+					os.Exit(1)
 				}
-
-				for _, space := range spaces {
-					// Skip if specific space is requested and this isn't it
-					if spaceID != "" && space.ID != spaceID && space.Name != spaceID {
-						continue
-					}
-
-					// Get folders in space
-					folders, err := client.GetFolders(ctx, space.ID)
-					if err != nil {
-						searchErrors = append(searchErrors, fmt.Sprintf("Failed to get folders for space %s: %v", space.Name, err))
-						continue
-					}
-
-					// Get tasks from folders
-					for _, folder := range folders {
-						lists, err := client.GetLists(ctx, folder.ID)
-						if err != nil {
-							searchErrors = append(searchErrors, fmt.Sprintf("Failed to get lists for folder %s: %v", folder.Name, err))
-							continue
-						}
-
-						for _, list := range lists {
-							tasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
-							if err != nil {
-								searchErrors = append(searchErrors, fmt.Sprintf("Failed to get tasks for list %s: %v", list.Name, err))
-								continue
-							}
-							allTasks = append(allTasks, tasks...)
-						}
-					}
-
-					// Get folderless lists
-					lists, err := client.GetFolderlessLists(ctx, space.ID)
-					if err != nil {
-						searchErrors = append(searchErrors, fmt.Sprintf("Failed to get folderless lists for space %s: %v", space.Name, err))
-						continue
-					}
-
-					for _, list := range lists {
-						tasks, err := client.GetTasks(ctx, list.ID, &api.TaskQueryOptions{})
-						if err != nil {
-							searchErrors = append(searchErrors, fmt.Sprintf("Failed to get tasks for list %s: %v", list.Name, err))
-							continue
-						}
-						allTasks = append(allTasks, tasks...)
-					}
-				}
+				allTasks = append(allTasks, res.Tasks...)
+				truncated = truncated || res.Truncated
+			}
+			if spaceID != "" && !spaceFound {
+				fmt.Fprintf(os.Stderr, "Space not found: %s\n", spaceID)
+				os.Exit(1)
 			}
 		}
 
-		// Print any errors encountered during search
-		if len(searchErrors) > 0 {
-			fmt.Fprintln(os.Stderr, "Some errors occurred during search:")
-			for _, err := range searchErrors {
-				fmt.Fprintf(os.Stderr, "  - %s\n", err)
-			}
+		if truncated {
+			fmt.Fprintf(os.Stderr,
+				"Warning: stopped after %d pages; results may be incomplete. Narrow the search with --space or --list.\n",
+				api.DefaultMaxTaskPages)
 		}
 
 		// Filter tasks based on search query
@@ -772,6 +759,8 @@ func init() {
 	// Search command flags
 	taskSearchCmd.Flags().StringP("space", "s", "", "Limit search to specific space")
 	taskSearchCmd.Flags().StringP("list", "l", "", "Limit search to specific list")
+	taskSearchCmd.Flags().Bool("include-closed", false, "Include closed tasks in the search")
+	taskSearchCmd.Flags().Bool("subtasks", false, "Include subtasks in the search")
 	taskSearchCmd.Flags().Bool("include-description", false, "Search in task descriptions as well as names")
 	taskSearchCmd.Flags().Int("limit", 50, "Maximum number of results to return")
 }
@@ -989,4 +978,20 @@ func getPriorityValue(priority string) int {
 	default:
 		return 3 // Default to normal
 	}
+}
+
+// resolveSpaceInWorkspace maps a --space value (id or name) to a space id in
+// one workspace. It returns "" when the workspace has no such space, so a
+// multi-workspace caller can skip it.
+func resolveSpaceInWorkspace(ctx context.Context, client *api.Client, workspace clickup.Team, idOrName string) (string, error) {
+	spaces, err := client.GetSpaces(ctx, workspace.ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve spaces for workspace %s: %w", workspace.Name, err)
+	}
+	for _, sp := range spaces {
+		if sp.ID == idOrName || sp.Name == idOrName {
+			return sp.ID, nil
+		}
+	}
+	return "", nil
 }

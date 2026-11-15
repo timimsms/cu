@@ -28,6 +28,7 @@ for dropdowns and labels — so names can be used on the command line.
 
 * [cu](cu.md)	 - A GitHub CLI-inspired command-line interface for ClickUp
 * [cu field clear](cu_field_clear.md)	 - Clear a custom field value on a task
+* [cu field find](cu_field_find.md)	 - Find tasks whose custom field equals a value
 * [cu field get](cu_field_get.md)	 - Show custom field values on a task
 * [cu field list](cu_field_list.md)	 - List custom fields available on a list
 * [cu field set](cu_field_set.md)	 - Set a custom field value on a task
