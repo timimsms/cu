@@ -6,6 +6,9 @@ Authenticate with ClickUp
 
 Authenticate with ClickUp using a personal API token. The token is stored securely in your operating system's credential store.
 
+With --workspace, the token is stored under that name and the workspace becomes
+the default (config default_workspace) that all other commands authenticate with.
+
 ```
 cu auth login [flags]
 ```
