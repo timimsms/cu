@@ -3,99 +3,99 @@ package errors
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAPIError(t *testing.T) {
-	t.Run("NewAPIError creates error", func(t *testing.T) {
-		err := NewAPIError(404, "Not Found", "Resource not found")
-		assert.NotNil(t, err)
-		assert.Equal(t, 404, err.StatusCode)
-		assert.Equal(t, "Not Found", err.Message)
-		assert.Equal(t, "Resource not found", err.Details)
-	})
+func TestNewAPIError(t *testing.T) {
+	cause := errors.New("sdk error")
 
-	t.Run("APIError formats message", func(t *testing.T) {
-		err := NewAPIError(500, "Internal Server Error", "Database connection failed")
-		assert.Contains(t, err.Error(), "500")
-		assert.Contains(t, err.Error(), "Internal Server Error")
-		assert.Contains(t, err.Error(), "Database connection failed")
-	})
-}
-
-func TestUserError(t *testing.T) {
-	t.Run("NewUserError creates error", func(t *testing.T) {
-		err := NewUserError("Invalid token", "Try logging in again", ErrInvalidToken)
-		assert.NotNil(t, err)
-		assert.Equal(t, "Invalid token", err.Message)
-		assert.Equal(t, "Try logging in again", err.Suggestion)
-		assert.Equal(t, ErrInvalidToken, err.Err)
-	})
-
-	t.Run("UserError formats with suggestion", func(t *testing.T) {
-		err := NewUserError("Authentication failed", "Run 'cu auth login'", ErrNotAuthenticated)
-		assert.Contains(t, err.Error(), "Authentication failed")
-		assert.Contains(t, err.Error(), "Suggestion: Run 'cu auth login'")
-	})
-
-	t.Run("UserError without suggestion", func(t *testing.T) {
-		err := NewUserError("Something went wrong", "", nil)
-		assert.Equal(t, "Something went wrong", err.Error())
-	})
-}
-
-func TestHandleHTTPError(t *testing.T) {
 	tests := []struct {
-		name        string
-		statusCode  int
-		body        string
-		expectedMsg string
+		name       string
+		statusCode int
+		ecode      string
+		message    string
+		resource   string
+		resourceID string
+		kind       error
+		want       string
 	}{
 		{
-			name:        "401 Unauthorized",
-			statusCode:  401,
-			body:        "unauthorized",
-			expectedMsg: "Authentication failed",
+			name:       "401 token invalid",
+			statusCode: 401, ecode: "OAUTH_025", message: "Token invalid",
+			kind: ErrNotAuthenticated,
+			want: "not authenticated or token invalid — run `cu auth login` (HTTP 401 OAUTH_025: Token invalid)",
 		},
 		{
-			name:        "403 Forbidden",
-			statusCode:  403,
-			body:        "forbidden",
-			expectedMsg: "Access denied",
+			name:       "401 team not authorized is not a login problem",
+			statusCode: 401, ecode: "OAUTH_027", message: "Team not authorized",
+			resource: "task", resourceID: "bogus",
+			kind: ErrNotFound,
+			want: `task "bogus" not found, or not accessible with the current token (HTTP 401 OAUTH_027: Team not authorized)`,
 		},
 		{
-			name:        "404 Not Found",
-			statusCode:  404,
-			body:        "not found",
-			expectedMsg: "Resource not found",
+			name:       "403 with resource",
+			statusCode: 403, resource: "list", resourceID: "42",
+			kind: ErrPermissionDenied,
+			want: `permission denied for list "42" — check your ClickUp access to it (HTTP 403)`,
 		},
 		{
-			name:        "429 Rate Limited",
-			statusCode:  429,
-			body:        "rate limited",
-			expectedMsg: "Rate limit exceeded",
+			name:       "404 with resource",
+			statusCode: 404, ecode: "ITEM_013", message: "Task not found",
+			resource: "task", resourceID: "abc",
+			kind: ErrNotFound,
+			want: `task "abc" not found (HTTP 404 ITEM_013: Task not found)`,
 		},
 		{
-			name:        "500 Server Error",
-			statusCode:  500,
-			body:        "internal error",
-			expectedMsg: "ClickUp service error",
+			name:       "404 without resource",
+			statusCode: 404,
+			kind:       ErrNotFound,
+			want:       "resource not found (HTTP 404)",
+		},
+		{
+			name:       "429",
+			statusCode: 429,
+			kind:       ErrRateLimited,
+			want:       "ClickUp rate limit exceeded — wait a minute and try again (HTTP 429)",
+		},
+		{
+			name:       "500",
+			statusCode: 500, message: "Internal error",
+			kind: ErrServer,
+			want: "ClickUp server error — try again shortly (HTTP 500: Internal error)",
+		},
+		{
+			name:       "400",
+			statusCode: 400, ecode: "INPUT_005", message: "Status not found",
+			kind: ErrInvalidInput,
+			want: "ClickUp rejected the request (HTTP 400 INPUT_005: Status not found)",
+		},
+		{
+			name:       "other 4xx",
+			statusCode: 409,
+			want:       "ClickUp request failed (HTTP 409)",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := HandleHTTPError(tt.statusCode, tt.body)
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), tt.expectedMsg)
+			err := NewAPIError(tt.statusCode, tt.ecode, tt.message, cause)
+			err.Resource, err.ResourceID = tt.resource, tt.resourceID
+
+			assert.Equal(t, tt.want, err.Error())
+			assert.ErrorIs(t, err, cause, "original error must stay reachable")
+			if tt.kind != nil {
+				assert.ErrorIs(t, err, tt.kind)
+			}
 		})
 	}
+}
 
-	t.Run("200 OK returns nil", func(t *testing.T) {
-		err := HandleHTTPError(200, "success")
-		assert.NoError(t, err)
-	})
+func TestAPIErrorRetryAfter(t *testing.T) {
+	err := NewAPIError(429, "", "", nil)
+	err.RetryAfter = 42*time.Second + 300*time.Millisecond
+	assert.Equal(t, "ClickUp rate limit exceeded — wait 42s and try again (HTTP 429)", err.Error())
 }
 
 func TestIsRetryable(t *testing.T) {
@@ -116,22 +116,22 @@ func TestIsRetryable(t *testing.T) {
 		},
 		{
 			name:     "429 API error",
-			err:      NewAPIError(429, "Too Many Requests"),
+			err:      NewAPIError(429, "", "Too Many Requests", nil),
 			expected: true,
 		},
 		{
 			name:     "503 API error",
-			err:      NewAPIError(503, "Service Unavailable"),
+			err:      NewAPIError(503, "", "Service Unavailable", nil),
 			expected: true,
 		},
 		{
 			name:     "502 API error",
-			err:      NewAPIError(502, "Bad Gateway"),
+			err:      NewAPIError(502, "", "Bad Gateway", nil),
 			expected: true,
 		},
 		{
 			name:     "404 API error",
-			err:      NewAPIError(404, "Not Found"),
+			err:      NewAPIError(404, "", "Not Found", nil),
 			expected: false,
 		},
 		{
@@ -162,7 +162,8 @@ func TestPredefinedErrors(t *testing.T) {
 		assert.Error(t, ErrNetworkError)
 		assert.Error(t, ErrRateLimited)
 		assert.Error(t, ErrNotFound)
+		assert.Error(t, ErrPermissionDenied)
 		assert.Error(t, ErrInvalidInput)
-		assert.Error(t, ErrConfigNotFound)
+		assert.Error(t, ErrServer)
 	})
 }
