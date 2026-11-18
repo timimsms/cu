@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/raksul/go-clickup/clickup"
 	"github.com/spf13/cobra"
 	"github.com/timimsms/cu/internal/api"
 	"github.com/timimsms/cu/internal/cache"
@@ -15,6 +16,36 @@ import (
 var (
 	isProjectFlag bool
 )
+
+// listRow is the table view of a clickup.List.
+type listRow struct {
+	ID       string `json:"id" yaml:"id"`
+	Name     string `json:"name" yaml:"name"`
+	Default  string `json:"default" yaml:"default"`
+	Tasks    int    `json:"tasks" yaml:"tasks"`
+	Archived bool   `json:"archived" yaml:"archived"`
+}
+
+// listTableRows converts lists into table rows, marking the default list with "*".
+func listTableRows(lists []clickup.List, defaultListID string) []listRow {
+	rows := make([]listRow, 0, len(lists))
+	for _, l := range lists {
+		defaultMarker := ""
+		if l.ID == defaultListID {
+			defaultMarker = "*"
+		}
+		// task_count may be absent; leave Tasks at zero in that case
+		tasks, _ := l.TaskCount.Int64()
+		rows = append(rows, listRow{
+			ID:       l.ID,
+			Name:     l.Name,
+			Default:  defaultMarker,
+			Tasks:    int(tasks),
+			Archived: l.Archived,
+		})
+	}
+	return rows
+}
 
 var listCmd = &cobra.Command{
 	Use:   "list",
@@ -54,7 +85,7 @@ var listListCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		var allLists []interface{}
+		var allLists []clickup.List
 
 		if folderID != "" {
 			// Get lists from folder
@@ -109,39 +140,7 @@ var listListCmd = &cobra.Command{
 		format := cmd.Flag("output").Value.String()
 
 		if format == "table" {
-			// Prepare table data
-			type listRow struct {
-				ID       string `json:"id"`
-				Name     string `json:"name"`
-				Default  string `json:"default"`
-				Tasks    int    `json:"tasks"`
-				Archived bool   `json:"archived"`
-			}
-
-			var rows []listRow
-			for _, item := range allLists {
-				// Type assertion based on the actual type
-				switch v := item.(type) {
-				case map[string]interface{}:
-					id, _ := v["id"].(string)
-					name, _ := v["name"].(string)
-					archived, _ := v["archived"].(bool)
-
-					defaultMarker := ""
-					if id == defaultListID {
-						defaultMarker = "*"
-					}
-
-					row := listRow{
-						ID:       id,
-						Name:     name,
-						Default:  defaultMarker,
-						Archived: archived,
-					}
-					rows = append(rows, row)
-				}
-			}
-
+			rows := listTableRows(allLists, defaultListID)
 			if err := output.Format(format, rows); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to format output: %v\n", err)
 				os.Exit(1)
