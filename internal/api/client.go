@@ -225,17 +225,6 @@ func (c *Client) GetWorkspaceMembers(ctx context.Context, workspaceID string) ([
 	return users, nil
 }
 
-// handleError converts API errors to user-friendly errors
-func (c *Client) handleError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	// TODO: Parse HTTP response codes and convert to appropriate errors
-	// For now, return the error as-is
-	return err
-}
-
 // TaskQueryOptions represents options for querying tasks
 type TaskQueryOptions struct {
 	Page      int
