@@ -21,7 +21,10 @@ var authCmd = &cobra.Command{
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate with ClickUp",
-	Long:  `Authenticate with ClickUp using a personal API token. The token is stored securely in your operating system's credential store.`,
+	Long: `Authenticate with ClickUp using a personal API token. The token is stored securely in your operating system's credential store.
+
+With --workspace, the token is stored under that name and the workspace becomes
+the default (config default_workspace) that all other commands authenticate with.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		token, _ := cmd.Flags().GetString("token")
 		workspace, _ := cmd.Flags().GetString("workspace")
@@ -39,6 +42,7 @@ var authLoginCmd = &cobra.Command{
 				fmt.Fprintf(os.Stderr, "Failed to save token: %v\n", err)
 				os.Exit(1)
 			}
+			rememberWorkspace(workspace)
 
 			fmt.Println("Successfully authenticated!")
 			return
@@ -73,18 +77,29 @@ var authLoginCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Save workspace as default if it's the first one
-		if workspace != "" && workspace != auth.DefaultWorkspace {
-			config.Set("default_workspace", workspace)
-			if err := config.Save(); err != nil {
-				// Log warning but don't fail - the auth is already saved
-				fmt.Fprintf(os.Stderr, "Warning: failed to save default workspace: %v\n", err)
-			}
-		}
+		rememberWorkspace(workspace)
 
 		fmt.Println("\nSuccessfully authenticated!")
 		fmt.Println("You can now use cu commands to interact with ClickUp.")
 	},
+}
+
+// rememberWorkspace makes the workspace just logged in to the one every other
+// command authenticates with, so the token that was saved is the token used.
+// Nothing is written when it is already current, which keeps a plain
+// `cu auth login` from creating a config file it does not need.
+func rememberWorkspace(workspace string) {
+	if workspace == "" {
+		workspace = auth.DefaultWorkspace
+	}
+	if workspace == auth.CurrentWorkspace() {
+		return
+	}
+	config.Set("default_workspace", workspace)
+	if err := config.Save(); err != nil {
+		// Log warning but don't fail - the auth is already saved
+		fmt.Fprintf(os.Stderr, "Warning: failed to save default workspace: %v\n", err)
+	}
 }
 
 // authStatus is the machine-readable form of `cu auth status`.
@@ -101,10 +116,7 @@ var authStatusCmd = &cobra.Command{
 	Long:  `Display the current authentication status and user information.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		authMgr := auth.NewManager()
-		workspace := config.GetString("default_workspace")
-		if workspace == "" {
-			workspace = auth.DefaultWorkspace
-		}
+		workspace := auth.CurrentWorkspace()
 
 		token, err := authMgr.GetToken(workspace)
 
@@ -152,10 +164,7 @@ var authLogoutCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		workspace, _ := cmd.Flags().GetString("workspace")
 		if workspace == "" {
-			workspace = config.GetString("default_workspace")
-			if workspace == "" {
-				workspace = auth.DefaultWorkspace
-			}
+			workspace = auth.CurrentWorkspace()
 		}
 
 		authMgr := auth.NewManager()

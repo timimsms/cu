@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/timimsms/cu/internal/config"
 	"github.com/timimsms/cu/internal/errors"
 	"github.com/zalando/go-keyring"
 )
@@ -109,8 +110,19 @@ func (m *Manager) IsAuthenticated(workspace string) bool {
 	return err == nil
 }
 
+// CurrentWorkspace returns the workspace whose token cu authenticates with:
+// the config `default_workspace` value (which `cu auth login -w` records, and
+// CU_DEFAULT_WORKSPACE overrides), falling back to DefaultWorkspace. The API
+// client and `cu auth status`/`logout` all resolve through here so they can
+// never disagree about which keyring account is in use.
+func CurrentWorkspace() string {
+	if ws := config.GetString("default_workspace"); ws != "" {
+		return ws
+	}
+	return DefaultWorkspace
+}
+
 // GetCurrentToken gets the token for the current workspace
 func (m *Manager) GetCurrentToken() (*Token, error) {
-	// TODO: Get current workspace from config
-	return m.GetToken(DefaultWorkspace)
+	return m.GetToken(CurrentWorkspace())
 }
