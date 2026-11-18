@@ -13,6 +13,7 @@ type RateLimiter struct {
 	maxTokens  int
 	refillRate time.Duration
 	lastRefill time.Time
+	now        func() time.Time // injectable clock; tests substitute a fake
 }
 
 // NewRateLimiter creates a new rate limiter
@@ -22,6 +23,7 @@ func NewRateLimiter(maxRequests int, per time.Duration) *RateLimiter {
 		maxTokens:  maxRequests,
 		refillRate: per / time.Duration(maxRequests),
 		lastRefill: time.Now(),
+		now:        time.Now,
 	}
 }
 
@@ -47,7 +49,7 @@ func (r *RateLimiter) tryAcquire() bool {
 	defer r.mu.Unlock()
 
 	// Refill tokens based on time elapsed
-	now := time.Now()
+	now := r.now()
 	elapsed := now.Sub(r.lastRefill)
 	tokensToAdd := int(elapsed / r.refillRate)
 
